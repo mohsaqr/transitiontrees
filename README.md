@@ -1,5 +1,11 @@
 # transitiontrees
 
+<!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/transitiontrees)](https://CRAN.R-project.org/package=transitiontrees)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/transitiontrees)](https://cran.r-project.org/package=transitiontrees)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<!-- badges: end -->
+
 Predictive pathway discovery in categorical sequence data.
 
 `transitiontrees` fits a variable-depth pathway tree (a prediction
