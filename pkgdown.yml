@@ -1,0 +1,13 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  advanced-analysis: advanced-analysis.html
+  analysis-case: analysis-case.html
+  ecosystem-compatibility: ecosystem-compatibility.html
+  getting-started: getting-started.html
+  visualization: visualization.html
+last_built: 2026-07-12T14:30Z
+urls:
+  reference: https://pak.dynasite.org/transitiontrees/reference
+  article: https://pak.dynasite.org/transitiontrees/articles
