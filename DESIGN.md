@@ -24,10 +24,10 @@ Everything else in the package is a function that consumes a
 
 `verb_transitiontrees()` for any non-generic verb that acts on a tree,
 so the public surface does not collide with sibling packages
-([`tna::prune`](http://sonsoles.me/tna/reference/prune.md),
+([`tna::prune`](https://sonsoles.me/tna/reference/prune.html),
 [`rpart::prune`](https://rdrr.io/pkg/rpart/man/prune.rpart.html),
-[`Nestimate::path_dependence`](https://saqr.me/Nestimate/reference/path_dependence.html),
-[`Nestimate::pathways`](https://saqr.me/Nestimate/reference/pathways.html)):
+[`Nestimate::path_dependence`](https://pak.dynasite.org/Nestimate/reference/path_dependence.html),
+[`Nestimate::pathways`](https://pak.dynasite.org/Nestimate/reference/pathways.html)):
 
 ``` r
 
@@ -380,7 +380,7 @@ are pathway-centric views that complement (don’t replace) the tree plot.
 - Not a hidden-Markov-model package — that’s `seqHMM`, `depmixS4`.
 - Not a sequence-distance / clustering package — that’s `TraMineR`.
 - Not an HONEM / higher-order-network embedding package — that’s the
-  [`Nestimate::build_honem()`](https://saqr.me/Nestimate/reference/build_honem.html)
+  [`Nestimate::build_honem()`](https://pak.dynasite.org/Nestimate/reference/build_honem.html)
   / `Saebi 2020` family.
 - Not a fixed-order Markov chain package — that’s `markovchain`.
 

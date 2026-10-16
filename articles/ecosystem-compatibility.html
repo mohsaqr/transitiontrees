@@ -129,7 +129,7 @@ routes converge on this same tree.</p>
 decodes through the model’s label set.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/sonsoleslp/tna/" class="external-link">tna</a></span><span class="op">)</span></span>
-<span><span class="co">#&gt; 'tna' package version 1.2.3</span></span>
+<span><span class="co">#&gt; 'tna' package version 1.3.1</span></span>
 <span><span class="co">#&gt; ------------------------------------------------------</span></span>
 <span><span class="co">#&gt;   Tikka, S., López-Pernas, S., and Saqr, M. (2025). </span></span>
 <span><span class="co">#&gt;   tna: An R Package for Transition Network Analysis.</span></span>
@@ -143,7 +143,7 @@ decodes through the model’s label set.</p>
 <span><span class="co">#&gt; The following object is masked from 'package:transitiontrees':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     group_regulation_long</span></span>
-<span><span class="va">model_tna</span> <span class="op">&lt;-</span> <span class="fu"><a href="http://sonsoles.me/tna/reference/build_model.html" class="external-link">tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
+<span><span class="va">model_tna</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://sonsoles.me/tna/reference/build_model.html" class="external-link">tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">model_tna</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "tna"</span></span>
 <span></span>
@@ -170,7 +170,7 @@ decodes through the model’s label set.</p>
 <div class="section level2">
 <h2 id="route-c-a-nestimate-network-object">Route C – a <code>Nestimate</code> network object<a class="anchor" aria-label="anchor" href="#route-c-a-nestimate-network-object"></a>
 </h2>
-<p><code><a href="https://saqr.me/Nestimate/reference/build_tna.html" class="external-link">Nestimate::build_tna()</a></code> (and the other
+<p><code><a href="https://pak.dynasite.org/Nestimate/reference/build_tna.html" class="external-link">Nestimate::build_tna()</a></code> (and the other
 <code>build_*()</code> constructors) return a <code>netobject</code>
 that likewise carries the sequence frame and a <code>$nodes</code> label
 table. Same hand-off:</p>
@@ -181,7 +181,7 @@ table. Same hand-off:</p>
 <span><span class="co">#&gt; The following objects are masked from 'package:tna':</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt;     cluster_data, group_regulation_long, plot_mosaic</span></span>
-<span><span class="va">model_nest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://saqr.me/Nestimate/reference/build_tna.html" class="external-link">build_tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
+<span><span class="va">model_nest</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://pak.dynasite.org/Nestimate/reference/build_tna.html" class="external-link">build_tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/class.html" class="external-link">class</a></span><span class="op">(</span><span class="va">model_nest</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "netobject"       "cograph_network"</span></span>
 <span></span>
@@ -243,7 +243,7 @@ sequences cannot be recovered from edge weights, so fabricating them
 would be silently wrong. The same invariant rejects a bare numeric
 transition matrix.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">graph_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://saqr.me/Nestimate/reference/build_tna.html" class="external-link">build_tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">graph_only</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://pak.dynasite.org/Nestimate/reference/build_tna.html" class="external-link">build_tna</a></span><span class="op">(</span><span class="va">engagement</span><span class="op">)</span></span>
 <span><span class="va">graph_only</span><span class="op">$</span><span class="va">data</span> <span class="op">&lt;-</span> <span class="cn">NULL</span>          <span class="co"># strip the stored sequences</span></span>
 <span><span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">graph_only</span><span class="op">)</span>         <span class="co"># -&gt; informative error, not a fabricated fit</span></span>
 <span><span class="co">#&gt; <span style="color: #BBBB00; font-weight: bold;">Error</span><span style="font-weight: bold;">:</span></span></span>

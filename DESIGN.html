@@ -56,7 +56,7 @@
 <h2 id="id_2-naming-conventions">2. Naming conventions<a class="anchor" aria-label="anchor" href="#id_2-naming-conventions"></a></h2>
 <div class="section level3">
 <h3 id="verbs-functions-that-act">Verbs (functions that act)<a class="anchor" aria-label="anchor" href="#verbs-functions-that-act"></a></h3>
-<p><code>verb_transitiontrees()</code> for any non-generic verb that acts on a tree, so the public surface does not collide with sibling packages (<code><a href="http://sonsoles.me/tna/reference/prune.html" class="external-link">tna::prune</a></code>, <code><a href="https://rdrr.io/pkg/rpart/man/prune.rpart.html" class="external-link">rpart::prune</a></code>, <code><a href="https://saqr.me/Nestimate/reference/path_dependence.html" class="external-link">Nestimate::path_dependence</a></code>, <code><a href="https://saqr.me/Nestimate/reference/pathways.html" class="external-link">Nestimate::pathways</a></code>):</p>
+<p><code>verb_transitiontrees()</code> for any non-generic verb that acts on a tree, so the public surface does not collide with sibling packages (<code><a href="https://sonsoles.me/tna/reference/prune.html" class="external-link">tna::prune</a></code>, <code><a href="https://rdrr.io/pkg/rpart/man/prune.rpart.html" class="external-link">rpart::prune</a></code>, <code><a href="https://pak.dynasite.org/Nestimate/reference/path_dependence.html" class="external-link">Nestimate::path_dependence</a></code>, <code><a href="https://pak.dynasite.org/Nestimate/reference/pathways.html" class="external-link">Nestimate::pathways</a></code>):</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="op">)</span>         <span class="co"># fit</span></span>
 <span><span class="fu"><a href="reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="op">)</span>       <span class="co"># was prune()</span></span>
@@ -273,7 +273,7 @@ $pathways     # data.frame with per-pathway divergence
 <h2 id="id_9-what-transitiontrees-is-not">9. What <code>transitiontrees</code> is not<a class="anchor" aria-label="anchor" href="#id_9-what-transitiontrees-is-not"></a></h2>
 <ul><li>Not a hidden-Markov-model package — that’s <code>seqHMM</code>, <code>depmixS4</code>.</li>
 <li>Not a sequence-distance / clustering package — that’s <code>TraMineR</code>.</li>
-<li>Not an HONEM / higher-order-network embedding package — that’s the <code><a href="https://saqr.me/Nestimate/reference/build_honem.html" class="external-link">Nestimate::build_honem()</a></code> / <code>Saebi 2020</code> family.</li>
+<li>Not an HONEM / higher-order-network embedding package — that’s the <code><a href="https://pak.dynasite.org/Nestimate/reference/build_honem.html" class="external-link">Nestimate::build_honem()</a></code> / <code>Saebi 2020</code> family.</li>
 <li>Not a fixed-order Markov chain package — that’s <code>markovchain</code>.</li>
 </ul><p><code>transitiontrees</code> is the variable-order PST toolkit. Anything that doesn’t serve that focus belongs in another package.</p>
 </div>

@@ -68,7 +68,7 @@ reads them and decodes through the model’s label set.
 ``` r
 
 library(tna)
-#> 'tna' package version 1.2.3
+#> 'tna' package version 1.3.1
 #> ------------------------------------------------------
 #>   Tikka, S., López-Pernas, S., and Saqr, M. (2025). 
 #>   tna: An R Package for Transition Network Analysis.
@@ -109,7 +109,7 @@ tree_tna
 
 ## Route C – a `Nestimate` network object
 
-[`Nestimate::build_tna()`](https://saqr.me/Nestimate/reference/build_tna.html)
+[`Nestimate::build_tna()`](https://pak.dynasite.org/Nestimate/reference/build_tna.html)
 (and the other `build_*()` constructors) return a `netobject` that
 likewise carries the sequence frame and a `$nodes` label table. Same
 hand-off:
