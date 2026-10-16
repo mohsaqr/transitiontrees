@@ -63,7 +63,7 @@ prediction-suffix-tree model:
 ## Installation
 
 ```r
-# From CRAN (once released)
+# From CRAN
 install.packages("transitiontrees")
 
 # Development version from GitHub
