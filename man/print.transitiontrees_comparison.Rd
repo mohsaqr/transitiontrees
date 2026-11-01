@@ -23,3 +23,8 @@ Default 6.}
 \description{
 Print a context tree Comparison
 }
+\examples{
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+print(compare_trees(grp, iter = 50L), n = 3L)
+}

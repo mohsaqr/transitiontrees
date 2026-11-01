@@ -32,13 +32,12 @@ If \code{type = "prob"}: a matrix with one row per history
 Predict Next-State Probabilities from a Context Tree
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 predict(tree, newdata = list(c("A","B"), c("C","C","B")))
 predict(tree, newdata = list(c("A","B")), type = "class")
-predict(tree, newdata = c("A","B"))   # bare vector → named vector
-}
+predict(tree, newdata = c("A","B"))   # bare vector -> named vector
 
 }

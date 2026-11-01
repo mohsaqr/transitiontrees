@@ -25,7 +25,7 @@
 #'   \item \code{exact = TRUE}: the pathway must appear as a node;
 #'     otherwise returns \code{NA}.
 #'   \item \code{exact = FALSE} (default): if the pathway is missing,
-#'     falls back to the longest matching suffix that *is* in the tree
+#'     falls back to the longest matching suffix that \emph{is} in the tree
 #'     (mirrors \code{predict.transitiontrees()}).
 #' }
 #'
@@ -35,20 +35,18 @@
 #'   vector of states (\code{c("A","B","C")}).
 #' @param next_state Character. Next-state symbol to query, or
 #'   \code{NULL} (default) to return the full conditional distribution.
-#' @param exact Logical. Default \code{FALSE} — fall back to longest
+#' @param exact Logical. Default \code{FALSE} -- fall back to longest
 #'   matching suffix.
 #'
 #' @return If \code{next_state} is supplied, a numeric scalar. Otherwise
 #'   a named numeric vector indexed by alphabet.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 #' query_pathway(tr, c("A","B"))
 #' query_pathway(tr, "A -> B", next_state = "C")
-#' }
 #' @export
 query_pathway <- function(tree, pathway, next_state = NULL,
                           exact = FALSE) {
@@ -85,11 +83,10 @@ query_pathway <- function(tree, pathway, next_state = NULL,
 #' @return Logical scalar.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' tr <- context_tree(matrix(sample(c("A","B"), 50, TRUE), 5),
 #'                    max_depth = 2L, min_count = 1L)
 #' pathway_exists(tr, "A")
-#' }
 #' @export
 pathway_exists <- function(tree, pathway) {
   stopifnot(inherits(tree, "transitiontrees"))
@@ -116,12 +113,10 @@ pathway_exists <- function(tree, pathway) {
 #'   \code{attr(., "local_root")} for programmatic use).
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 #' subtree(tr, "A")   # prints "subtree of: A" in the banner
-#' }
 #' @export
 subtree <- function(tree, pathway) {
   stopifnot(inherits(tree, "transitiontrees"))

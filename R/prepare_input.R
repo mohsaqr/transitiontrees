@@ -51,7 +51,7 @@
 #'   to order events and to split sessions by \code{time_threshold}.
 #'   Numeric values are read as Unix time. \code{NULL} (default) uses
 #'   \code{order} (or row order) instead and does no session splitting.
-#' @param action Character. Column holding the event's state / code —
+#' @param action Character. Column holding the event's state / code --
 #'   the symbol that becomes a cell of the sequence. Required.
 #' @param order Character. Optional column giving an explicit within-
 #'   actor ordering (used when \code{time} is absent, or to break time

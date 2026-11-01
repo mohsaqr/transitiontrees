@@ -1,4 +1,4 @@
-# Tests for Phase F: stslist input + per-sequence weights
+# Tests for per-sequence weights and TraMineR-style missing codes
 
 mk_mat <- function(n = 30, len = 12, seed = 1,
                    states = c("A","B","C")) {
@@ -53,34 +53,30 @@ test_that("weights validation errors on negative values", {
                "non-negative")
 })
 
-test_that("stslist input matches as.matrix() input on the same data", {
-  skip_if_not_installed("TraMineR")
-  m <- mk_mat()
-  ## TraMineR seqdef warns on default; suppress for the test.
-  sts <- suppressMessages(suppressWarnings(
-    TraMineR::seqdef(m)
-  ))
-  tr_mat <- context_tree(m,   max_depth = 2L, min_count = 3L)
-  tr_sts <- context_tree(sts, max_depth = 2L, min_count = 3L)
-  expect_equal(sort(tr_mat$alphabet), sort(tr_sts$alphabet))
-  expect_equal(sort(names(tr_mat$nodes)), sort(names(tr_sts$nodes)))
-  for (ctx in names(tr_mat$nodes)) {
-    expect_equal(as.numeric(tr_mat$nodes[[ctx]]$counts),
-                 as.numeric(tr_sts$nodes[[ctx]]$counts))
-  }
+test_that("TraMineR void '%' and missing '*' are treated as gaps, not states", {
+  ## A matrix using TraMineR's conventional codes must yield the same
+  ## alphabet and fit as the same data with those cells blanked to NA.
+  m_codes <- rbind(
+    c("A", "B", "%", "*"),
+    c("B", "A", "A", "%"),
+    c("A", "A", "B", "B"),
+    c("B", "%", "*", "%")
+  )
+  m_blank <- m_codes
+  m_blank[m_blank %in% c("%", "*")] <- NA
+
+  tr_codes <- context_tree(m_codes, max_depth = 1L, min_count = 1L)
+  tr_blank <- context_tree(m_blank, max_depth = 1L, min_count = 1L)
+
+  expect_equal(tr_codes$alphabet, c("A", "B"))   # no "%" / "*" state
+  expect_equal(names(tr_codes$nodes), names(tr_blank$nodes))
+  for (ctx in names(tr_codes$nodes))
+    expect_equal(as.numeric(tr_codes$nodes[[ctx]]$counts),
+                 as.numeric(tr_blank$nodes[[ctx]]$counts))
 })
 
-test_that("stslist with weights attribute is auto-detected", {
-  skip_if_not_installed("TraMineR")
-  m <- mk_mat()
-  w <- runif(nrow(m), 0.5, 2)
-  sts <- suppressMessages(suppressWarnings(
-    TraMineR::seqdef(m, weights = w)
-  ))
-  tr_auto <- context_tree(sts, max_depth = 2L, min_count = 1L)
-  tr_explicit <- context_tree(m, max_depth = 2L, min_count = 1L, weights = w)
-  for (ctx in names(tr_auto$nodes)) {
-    expect_equal(as.numeric(tr_auto$nodes[[ctx]]$counts),
-                 as.numeric(tr_explicit$nodes[[ctx]]$counts))
-  }
+test_that("'%' and '*' are dropped from list input too", {
+  seqs <- list(c("A", "%", "B", "A"), c("B", "*", "A"), c("A", "B", "B"))
+  tr <- context_tree(seqs, max_depth = 1L, min_count = 1L)
+  expect_equal(tr$alphabet, c("A", "B"))
 })

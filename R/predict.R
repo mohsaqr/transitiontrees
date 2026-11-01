@@ -34,14 +34,13 @@
 #'   modal predictions.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' predict(tree, newdata = list(c("A","B"), c("C","C","B")))
 #' predict(tree, newdata = list(c("A","B")), type = "class")
-#' predict(tree, newdata = c("A","B"))   # bare vector → named vector
-#' }
+#' predict(tree, newdata = c("A","B"))   # bare vector -> named vector
 #'
 #' @export
 predict.transitiontrees <- function(object, newdata, type = c("prob", "class"),
@@ -90,22 +89,29 @@ predict.transitiontrees <- function(object, newdata, type = c("prob", "class"),
 
 #' Sample Sequences from a Fitted Context Tree
 #'
+#' @description
+#' Draws sequences by walking the fitted conditional distributions: each
+#' next state is sampled from the longest context in the tree that
+#' matches the history so far. Uses the session RNG, so call
+#' \code{set.seed()} first (or use \code{\link{simulate.transitiontrees}()}
+#' with \code{seed}) for reproducible draws.
+#'
 #' @param tree A \code{transitiontrees}.
-#' @param n Integer. Number of sequences to sample.
-#' @param length Integer. Length of each sampled sequence.
+#' @param n Integer. Number of sequences to sample. Default 5.
+#' @param length Integer. Length of each sampled sequence. Default 10.
 #' @param start NULL or character vector. If NULL (default), each
 #'   sequence starts from the root marginal; otherwise must have
 #'   length \code{n} and supply the first state of each sequence.
 #'
-#' @return A character matrix of dimension \code{n x length}.
+#' @return A character matrix with \code{n} rows (one sampled sequence
+#'   each) and \code{length} columns (time-steps).
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' generate_sequences(tree, n = 5, length = 10)
-#' }
 #'
 #' @export
 generate_sequences <- function(tree, n = 5L, length = 10L,
@@ -163,7 +169,11 @@ generate_sequences <- function(tree, n = 5L, length = 10L,
 #'   sequence; see \code{\link{generate_sequences}}.
 #' @param ... Ignored.
 #'
-#' @return A character matrix of dimension \code{nsim x length}.
+#' @return A character matrix with \code{nsim} rows (one simulated
+#'   sequence each) and \code{length} columns (time-steps).
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' simulate(tree, nsim = 3L, seed = 42L, length = 8L)
 #' @export
 simulate.transitiontrees <- function(object, nsim = 5L, seed = NULL,
                               length = 10L, start = NULL, ...) {

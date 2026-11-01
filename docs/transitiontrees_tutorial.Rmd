@@ -490,8 +490,8 @@ plot(pruned)
 
 ### 11.2 Icicle (publication-ready partition)
 
-`ggraph(layout = "partition")` renders a horizontal icicle. Tile
-size is proportional to count; fill is KL vs. parent.
+A circular partition (sunburst): arc width is proportional to count,
+fill is the most-recent state, rings are depth.
 
 ```{r plot-icicle, fig.height = 5}
 plot(pruned, style = "icicle")

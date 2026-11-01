@@ -28,8 +28,12 @@ ignored otherwise. Default 0.05.}
 \code{"KL"}; ignored otherwise. Default 0.005.}
 }
 \value{
-A pruned \code{transitiontrees} with \code{tree$pruned = TRUE} and
-  \code{tree$pruning} carrying the criterion + threshold settings.
+A pruned \code{transitiontrees} (same structure as
+  \code{\link{context_tree}()} returns, fewer nodes) whose \code{pruned}
+  component is \code{TRUE} and whose \code{pruning} component records
+  \code{criterion}, \code{alpha} and \code{threshold}; the print banner
+  reports both. A \code{transitiontrees_group} input returns a
+  \code{transitiontrees_group} of pruned members.
 }
 \description{
 Removes nodes that do not earn their depth under the chosen
@@ -44,6 +48,13 @@ Renamed from \code{prune()} to avoid collision with other
 For each leaf, compute the criterion against its parent. If the
 criterion does not exceed its threshold, drop the leaf and revisit
 the parent. Repeat until stable. The root is never dropped.
+\code{"G2"} keeps a leaf when its likelihood-ratio statistic against
+the parent exceeds the chi-square critical value at \code{alpha} with
+\eqn{|S| - 1} degrees of freedom (one test per leaf, no multiplicity
+correction). \code{"AIC"} and \code{"BIC"} keep a leaf when its
+penalised log-likelihood beats the parent's, with penalty
+\eqn{2(|S| - 1)} and \eqn{\log(n)(|S| - 1)} respectively (\eqn{n} =
+the leaf's count).
 Surviving nodes keep their original smoothed \code{prob} vector
 (whatever smoothing scheme was applied at fit time).
 
@@ -54,15 +65,22 @@ in \strong{bits} (log base 2). Multiply a nats threshold by
 \code{1 / log(2)} (~1.4427) to read it on the pathway-table scale.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                     simplify = FALSE)
 tree   <- context_tree(seqs, max_depth = 4)
 pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
-}
+pruned
+prune_tree(tree, criterion = "BIC")
 
 }
 \references{
 Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia.
 \emph{Machine Learning}, 25, 117-149.
+
+Akaike, H. (1974). A new look at the statistical model identification.
+\emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
+
+Schwarz, G. (1978). Estimating the dimension of a model. \emph{The
+Annals of Statistics}, 6(2), 461-464.
 }

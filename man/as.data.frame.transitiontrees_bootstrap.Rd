@@ -14,11 +14,19 @@
 \item{...}{Ignored.}
 }
 \value{
-A data.frame; see \code{\link{bootstrap_pathways}} for the
-  full column vocabulary.
+A data.frame with one row per pathway; see
+  \code{\link{bootstrap_pathways}} for the full column vocabulary.
 }
 \description{
 Uniform tidy-extract: returns the per-pathway summary table
 (\code{object$summary}), so \code{as.data.frame(boot)} and
 \code{summary(boot)} are interchangeable extractors.
+}
+\examples{
+set.seed(1)
+seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
+                  simplify = FALSE)
+boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
+                           iter = 50L)
+as.data.frame(boot)
 }

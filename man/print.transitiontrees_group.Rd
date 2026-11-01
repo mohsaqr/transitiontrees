@@ -17,3 +17,8 @@
 \description{
 Print a Group of Context Trees
 }
+\examples{
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+print(grp)
+}

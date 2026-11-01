@@ -31,10 +31,6 @@
   ##   slices >= label_abbrev_fraction still get the full name.
   if (is.null(label_abbrev_fraction))
     label_abbrev_fraction <- label_min_fraction
-  if (!requireNamespace("ggraph", quietly = TRUE) ||
-      !requireNamespace("tidygraph", quietly = TRUE))
-    stop("plot(style = 'icicle') requires 'ggraph' and 'tidygraph'.",
-         call. = FALSE)
   stopifnot(
     is.numeric(label_min_fraction),    label_min_fraction    >= 0,
     is.numeric(label_abbrev_fraction), label_abbrev_fraction >= 0,
@@ -68,7 +64,7 @@
   ##   arc_fraction < label_abbrev_fraction → abbreviation (abbrev_len chars)
   ##   otherwise                            → full state name
   ##
-  ## arc_fraction is the *actual* visual arc fraction in the ggraph
+  ## arc_fraction is the *actual* visual arc fraction in the circular
   ## partition: each leaf contributes its count as its weight; each
   ## internal node's visual arc is the sum of its descendant leaves'
   ## counts. Using the node's own count would overstate the fraction
@@ -103,44 +99,57 @@
            last_state)
   )
 
+  ## Per-node frame used as the plot's default data, so introspection
+  ## (e.g. `plot(...)$data`) still exposes `label_text` / `arc_fraction`.
   nodes <- data.frame(
     name         = node_names,
-    state        = state_factor,
-    count        = pt_count,
-    pt_depth     = pt_depth,
-    label_text   = label_text,
-    arc_fraction = arc_fraction,
-    stringsAsFactors = FALSE
+    state        = unname(state_factor),
+    count        = unname(pt_count),
+    pt_depth     = unname(pt_depth),
+    label_text   = unname(label_text),
+    arc_fraction = unname(arc_fraction),
+    stringsAsFactors = FALSE,
+    row.names    = NULL
   )
-  ## ggraph's partition layout derives parent tile sizes from children;
-  ## non-zero internal-node weights trigger a "Non-leaf weights ignored"
-  ## message. Pass leaf-only weights to communicate that explicitly.
-  nodes$leaf_weight <- ifelse(is_leaf, nodes$count, 0)
-
-  edges <- if (nrow(tree$edges) > 0L)
-    data.frame(from = tree$edges$parent,
-               to   = tree$edges$child,
-               stringsAsFactors = FALSE) else
-    data.frame(from = character(0), to = character(0),
-               stringsAsFactors = FALSE)
-
-  tg <- tidygraph::tbl_graph(nodes = nodes, edges = edges,
-                             directed = TRUE)
 
   pal <- .pt_state_palette(state_levels)
 
-  ## Build the layout explicitly so we can pull out the angular
-  ## boundaries of the depth-1 slices.
-  lay <- ggraph::create_layout(tg, layout = "partition",
-                                circular = TRUE,
-                                weight   = leaf_weight)
+  ## ---- Circular-partition layout, computed in base R ----
+  ## Each node owns an angular interval whose width is its subtree's
+  ## leaf weight (internal arcs = sum of descendant leaves, matching the
+  ## classic "partition" layout). Children are laid out consecutively
+  ## inside their parent's interval, in edge order, so the result is
+  ## deterministic. Depth maps to radius: ring d spans [d, d + 1].
+  total <- max(total_leaf_count, 1)
+  node_a0 <- setNames(numeric(length(node_names)), node_names)
+  node_a1 <- node_a0
+  assign_angles <- function(ctx, a0) {
+    node_a0[[ctx]] <<- a0
+    node_a1[[ctx]] <<- a0 + subtree_leaf_w[[ctx]]
+    ch <- children_by_parent[[ctx]]
+    if (!is.null(ch) && length(ch) > 0L) {
+      w_ch <- subtree_leaf_w[ch]
+      offs <- a0 + c(0, cumsum(w_ch)[-length(w_ch)])
+      invisible(Map(assign_angles, ch, offs))
+    }
+  }
+  assign_angles(.ROOT, 0)
 
-  ## Optional radial jitter on leaf tiles: each leaf's outer radius
-  ## is perturbed by up to `jitter * ring_width`, giving the outer
-  ## edge of the icicle an organic, slightly-irregular look without
-  ## breaking the within-ring layout. RNG state is saved & restored
+  theta0 <- node_a0 / total * 2 * pi
+  theta1 <- node_a1 / total * 2 * pi
+  ## Each depth ring is `ring_thickness` wide, with a `ring_gap` of empty
+  ## space before the next ring (ring d spans [d * (thickness + gap),
+  ## + thickness]). Slot spacing = thickness + gap.
+  ring_thickness <- 0.68
+  ring_gap       <- 0.10
+  rr0    <- as.numeric(pt_depth) * (ring_thickness + ring_gap)
+  rr1    <- rr0 + ring_thickness
+
+  ## Optional radial jitter on leaf tiles: each leaf's outer radius is
+  ## perturbed by up to `jitter` of a ring width, giving the outer edge
+  ## an organic, slightly-irregular look. RNG state is saved & restored
   ## so we don't clobber the caller's seed.
-  if (jitter > 0 && any(lay$leaf)) {
+  if (jitter > 0 && any(is_leaf)) {
     old_seed <- if (exists(".Random.seed", envir = .GlobalEnv))
                   get(".Random.seed", envir = .GlobalEnv) else NULL
     on.exit({
@@ -148,30 +157,52 @@
         assign(".Random.seed", old_seed, envir = .GlobalEnv)
     }, add = TRUE)
     set.seed(as.integer(jitter_seed))
-    ring_width <- mean(diff(sort(unique(lay$r))), na.rm = TRUE)
-    if (!is.finite(ring_width) || ring_width <= 0)
-      ring_width <- 0.2
-    leaf_idx <- which(lay$leaf)
-    delta <- stats::runif(length(leaf_idx),
-                          -jitter * ring_width,
-                          +jitter * ring_width)
-    lay$r[leaf_idx] <- lay$r[leaf_idx] + delta
+    leaf_idx <- which(is_leaf)
+    rr1[leaf_idx] <- rr1[leaf_idx] +
+      stats::runif(length(leaf_idx), -jitter, jitter)
   }
 
-  ## Compute the radial separator segments — one per depth-1 boundary
-  ## angle, extending from the inner edge of the depth-1 ring all the
-  ## way to the outer edge of the deepest ring. These read as wedge
-  ## dividers in a pie chart: the separation is defined at the first
-  ## level, then "stays" out through every deeper ring.
-  ##
-  ## ggraph's circular partition uses the convention
-  ##   theta_cartesian = pi/2 - theta_partition
-  ## so (x, y) = (r * sin(theta), r * cos(theta)).
-  d1 <- lay[lay$pt_depth == 1L, , drop = FALSE]
-  if (nrow(d1) > 1L) {
-    angles <- sort(unique(c(d1$start, d1$end) %% (2 * pi)))
-    r_in   <- min(d1$r0)
-    r_out  <- max(lay$r, na.rm = TRUE)
+  ## One arc-bar polygon per node: outer arc (r1, a0 -> a1) followed by
+  ## the inner arc (r0, a1 -> a0). Sampling density scales with the
+  ## angular span so wide arcs stay smooth. The circular-partition
+  ## convention is theta_cartesian = pi/2 - theta_partition, i.e.
+  ## (x, y) = (r * sin(theta), r * cos(theta)), so the arc text-angle
+  ## helper applies unchanged.
+  .arc_poly <- function(i) {
+    span <- theta1[i] - theta0[i]
+    if (span <= 0) return(NULL)
+    npt     <- max(2L, ceiling(span / (2 * pi) * 360))
+    ang_out <- seq(theta0[i], theta1[i], length.out = npt)
+    ang_in  <- rev(ang_out)
+    data.frame(
+      id    = node_names[i],
+      state = unname(state_factor[i]),
+      x     = c(rr1[i] * sin(ang_out), rr0[i] * sin(ang_in)),
+      y     = c(rr1[i] * cos(ang_out), rr0[i] * cos(ang_in)),
+      stringsAsFactors = FALSE
+    )
+  }
+  poly_df <- do.call(rbind, lapply(seq_along(node_names), .arc_poly))
+
+  ## Label positions: centroid angle, mid-ring radius.
+  mid_ang <- (theta0 + theta1) / 2
+  mid_r   <- (rr0 + rr1) / 2
+  lab_df  <- data.frame(
+    x     = mid_r * sin(mid_ang),
+    y     = mid_r * cos(mid_ang),
+    label = label_text,
+    stringsAsFactors = FALSE
+  )
+  lab_df <- lab_df[!is.na(lab_df$label), , drop = FALSE]
+
+  ## Radial separator segments at each depth-1 boundary, extending from
+  ## the inner edge of the depth-1 ring to the outer edge of the deepest
+  ## ring -- wedge dividers that "stay" out through every deeper ring.
+  is_d1 <- pt_depth == 1L
+  if (sum(is_d1) > 1L) {
+    angles <- sort(unique(c(theta0[is_d1], theta1[is_d1]) %% (2 * pi)))
+    r_in   <- ring_thickness + ring_gap        # inner edge of the depth-1 ring
+    r_out  <- max(rr1, na.rm = TRUE)
     sep_df <- data.frame(
       x    = r_in  * sin(angles),
       y    = r_in  * cos(angles),
@@ -183,9 +214,14 @@
                          xend = numeric(0), yend = numeric(0))
   }
 
-  ggraph::ggraph(lay) +
-    ggraph::geom_node_arc_bar(
-      ggplot2::aes(fill = .data$state),
+  ## The per-node `nodes` frame is the plot's default data: it carries
+  ## `label_text` and `arc_fraction` for introspection (each geom below
+  ## supplies its own data, so this is never drawn directly).
+  ggplot2::ggplot(data = nodes) +
+    ggplot2::geom_polygon(
+      data = poly_df,
+      ggplot2::aes(x = .data$x, y = .data$y, group = .data$id,
+                   fill = .data$state),
       colour    = "white",
       linewidth = gap_size_within,
       na.rm     = TRUE
@@ -198,8 +234,9 @@
       linewidth = gap_size,
       lineend   = "butt"
     ) +
-    ggraph::geom_node_text(
-      ggplot2::aes(label = .data$label_text,
+    ggplot2::geom_text(
+      data = lab_df,
+      ggplot2::aes(x = .data$x, y = .data$y, label = .data$label,
                    angle = .pt_arc_text_angle(.data$x, .data$y)),
       size = 2.8, colour = "grey15", fontface = "bold",
       na.rm = TRUE

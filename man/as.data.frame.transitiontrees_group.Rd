@@ -14,11 +14,17 @@
 \item{...}{Forwarded to \code{\link{tree_pathways}()}.}
 }
 \value{
-A data.frame: the canonical pathway columns with a leading
-  \code{group} column identifying the source tree.
+A data.frame with one row per (group, pathway): a leading
+  \code{group} column identifying the source tree, then the canonical
+  pathway columns of \code{\link{tree_pathways}}.
 }
 \description{
 Row-binds each group's \code{\link{tree_pathways}} table, tagged
 with a leading \code{group} column, so the whole batch is one tidy
 frame ready to filter, facet, or join.
+}
+\examples{
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+as.data.frame(grp)
 }

@@ -42,7 +42,7 @@ A ggplot object for the three static styles; an
 \description{
 Renders a fitted transitiontrees in one of four styles:
 \itemize{
-  \item \code{"horizontal"} (default) — pure-ggplot2 left-to-right
+  \item \code{"horizontal"} (default) -- pure-ggplot2 left-to-right
     phylogram: root on the left, contexts fanned out vertically to
     the right, each labelled beneath with its full arrow-notation
     context and (by default) its modal prediction
@@ -50,12 +50,12 @@ Renders a fitted transitiontrees in one of four styles:
     \emph{most recent} move (rightmost token), so each branch off a
     depth-1 hub shares a colour. Set \code{show_prediction = FALSE}
     for context-only labels.
-  \item \code{"dendrogram"} — pure-ggplot2 radial tree: root at the
+  \item \code{"dendrogram"} -- pure-ggplot2 radial tree: root at the
     centre, leaves on the outer ring.
-  \item \code{"icicle"} — circular partition / sunburst via
-    \code{ggraph} (Suggests); inner ring carries full state
-    names, outer rings carry 3-letter abbreviations.
-  \item \code{"interactive"} — \code{visNetwork} htmlwidget
+  \item \code{"icicle"} -- pure-ggplot2 circular partition / sunburst;
+    inner ring carries full state names, outer rings carry 3-letter
+    abbreviations.
+  \item \code{"interactive"} -- \code{visNetwork} htmlwidget
     (Suggests). A draggable, zoomable hierarchical tree; node size
     = context count and edge width = child's count (\dQuote{flow}),
     the same encoding as the static styles. Hover for a tooltip
@@ -70,21 +70,20 @@ token of the context) in the \code{"horizontal"} style; the
 colour by the branching (oldest) token.
 }
 \details{
-\code{"icicle"} requires \code{ggraph} + \code{tidygraph};
-\code{"interactive"} requires \code{visNetwork}. The dispatcher
-errors informatively if a needed Suggests dependency is missing.
+The three static styles (\code{"horizontal"}, \code{"dendrogram"},
+\code{"icicle"}) are drawn in pure \pkg{ggplot2}. \code{"interactive"}
+requires \code{visNetwork}; the dispatcher errors informatively if it
+is missing.
 }
 \examples{
-\donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 plot(tr)                           # left-to-right phylogram (default)
 plot(tr, style = "dendrogram")     # radial dendrogram
-if (requireNamespace("ggraph", quietly = TRUE) &&
-    requireNamespace("tidygraph", quietly = TRUE))
-  plot(tr, style = "icicle")       # sunburst (needs ggraph + tidygraph)
-if (requireNamespace("visNetwork", quietly = TRUE))
-  plot(tr, style = "interactive")  # visNetwork htmlwidget (Suggests)
+plot(tr, style = "icicle")         # sunburst
+if (requireNamespace("visNetwork", quietly = TRUE)) {
+  widget <- plot(tr, style = "interactive")  # visNetwork htmlwidget
+  if (interactive()) print(widget)           # opens in the viewer
 }
 }

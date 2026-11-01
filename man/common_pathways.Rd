@@ -25,12 +25,11 @@ Returns the top \code{n} pathways by occurrence count -- the
 trajectories the data actually contains many copies of.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 common_pathways(tree, top = 8)
 common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
-}
 
 }

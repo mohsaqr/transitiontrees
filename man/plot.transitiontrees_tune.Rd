@@ -21,3 +21,10 @@ facets split by smoothing scheme and \code{prune}; colour encodes
 \code{nmin}. The minimum-perplexity configuration is highlighted
 with a star.
 }
+\examples{
+set.seed(1)
+m  <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
+tg <- tune_tree(m, max_depth = 1:2, min_count = 5L, prune = FALSE,
+                folds = 3L)
+plot(tg)
+}

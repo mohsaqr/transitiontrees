@@ -1,3 +1,27 @@
+# transitiontrees 0.1.3
+
+## Documentation
+
+* Every help page now has examples that run unwrapped (no `\donttest{}`),
+  with fixed seeds, and examples were added for the `print()`, `summary()`,
+  `plot()` and `as.data.frame()` methods, `simulate()` and `nobs()`.
+* `@return` sections describe the returned structure (one row per what,
+  every column), including the bootstrap summary columns, the
+  `compare_groups()` omnibus table and `stratified` flag, and the
+  `weights` component of a fitted tree.
+* Corrected stale or wrong statements: `compare_pruning(alpha =)` is used
+  by `"G2"` only (not by AIC/BIC); `compare_smoothing()` holds
+  `min_count` (not `nmin`) fixed; the bootstrap G-squared level is the
+  `alpha` argument; the `trajectories` help no longer points at a
+  non-existent vignette; `plot_pruning()` no longer cites the unshipped
+  `PARITY.md`.
+* Added method references (AIC, BIC, smoothing, Jensen-Shannon divergence,
+  Benjamini-Hochberg, bootstrap) and replaced non-ASCII punctuation in the
+  help pages.
+* README and vignettes: examples run on the bundled data, and results are
+  read through the package's printed objects and accessors instead of
+  `$` / `attr()` extraction.
+
 # transitiontrees 0.1.2
 
 Initial CRAN release.
@@ -7,8 +31,9 @@ Initial CRAN release.
 * `context_tree()` fits a variable-depth pathway tree (prediction
   suffix tree; Ron, Singer & Tishby 1996) from a wide character
   matrix / data.frame, a list of character vectors, a long event log
-  (`actor` / `time` / `action` / `order` / `session` arguments), an
-  `stslist` state-sequence object, or a transition/network object.
+  (`actor` / `time` / `action` / `order` / `session` arguments), or a
+  transition/network object. `NA`, `""`, and the TraMineR codes `%`
+  (void) and `*` (missing) are treated as gaps in wide / list input.
 * `prepare_input()` reshapes a long event log to a wide sequence frame
   (timestamp / session logic), and can carry per-sequence metadata
   through the reshape via `meta`.
@@ -63,7 +88,7 @@ Initial CRAN release.
 ## Visualisation
 
 * `plot()` on a `transitiontrees` offers four styles: `"horizontal"`
-  (default), `"dendrogram"`, `"icicle"` (`ggraph`), and
+  (default), `"dendrogram"`, and `"icicle"` (all pure ggplot2), plus
   `"interactive"` (`visNetwork`). `plot()` on a `transitiontrees_group`
   draws one figure per group.
 * `plot_pathways()`, `plot_divergence()`, `plot_distributions()`,

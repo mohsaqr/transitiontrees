@@ -18,8 +18,14 @@ A \code{summary.transitiontrees} object. The \code{$table} slot is
   \code{depth}, \code{count}, \code{likely_next},
   \code{next_probability}, \code{divergence},
   \code{changes_prediction}), re-sorted by \code{(depth, -count)} so
-  the structural tree order is read top-to-bottom.
+  the structural tree order is read top-to-bottom. Its other
+  components are the scalars \code{n_states}, \code{max_depth},
+  \code{n_nodes} and \code{pruned}.
 }
 \description{
 Summary of a Context Tree
+}
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+summary(tree)
 }

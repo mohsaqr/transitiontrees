@@ -21,15 +21,19 @@ accepts a fitted state-sequence or transition/network object **directly**,
 auto-detected by its S3 class. It reads the sequences the object already 
 carries and fits the suffix tree on exactly those, over the same state set.
 
-This vignette shows the three hand-offs on one shared dataset and confirms
-they agree. The `tna` and `Nestimate` sections only run if those packages are
-installed; the `TraMineR` state-sequence section runs on the bundled data
-with no extra package.
+It also speaks `TraMineR`'s missing-data convention with no dependency on the
+package: in wide input, the void code `%` and the missing code `*` (alongside
+`NA` and `""`) are treated as gaps, never as states. So a matrix exported from
+a `TraMineR` state-sequence via `as.matrix()` drops straight in.
+
+This vignette shows the hand-offs on one shared dataset and confirms they
+agree. The `tna` and `Nestimate` sections only run if those packages are
+installed; the wide-data section needs no extra package.
 
 ## The shared dataset
 
-The bundled `engagement` object is a `TraMineR` state-sequence (`stslist`):
-1000 weekly engagement sequences over three states.
+The bundled `engagement` object is a wide `data.frame`: 1000 weekly
+engagement sequences over three states, with `NA` marking dropout.
 
 ```{r data}
 data(engagement)
@@ -37,30 +41,24 @@ class(engagement)
 dim(engagement)
 ```
 
-## Route A -- a state-sequence (`stslist`) object
+`tna` ships a dataset with the same name. Because `data(engagement)` has
+already put this package's copy in the workspace, the `tna` and `Nestimate`
+routes below read exactly the same object as the wide route.
 
-Hand the `stslist` straight to `context_tree()`.
+## Route A -- wide sequence data, directly
 
-```{r stslist-naive}
-tree_sts_raw <- context_tree(engagement, max_depth = 2L, min_count = 5L)
-tree_sts_raw$alphabet
+Hand the wide frame straight to `context_tree()`.
+
+```{r wide}
+tree_wide <- context_tree(engagement, max_depth = 2L, min_count = 5L)
+tree_wide
 ```
 
-Note the alphabet: a `TraMineR` sequence object encodes gaps/missing with a
-**void code** (here `%`), and taken literally that void looks like a fourth
-state. The clean fix is to pass the object's declared `alphabet` so the void
-is treated as end-of-sequence, not a state:
+The banner lists the alphabet the data defines and the node count.
 
-```{r stslist-clean}
-tree_sts <- context_tree(engagement, max_depth = 2L, min_count = 5L,
-                        alphabet = attr(engagement, "alphabet"))
-tree_sts$alphabet
-n_nodes(tree_sts)
-```
-
-That is the tree to use. The `tna` and `Nestimate` objects below carry the
-clean label set internally, so they decode the void for you automatically --
-the two routes converge on this same tree.
+A `TraMineR` user reaches this same tree with `context_tree(as.matrix(seq))`
+-- the void/missing codes are dropped automatically, so there is no need to
+declare the alphabet or strip the void by hand.
 
 ## Route B -- a `tna` transition-network object
 
@@ -94,17 +92,17 @@ tree_nest
 ## They agree
 
 Because all three objects wrap the *same* sequences, the fitted trees are
-identical -- same alphabet, same nodes, same observation count.
+identical -- same alphabet, same pathways, same counts and probabilities,
+same fit.
 
 ```{r agree, eval = has_tna && has_nest}
-identical(tree_sts$nodes, tree_tna$nodes)
-identical(tree_tna$nodes, tree_nest$nodes)
+identical(tree_pathways(tree_wide), tree_pathways(tree_tna))
+identical(tree_pathways(tree_tna), tree_pathways(tree_nest))
 
 data.frame(
-  route   = c("stslist", "tna", "Nestimate"),
-  n_nodes = c(n_nodes(tree_sts), n_nodes(tree_tna), n_nodes(tree_nest)),
-  nobs    = c(model_fit(tree_sts)$nobs, model_fit(tree_tna)$nobs,
-              model_fit(tree_nest)$nobs))
+  route   = c("wide", "tna", "Nestimate"),
+  n_nodes = c(n_nodes(tree_wide), n_nodes(tree_tna), n_nodes(tree_nest)),
+  rbind(model_fit(tree_wide), model_fit(tree_tna), model_fit(tree_nest)))
 ```
 
 The tree shares one symbol space with the source model, so the whole
@@ -119,11 +117,16 @@ The hand-off works only when the object actually **carries its sequences**. A
 nulled out (an aggregated transition network) -- is **rejected**, on purpose:
 the original sequences cannot be recovered from edge weights, so fabricating
 them would be silently wrong. The same invariant rejects a bare numeric
-transition matrix.
+transition matrix. A `tna` model built from a transition matrix alone is
+exactly such a pure graph:
 
-```{r pure-graph, eval = has_nest, error = TRUE}
-graph_only <- build_tna(engagement)
-graph_only$data <- NULL          # strip the stored sequences
+```{r pure-graph, eval = has_tna, error = TRUE}
+states <- c("Active", "Average", "Disengaged")
+transitions <- matrix(c(0.6, 0.3, 0.1,
+                        0.2, 0.5, 0.3,
+                        0.1, 0.3, 0.6), nrow = 3, byrow = TRUE,
+                      dimnames = list(states, states))
+graph_only <- tna(transitions)   # weights only, no sequences
 context_tree(graph_only)         # -> informative error, not a fabricated fit
 ```
 

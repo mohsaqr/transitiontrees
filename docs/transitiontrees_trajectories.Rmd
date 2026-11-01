@@ -188,8 +188,7 @@ plot(pruned, style = "dendrogram")
 
 > The same pruned tree as a sunburst and as a radial dendrogram — the
 > encodings (size = count, fill = state, depth = rings or radius) are
-> identical, only the layout changes. There is also
-> `plot(pruned, style = "interactive")` for a draggable version.
+> identical, only the layout changes.
 
 # Session info
 

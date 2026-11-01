@@ -33,6 +33,7 @@ Faceted histogram of the bootstrap resample values for a chosen
 pathway statistic, one panel per pathway.
 }
 \examples{
+set.seed(1)
 seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),

@@ -14,11 +14,22 @@
 \item{...}{Ignored.}
 }
 \value{
-A data.frame of per-pathway results; see
+A data.frame with one row per tested context; see
   \code{\link{compare_groups}} for the column vocabulary.
 }
 \description{
 Uniform tidy-extract: returns the per-pathway comparison table
 (\code{object$pathways}) so \code{as.data.frame(cmp)} yields the full
 divergence / usage breakdown as a base \code{data.frame}.
+}
+\examples{
+set.seed(1)
+gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.6,.2)), simplify = FALSE)
+gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.2,.6)), simplify = FALSE)
+grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+                    max_depth = 1L)
+cmp <- compare_groups(grp, iter = 99L)
+as.data.frame(cmp)
 }

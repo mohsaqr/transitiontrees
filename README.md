@@ -34,7 +34,9 @@ prediction-suffix-tree model:
 - validated at machine precision against independent external reference
   implementations of the model (counts, node probabilities at all depths,
   context queries, per-position prediction, `logLik`, and topology), as
-  documented in `PARITY.md`;
+  documented in
+  [`PARITY.md`](https://github.com/mohsaqr/transitiontrees/blob/main/PARITY.md)
+  (the equivalence suite runs locally and is not shipped with the package);
 - a pathway-centric API (`tree_pathways()`, `common_pathways()`,
   `divergent_pathways()`, `sharp_pathways()`) that ranks trajectories
   by frequency, predictive divergence, or modal-flip — the structure
@@ -46,16 +48,20 @@ prediction-suffix-tree model:
   `perplexity` / `score_sequences` / `score_positions` / `model_fit`,
   five smoothing schemes (`floor`, `laplace`, `kneser_ney`,
   `witten_bell`, `jelinek_mercer`), k-fold cross-validated `tune_tree()`,
-  and permutation-tested two-tree `compare_trees()`;
+  permutation-tested two-tree `compare_trees()`, the multi-group
+  `compare_groups()` (behavioral and usage axes, Benjamini-Hochberg FDR),
+  and `bootstrap_pathways()` stability/informativeness with bootstrap CIs;
 - sequence tools: `impute_sequences()` fills internal gaps from the
   fitted tree; `mine_contexts()` / `mine_sequences()` scan for contexts
   where a state is unusually likely or unlikely and for the best/worst-fit
   held-out sequences;
 - flexible ingestion — a wide character matrix/data.frame, a list of
   character vectors, a long event log (via `actor` / `time` / `action` /
-  `order` arguments, or the standalone `prepare_input()`), a
-  state-sequence (`stslist`) object, or a compatible transition/network
-  object — plus per-sequence weights for social-science workflows;
+  `order` / `session` arguments, or the standalone `prepare_input()`), a
+  `TraMineR` state-sequence exported with `as.matrix()` (the `%` void and
+  `*` missing codes are treated as gaps), or a compatible `tna` /
+  `Nestimate` transition/network object that carries its sequences — plus
+  per-sequence weights for social-science workflows;
 - five plot views — `horizontal` (default), `dendrogram`, `icicle`, an
   `interactive` HTML-widget tree, and the forward `plot_trajectories()` —
   with count-sized nodes and flow-sized edges.
@@ -73,25 +79,28 @@ remotes::install_github("mohsaqr/transitiontrees")
 
 ## Usage
 
+Every call below runs on the bundled datasets.
+
 ```r
 library(transitiontrees)
 
 # --- Fit ------------------------------------------------------------
-# From a wide character matrix / data.frame, or a list of character
-# vectors. `min_count` is the minimum occurrences a context needs to
-# get its own node.
-tree <- context_tree(seqs, max_depth = 4, min_count = 5, smoothing = "floor")
+# A wide character matrix / data.frame (one sequence per row), or a list
+# of character vectors. `min_count` is the minimum occurrences a context
+# needs to get its own node.
+tree <- context_tree(trajectories, max_depth = 4, min_count = 5,
+                     smoothing = "floor")
 
 # Smoothing as an explicit list (hyperparameters), or a different scheme:
-# context_tree(seqs, max_depth = 4, smoothing = list("floor", ymin = 0.001))
-# context_tree(seqs, max_depth = 4, smoothing = "kneser_ney")
+context_tree(trajectories, max_depth = 4, smoothing = list("floor", ymin = 0.001))
+context_tree(trajectories, max_depth = 4, smoothing = "kneser_ney")
 
 # From a long event log directly (no manual reshaping):
-# context_tree(events, actor = "id", action = "move", order = "step",
-#              max_depth = 3)
+context_tree(group_regulation_long, actor = "Actor", time = "Time",
+             action = "Action", max_depth = 3)
 # or build the wide frame yourself:
-# wide <- prepare_input(events, actor = "id", time = "timestamp",
-#                       action = "move")
+wide <- prepare_input(group_regulation_long, actor = "Actor", time = "Time",
+                      action = "Action")
 
 # --- Inspect --------------------------------------------------------
 print(tree)
@@ -100,7 +109,7 @@ model_fit(tree)                          # logLik, df, nobs, AIC, BIC, perplexit
 
 # --- Prune ----------------------------------------------------------
 # Collapse contexts whose extra depth is not a significant gain over
-# their parent (likelihood-ratio G^2 test at familywise alpha = 0.05).
+# their parent (likelihood-ratio G^2 test at alpha = 0.05 per context).
 pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
 
 # --- The pathway-centric API ---------------------------------------
@@ -112,26 +121,28 @@ sharp_pathways(pruned,     top = 5)         # most deterministic continuations
 tree_dependence(pruned)                     # per-context entropy/KL diagnostic
 
 # --- Predict & evaluate --------------------------------------------
-predict(pruned, newdata = list(c("A","B","B"), c("A","A","C")))
-predict(pruned, c("A","B"), type = "class")   # modal next state
+predict(pruned, newdata = list(c("Active", "Average"), c("Disengaged")))
+predict(pruned, c("Active", "Active"), type = "class")   # modal next state
 logLik(pruned); AIC(pruned); BIC(pruned)
-perplexity(pruned, newdata = test_seqs)
-score_sequences(pruned, newdata = test_seqs)
+perplexity(pruned, newdata = engagement)
+score_sequences(pruned, newdata = engagement)
 
 # Generate sequences from the fitted tree
 generate_sequences(pruned, n = 100, length = 20)
-simulate(pruned, nsim = 100, length = 20)     # S3 alias
+simulate(pruned, nsim = 100, length = 20, seed = 1)   # S3 alias
 
 # --- Cross-validated tuning ----------------------------------------
-tg <- tune_tree(seqs, max_depth = 1:4, min_count = c(3, 5),
+tg <- tune_tree(trajectories, max_depth = 1:4, min_count = c(3, 5),
                 smoothing = c("floor", "kneser_ney"),
                 prune = c(FALSE, TRUE), folds = 5)
-attr(tg, "best")
+tg                                          # ranked grid + the best configuration
+plot(tg)
 
-# --- Two-tree comparison with a permutation test -------------------
-tree_a <- context_tree(group_a)
-tree_b <- context_tree(group_b)
-compare_trees(tree_a, tree_b, iter = 200)
+# --- Group fits and comparisons ------------------------------------
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 2)
+compare_trees(grp, iter = 200)              # two-tree permutation test
+compare_groups(grp, iter = 199)             # per-context behavioral + usage tests
 
 # --- Bootstrap pathway reliability ---------------------------------
 boot <- bootstrap_pathways(pruned, iter = 1000, stat = "count")
@@ -139,26 +150,28 @@ summary(boot)        # tidy per-pathway stability + informativeness table
 plot(boot)
 
 # --- Tree introspection --------------------------------------------
-query_pathway(pruned, "A -> B")             # full predicted distribution
-pathway_exists(pruned, c("A","B","C"))
-sub <- subtree(pruned, "A")                 # restrict to descendants of "A"
+query_pathway(pruned, "Active -> Average")   # full predicted distribution
+pathway_exists(pruned, c("Active", "Average"))
+subtree(pruned, "Active")                    # restrict to descendants of "Active"
 
 # --- Impute & mine --------------------------------------------------
-impute_sequences(pruned, gappy_seqs)                  # fill internal NA gaps
-mine_contexts(pruned, state = "B", min_prob = 0.6)    # contexts where B is likely
-mine_sequences(pruned, test_seqs, which = "surprising")  # worst-fit sequences
+gappy <- list(c("Active", NA, "Average"), c("Average", "Average", NA, "Active"))
+impute_sequences(pruned, gappy)                              # fill internal gaps
+mine_contexts(pruned, state = "Disengaged", min_prob = 0.5)  # where Disengaged is likely
+mine_sequences(pruned, engagement, which = "surprising")     # worst-fit sequences
 
 # --- Visualisation --------------------------------------------------
 plot(pruned)                                # horizontal tree (default)
 plot(pruned, style = "dendrogram")          # pure-ggplot dendrogram
 plot(pruned, style = "icicle")              # partition (sunburst) diagram
-plot(pruned, style = "interactive")         # interactive HTML widget
+plot(pruned, style = "interactive")         # interactive HTML widget (visNetwork)
 plot_pathways(pruned)                       # next-move probability heatmap
 plot_divergence(pruned)                     # per-context KL lollipop
 plot_distributions(pruned)                  # per-context next-state bars
-plot_pruning(pruned, "A -> B -> C")         # suffix-chain memory view
-plot_trajectories(pruned, "frequency")      # forward trajectory tree
-plot_predictive(pruned, test_seqs)          # held-out confidence diagnostics
+plot_pruning(tree, "Active -> Active -> Average")   # suffix-chain memory view
+plot_trajectories(pruned, measure = "frequency")    # forward trajectory tree
+plot_predictive(pruned, engagement)         # held-out confidence diagnostics
+plot_difference(grp, depth = 1)             # where two groups differ, per context
 ```
 
 ## Bundled datasets
@@ -167,10 +180,10 @@ Four datasets ship with the package for examples and tests:
 
 | Dataset | Shape | Notes |
 |---|---|---|
-| `trajectories` | 138 × 15 wide character matrix | engagement states over time |
-| `group_regulation_long` | long event log, POSIXct time | regulation-of-learning events |
-| `ai_long` | long event log, Unix time + session id | AI-prompting moves |
-| `engagement` | state-sequence (`stslist`) object | weekly engagement sequences |
+| `trajectories` | 138 × 15 wide character matrix, trailing `NA` = end | engagement states over time |
+| `group_regulation_long` | 27,533-row long event log, POSIXct time | collaborative regulation moves, `Achiever` group label |
+| `ai_long` | 8,551-row long event log, Unix time + session id | AI-collaboration moves |
+| `engagement` | 1000 × 25 wide data.frame, `NA` = dropout | engagement-state sequences |
 
 ## Pathway notation
 

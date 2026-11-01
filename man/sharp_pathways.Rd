@@ -25,11 +25,10 @@ strongly deterministic continuations; low values indicate
 ambiguous next-state distributions.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 sharp_pathways(tree, top = 5)
-}
 
 }

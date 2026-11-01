@@ -59,11 +59,10 @@ quantifies how much more information the pathway carries than its
 where the longer history changes which next state is most likely.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 tree_pathways(tree)
-}
 
 }

@@ -38,6 +38,7 @@ sequence as continuing. A sequence that is entirely missing is
 returned unchanged (there is nothing to condition on).
 }
 \examples{
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 8, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)

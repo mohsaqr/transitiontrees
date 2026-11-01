@@ -22,3 +22,8 @@ distribution of transitiontrees distances under shuffled group labels;
 a vertical line marks the observed distance; the panel header
 carries the p-value.
 }
+\examples{
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+plot(compare_trees(grp, iter = 50L))
+}

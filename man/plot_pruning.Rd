@@ -22,17 +22,17 @@ A ggplot object.
 \description{
 A suffix-chain pruning view: take one pathway and show, side by
 side, the next-state distribution at every context along its suffix
-chain — the full context, then the context with its oldest move
-dropped, and so on down to the root — marking which contexts
+chain -- the full context, then the context with its oldest move
+dropped, and so on down to the root -- marking which contexts
 \code{\link{prune_tree}} (criterion \code{"G2"}) keeps versus prunes.
 It answers "how much memory does this pathway actually need?": each
 context is drawn as its own panel (deepest memory on the left, root on
 the right) and classified into three states by opacity. \strong{Solid}
-contexts are \emph{informative} — their own \eqn{G^2} clears the cutoff,
+contexts are \emph{informative} -- their own \eqn{G^2} clears the cutoff,
 so they add predictive information over their one-shorter parent.
 \strong{Mid-opacity} contexts are \emph{retained}: their own \eqn{G^2} is
 below the cutoff, but a deeper context diverges, so \code{prune_tree()}
-keeps them only as a structural bridge — they do not themselves add
+keeps them only as a structural bridge -- they do not themselves add
 memory. \strong{Faded} contexts are \emph{pruned} (the redundant tail).
 The panel title carries the full context, the decision, and the
 \eqn{G^2}. The requested pathway must be a fitted context; the function
@@ -43,15 +43,14 @@ The keep/prune decision is exactly \code{prune_tree}'s G2 rule
 (\eqn{2N \cdot \mathrm{KL} > \chi^2_{1-\alpha, k-1}}); the cumulative
 \code{pruned} flag follows the leaf-up amnesia rule. The distributions
 and counts shown are the same node values reported throughout the
-pathway API (see \code{PARITY.md}).
+pathway API (\code{\link{tree_pathways}()}, \code{\link{query_pathway}()}).
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(80, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3L, min_count = 3L)
 plot_pruning(tree, "A -> B -> C")
-}
 }
 \seealso{
 \code{\link{prune_tree}}, \code{\link{plot_distributions}}.

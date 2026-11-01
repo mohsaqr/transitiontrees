@@ -12,8 +12,10 @@ score_sequences(tree, newdata)
 \item{newdata}{Sequence data.}
 }
 \value{
-A data.frame with columns \code{sequence_id},
-  \code{n_scored}, \code{log_lik}, \code{perplexity}.
+A data.frame with one row per sequence in \code{newdata} and
+  columns \code{sequence_id} (row / element index of \code{newdata}),
+  \code{n_scored} (positions scored), \code{log_lik} (natural-log
+  likelihood) and \code{perplexity}.
 }
 \description{
 Returns one row per held-out sequence with its log-likelihood,
@@ -21,6 +23,7 @@ number of scored positions, and per-sequence perplexity
 (\code{exp(-log_lik / n_scored)}).
 }
 \examples{
+set.seed(1)
 fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 1L)

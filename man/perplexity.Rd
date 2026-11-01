@@ -24,9 +24,8 @@ predictive as a uniform distribution over \eqn{k} symbols.
 deterministic prediction.
 }
 \examples{
-\donttest{
+set.seed(1)
 tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
                      max_depth = 2, min_count = 2)
 perplexity(tree)
-}
 }

@@ -96,7 +96,7 @@ sharp_pathways(tree, top = 8)       # the most peaked next-action predictions
 Read the divergent table in two layers. The very top rows can have large
 `divergence` on a small `count` -- a short history seen just over the
 `min_count` floor that happened to resolve one way. Those are small-sample
-mirages; the bootstrap in section 7 exists to disarm them. The rows that
+mirages; the bootstrap in section 8 exists to disarm them. The rows that
 *also* carry a large `count` are the well-supported redirections worth
 quoting.
 
@@ -145,12 +145,12 @@ grid -- no hand-made train/test split. The in-sample perplexity is the
 optimistic bound; the cross-validated winner is the figure to report.
 
 ```{r holdout}
-model_fit(pruned)$perplexity                       # in-sample (optimistic)
+model_fit(pruned)                                  # in-sample (optimistic)
 
 tg <- tune_tree(group_regulation_long,
                actor = "Actor", time = "Time", action = "Action",
                max_depth = 1L:3L, min_count = 10L, folds = 5L, seed = 1L)
-attr(tg, "best")                                   # cross-validated winner
+tg                                                 # ranked grid; "best" = the CV winner
 ```
 
 A cross-validated perplexity close to the in-sample value is the signature of
@@ -176,7 +176,7 @@ resampling?" -- and reports two flags. **`stable`**: the count reproduces.
 chi-square bar. A claim worth making is **both**.
 
 ```{r bootstrap}
-boot <- bootstrap_pathways(pruned, iter = 200L, stat = "count", seed = 1L)
+boot <- bootstrap_pathways(pruned, iter = 100L, stat = "count", seed = 1L)
 boot
 ```
 
@@ -211,15 +211,26 @@ grp <- context_tree(group_regulation_long,
                     actor = "Actor", time = "Time", action = "Action",
                     group = "Achiever", max_depth = 2L, min_count = 10L)
 cmp <- compare_groups(grp, iter = 199L, seed = 1L)
-cmp$omnibus
+cmp
 ```
 
-The omnibus table reports two axes. **behavioral** is the count-weighted
+The printed omnibus table reports two axes. **behavioral** is the count-weighted
 Jensen-Shannon divergence (bits) between the groups' next-action
 distributions, summed over shared contexts -- "given the same history, do
 the groups do different things next?". **usage** is the summed G-squared
 homogeneity statistic -- "do they reach the same contexts at the same
-rates?". Each `p_value` comes from permuting the group labels.
+rates?". Each `p_value` comes from permuting the group labels. Below it,
+the pathway table ranks contexts by behavioral divergence with
+Benjamini-Hochberg adjusted p-values (`jsd_padj`, `usage_padj`);
+`as.data.frame(cmp)` returns the full table.
+
+Both omnibus p-values sit at the permutation floor, `1 / (iter + 1)`: no
+relabelling of the students produced a difference as large as the observed
+one, so high and low achievers do regulate differently. The printed rows
+also show that no single context carries the behavioral difference on its
+own after FDR correction -- the difference is spread thinly over many
+histories, which is why the omnibus statistic, not any one pathway, is the
+claim to report.
 
 ```{r groups-plot, fig.height = 5}
 plot_difference(grp, depth = 1L)

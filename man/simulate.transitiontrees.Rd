@@ -21,11 +21,16 @@ sequence; see \code{\link{generate_sequences}}.}
 \item{...}{Ignored.}
 }
 \value{
-A character matrix of dimension \code{nsim x length}.
+A character matrix with \code{nsim} rows (one simulated
+  sequence each) and \code{length} columns (time-steps).
 }
 \description{
 S3 \code{simulate()} method for \code{transitiontrees} objects. Wraps
 \code{\link{generate_sequences}} with the standard \code{nsim}
 argument name and an optional \code{seed} (set via
 \code{set.seed()} when supplied).
+}
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+simulate(tree, nsim = 3L, seed = 42L, length = 8L)
 }

@@ -57,8 +57,6 @@ test_that("plot.transitiontrees style='horizontal' accepts custom size ranges", 
 })
 
 test_that("plot.transitiontrees style='icicle' returns a ggplot when ggraph + tidygraph are installed", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   tr <- mk_plot_tree()
   p  <- plot(tr, style = "icicle")
   expect_s3_class(p, "ggplot")
@@ -78,8 +76,6 @@ test_that("plot.transitiontrees style='interactive' returns an htmlwidget with s
 })
 
 test_that("plot.transitiontrees style='icicle' uses size-based abbreviation", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   set.seed(7)
   states <- c("Active", "Average", "Disengaged")
   P <- matrix(c(0.7, 0.2, 0.1,
@@ -120,8 +116,6 @@ test_that("plot.transitiontrees style='icicle' uses size-based abbreviation", {
 })
 
 test_that("plot.transitiontrees style='icicle' respects override args", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   set.seed(7)
   states <- c("Active", "Average", "Disengaged")
   P <- matrix(c(0.7, 0.2, 0.1,

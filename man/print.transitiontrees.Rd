@@ -21,3 +21,7 @@
 \description{
 Print a Context Tree
 }
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+print(tree, max_lines = 10L)
+}

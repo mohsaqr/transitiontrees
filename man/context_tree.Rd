@@ -24,7 +24,7 @@ context_tree(
 \arguments{
 \item{data}{Sequence data in any of these forms: a wide data.frame /
 character matrix (rows = trajectories, columns = time-steps), a
-list of character vectors, an \code{stslist}, or a
+list of character vectors, or a
 \strong{supported network/transition model object}, taken
 directly: a fitted network object carrying its sequences, or a
 transition-network object. Any such object that
@@ -38,9 +38,13 @@ frame is decoded through the object's label map
 becomes the default alphabet so the tree shares the model's
 symbol space. A \emph{pure graph} object that carries no
 sequences anywhere (an aggregated transition network) is rejected
-with guidance — sequences cannot be recovered from edge weights,
+with guidance -- sequences cannot be recovered from edge weights,
 the same reason numeric transition matrices are rejected; route
-to the sequence-bearing object explicitly.}
+to the sequence-bearing object explicitly. In wide / list input,
+\code{NA}, the empty string, and the TraMineR codes \code{"\%"}
+(void) and \code{"*"} (missing) all mark "no observation": the cell
+is dropped (gaps closed, trailing padding trimmed) rather than
+treated as a state.}
 
 \item{max_depth}{Integer. Maximum context length the tree may
 represent. Default 5.}
@@ -57,7 +61,7 @@ Methods: \code{"floor"} (default; \code{ymin = 0.001}),
 (\code{discount = 0.75}), \code{"witten_bell"},
 \code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
 method also takes \code{rule}: \code{"interpolate"} (default, the
-interpolating floor — a distribution with a zero-count state is
+interpolating floor -- a distribution with a zero-count state is
 shifted toward uniform so each zero lands at exactly \code{ymin})
 or \code{"cap"} (clamp every probability up to \code{ymin} and
 renormalise), e.g. \code{list("floor", ymin = 0.001, rule = "cap")}.}
@@ -67,9 +71,8 @@ alphabet (useful when the test set may include states unseen in
 training).}
 
 \item{weights}{Numeric vector of per-sequence weights, length equal
-to the number of input rows / list elements. If \code{NULL}
-(default) and \code{data} is an \code{stslist} carrying
-weights, those are auto-detected.}
+to the number of input rows / list elements. \code{NULL} (default)
+fits unweighted.}
 
 \item{group}{Optional grouping for a \strong{batch fit}: a vector with
 one entry per input sequence, a column name of a network object's
@@ -122,7 +125,7 @@ For a single fit, a \code{transitiontrees} object (described below).
   \item{alphabet}{character vector of states.}
   \item{max_depth}{Integer. The fitted depth (may be less than the
     requested \code{max_depth} if data are short).}
-  \item{nmin}{the chosen min-count threshold.}
+  \item{nmin}{the \code{min_count} threshold used for the fit.}
   \item{smoothing}{resolved smoothing list (\code{method} +
     hyperparameters).}
   \item{n_seq, n_obs}{number of sequences and observations.}
@@ -132,7 +135,16 @@ For a single fit, a \code{transitiontrees} object (described below).
     the criterion / alpha / threshold used; otherwise \code{NULL}.}
   \item{data}{The cleaned trajectories (a list of character vectors)
     retained for downstream bootstrap and permutation routines.}
+  \item{weights}{The per-sequence weights aligned to \code{data}, or
+    \code{NULL} for an unweighted fit. Weighted trees are refused by
+    \code{\link{bootstrap_pathways}()}, \code{\link{compare_trees}()}
+    and \code{\link{compare_groups}()}, which rebuild counts from the
+    raw sequences.}
 }
+Read the fitted tree through its accessors rather than these
+components: \code{\link{tree_pathways}()} / \code{as.data.frame()} for
+the node table, \code{\link{model_fit}()} for the fit scalars, and
+\code{\link{n_nodes}()} for the size.
 }
 \description{
 Estimates a variable-depth context tree (prediction suffix tree; Ron, Singer & Tishby
@@ -151,18 +163,27 @@ All nodes start "live" and unpruned; \code{\link{prune_tree}()}
 decides which to retain.
 }
 \examples{
-\donttest{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
+# Wide character matrix: one learner per row, one time-step per column
+tree <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
 tree
-summary(tree)
-}
+
+# A list of character vectors works the same way
+set.seed(1)
+seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
+                  simplify = FALSE)
+context_tree(seqs, max_depth = 2L)
+
+# Long event log: name the columns and it is reshaped first
+context_tree(group_regulation_long, actor = "Actor", time = "Time",
+             action = "Action", max_depth = 2L)
+
+# One tree per group over a shared alphabet
+context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+             max_depth = 2L)
 
 }
 \references{
 Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia:
 learning probabilistic automata with variable memory length.
-\emph{Machine Learning}, 25, 117-149.
+\emph{Machine Learning}, 25, 117-149. \doi{10.1023/A:1026490906255}
 }

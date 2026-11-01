@@ -11,8 +11,9 @@
 
 \item{top}{Integer. Maximum pathways to show. Default 25.}
 
-\item{min_stability}{Numeric. Minimum stability_rate to display.
-Default \code{NULL} (use \code{x$stability_threshold}).}
+\item{min_stability}{Numeric. Minimum \code{stability_rate} to
+display. Default \code{NULL} (use the \code{stability_threshold}
+the bootstrap was run with).}
 
 \item{...}{Ignored.}
 }
@@ -23,11 +24,12 @@ A ggplot object.
 Forest plot of per-pathway \eqn{G^2} (likelihood-ratio against
 parent) with bootstrap 95\% CI bars. Pathways are ordered with
 \emph{stable & informative} ones first, then by stability rate.
-The chi-square critical value at \code{alpha_g2} is shown as a
+The chi-square critical value at the bootstrap's \code{alpha} is shown as a
 dashed reference line: pathways whose CI lies entirely above it
 are reproducibly informative.
 }
 \examples{
+set.seed(1)
 seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),

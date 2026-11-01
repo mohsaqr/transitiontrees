@@ -63,24 +63,25 @@
 #' Symmetric KL Distance Between Two context trees
 #'
 #' @description
-#' Bare-metal scalar: a count-weighted average of per-context symmetric
-#' Kullback-Leibler divergence over the union of pathways present in
-#' either tree. No null distribution.
+#' A single number: the count-weighted average of per-context symmetric
+#' Kullback-Leibler divergence (in nats) over the union of pathways
+#' present in either tree. A context missing from one tree is read from
+#' its longest matching suffix there. No null distribution; use
+#' \code{\link{compare_trees}()} for a permutation test.
 #'
-#' @param tree_a,tree_b context trees with matching alphabets.
+#' @param tree_a,tree_b \code{transitiontrees} objects with matching
+#'   alphabets.
 #' @param symmetric Logical. \code{TRUE} (default) returns
 #'   \eqn{0.5(D_{KL}(A\|B) + D_{KL}(B\|A))}; \code{FALSE} returns
 #'   \eqn{D_{KL}(A\|B)} only.
-#' @return Numeric scalar.
+#' @return Numeric scalar (nats); 0 for identical predictions.
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
 #' tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
 #' tree_distance(tr1, tr2)
-#' }
 #' @export
 tree_distance <- function(tree_a, tree_b, symmetric = TRUE) {
   stopifnot(inherits(tree_a, "transitiontrees"),
@@ -107,32 +108,39 @@ tree_distance <- function(tree_a, tree_b, symmetric = TRUE) {
 #' Use this to ask: do two cohorts (group A vs. group B, baseline vs.
 #' intervention) generate significantly different pathway dynamics?
 #'
-#' @param tree_a,tree_b context trees fit on data subsets A and B.
+#' @param tree_a,tree_b \code{transitiontrees} objects fit on data
+#'   subsets A and B (unweighted: a weighted tree is refused because the
+#'   permutation refits from the raw sequences).
 #'   Alternatively, pass a two-element \code{transitiontrees_group} (from
 #'   \code{context_tree(..., group =)}) as \code{tree_a} and leave
 #'   \code{tree_b = NULL}; its two trees are compared in key order.
 #' @param iter Integer. Number of permutations. Default 200.
-#' @param seed Integer. RNG seed for reproducibility. Default 1.
-#' @param symmetric Logical. Default \code{TRUE}.
+#' @param seed Integer. RNG seed for reproducibility, passed to
+#'   \code{set.seed()}. Default 1.
+#' @param symmetric Logical. \code{TRUE} (default) uses the symmetric
+#'   distance; \code{FALSE} uses \eqn{D_{KL}(A\|B)} only (see
+#'   \code{\link{tree_distance}()}).
 #'
 #' @return A \code{transitiontrees_comparison} object with components:
 #' \describe{
-#'   \item{pdist}{observed scalar distance}
-#'   \item{null_dist}{numeric vector, length \code{iter}}
-#'   \item{p_value}{one-sided p-value (proportion of null at least as
-#'     extreme as observed)}
-#'   \item{pathways}{per-pathway breakdown data.frame}
+#'   \item{pdist}{observed scalar distance (\code{\link{tree_distance}()}).}
+#'   \item{null_dist}{numeric vector, length \code{iter}: the distance
+#'     after each label permutation.}
+#'   \item{p_value}{one-sided permutation p-value,
+#'     \code{(1 + sum(null_dist >= pdist)) / (iter + 1)}.}
+#'   \item{pathways}{per-pathway breakdown data.frame, one row per
+#'     context in either tree; returned by \code{as.data.frame()}.}
 #' }
+#' The print method shows the observed distance, p-value and the most
+#' divergent pathways; \code{plot()} draws the null distribution.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
 #' tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
 #' compare_trees(tr1, tr2, iter = 50)
-#' }
 #' @export
 compare_trees <- function(tree_a, tree_b = NULL, iter = 200L,
                               seed = 1L, symmetric = TRUE) {
@@ -215,6 +223,10 @@ compare_trees <- function(tree_a, tree_b = NULL, iter = 200L,
 #' @param bins Integer. Histogram bins. Default 30.
 #' @param ... Ignored.
 #' @return A ggplot object.
+#' @examples
+#' grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'                     max_depth = 2L)
+#' plot(compare_trees(grp, iter = 50L))
 #' @export
 plot.transitiontrees_comparison <- function(x, bins = 30L, ...) {
   null_df <- data.frame(d = x$null_dist)
@@ -246,15 +258,22 @@ plot.transitiontrees_comparison <- function(x, bins = 30L, ...) {
 #'
 #' @description
 #' Uniform tidy-extract: returns the per-pathway divergence breakdown
-#' (\code{object$pathways}) — the consumer-facing detail behind the
+#' (\code{object$pathways}) -- the consumer-facing detail behind the
 #' scalar \code{pdist} and the permutation \code{p_value}.
 #'
 #' @param x A \code{transitiontrees_comparison}.
 #' @param row.names,optional Ignored.
 #' @param ... Ignored.
-#' @return A data.frame with columns \code{pathway}, \code{count_a},
-#'   \code{count_b}, \code{divergence_ab}, \code{divergence_ba},
-#'   \code{divergence_sym}.
+#' @return A data.frame with one row per context in either tree, sorted
+#'   by \code{divergence_sym} descending, and columns \code{pathway},
+#'   \code{count_a}, \code{count_b} (the context's count in each tree,
+#'   0 when absent), \code{divergence_ab}, \code{divergence_ba} (the two
+#'   directed Kullback-Leibler divergences, nats) and
+#'   \code{divergence_sym} (their mean).
+#' @examples
+#' grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'                     max_depth = 2L)
+#' as.data.frame(compare_trees(grp, iter = 50L))
 #' @export
 as.data.frame.transitiontrees_comparison <- function(x, row.names = NULL,
                                                optional = FALSE, ...) {
@@ -270,6 +289,10 @@ as.data.frame.transitiontrees_comparison <- function(x, row.names = NULL,
 #'   Default 6.
 #' @param ... Ignored.
 #' @return \code{x} invisibly.
+#' @examples
+#' grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'                     max_depth = 2L)
+#' print(compare_trees(grp, iter = 50L), n = 3L)
 #' @export
 print.transitiontrees_comparison <- function(x, digits = 3L, n = 6L, ...) {
   cat(sprintf("<transitiontrees_comparison>  iter = %d\n",

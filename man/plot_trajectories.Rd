@@ -26,7 +26,7 @@ A ggplot object.
 \description{
 Where \code{\link{plot.transitiontrees}} draws the fitted context tree
 \emph{backwards} (each node is a suffix, the most-recent move), this
-draws the same prompts \emph{forwards}: a prefix tree that starts at a
+draws the same sequences \emph{forwards}: a prefix tree that starts at a
 common root and follows each sequence move by move in time. The one
 tree can be coloured two ways:
 \describe{
@@ -43,21 +43,17 @@ The predictability of a node's last move is the model's conditional
 probability of that move given the preceding history, truncated to the
 tree's \code{max_depth} and read via \code{\link{query_pathway}()}
 (the empty history for a first move uses the root distribution). This
-is the forward-reading complement to the backward context tree; it is
-a visualisation, so it depends on \code{ggforce} (in Suggests) for the
-rounded node glyphs and errors with an install hint if it is missing.
+is the forward-reading complement to the backward context tree. It is
+drawn entirely in \pkg{ggplot2}, with no additional plotting dependency.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(120, sample(c("A", "B", "C"), 8, replace = TRUE),
                   simplify = FALSE)
 tree   <- context_tree(seqs, max_depth = 3L, min_count = 3L)
 pruned <- prune_tree(tree)
-if (requireNamespace("ggforce", quietly = TRUE)) {
-  plot_trajectories(tree,   measure = "frequency")
-  plot_trajectories(pruned, measure = "predictability")
-}
-}
+plot_trajectories(tree,   measure = "frequency")
+plot_trajectories(pruned, measure = "predictability")
 }
 \seealso{
 \code{\link{plot.transitiontrees}} for the backward context

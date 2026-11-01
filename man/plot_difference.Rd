@@ -45,13 +45,13 @@ permutation test.}
 \item{layout}{One of \code{"tile"} (default; per-context heatmap over
 all shared contexts) or \code{"tree"} (the horizontal context-tree
 phylogram drawn on a pooled backbone, with each node and branch
-coloured by which group reaches that context more — red for the first
+coloured by which group reaches that context more -- red for the first
 group, blue for the second; node size = pooled count).}
 
 \item{measure}{For \code{layout = "tile"}, what each cell encodes:
 \code{"residual"} (default) is the Pearson standardized residual of
 the first group against the no-group null (observed vs expected from
-the context's margins) — support-aware and decomposing the per-context
+the context's margins) -- support-aware and decomposing the per-context
 \eqn{G^2}; \code{"probability"} is the raw next-state probability
 difference \code{P(group1) - P(group2)}. Ignored by \code{"tree"}.}
 }
@@ -68,7 +68,7 @@ the per-context \eqn{G^2}; \code{measure = "probability"} shows the raw
 \code{P(group1) - P(group2)} instead.
 }
 \examples{
-\donttest{
+set.seed(1)
 gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
                            prob = c(.2,.6,.2)), simplify = FALSE)
 gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
@@ -77,7 +77,6 @@ grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 60),
                     max_depth = 2L)
 plot_difference(grp)                       # residual heatmap
 plot_difference(grp, layout = "tree")      # difference on the tree map
-}
 }
 \seealso{
 \code{\link{compare_groups}} for the significance test.

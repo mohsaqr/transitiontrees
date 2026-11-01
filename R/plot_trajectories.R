@@ -71,7 +71,7 @@
 #' @description
 #' Where \code{\link{plot.transitiontrees}} draws the fitted context tree
 #' \emph{backwards} (each node is a suffix, the most-recent move), this
-#' draws the same prompts \emph{forwards}: a prefix tree that starts at a
+#' draws the same sequences \emph{forwards}: a prefix tree that starts at a
 #' common root and follows each sequence move by move in time. The one
 #' tree can be coloured two ways:
 #' \describe{
@@ -97,21 +97,17 @@
 #' probability of that move given the preceding history, truncated to the
 #' tree's \code{max_depth} and read via \code{\link{query_pathway}()}
 #' (the empty history for a first move uses the root distribution). This
-#' is the forward-reading complement to the backward context tree; it is
-#' a visualisation, so it depends on \code{ggforce} (in Suggests) for the
-#' rounded node glyphs and errors with an install hint if it is missing.
+#' is the forward-reading complement to the backward context tree. It is
+#' drawn entirely in \pkg{ggplot2}, with no additional plotting dependency.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(120, sample(c("A", "B", "C"), 8, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree   <- context_tree(seqs, max_depth = 3L, min_count = 3L)
 #' pruned <- prune_tree(tree)
-#' if (requireNamespace("ggforce", quietly = TRUE)) {
-#'   plot_trajectories(tree,   measure = "frequency")
-#'   plot_trajectories(pruned, measure = "predictability")
-#' }
-#' }
+#' plot_trajectories(tree,   measure = "frequency")
+#' plot_trajectories(pruned, measure = "predictability")
 #' @seealso \code{\link{plot.transitiontrees}} for the backward context
 #'   tree, \code{\link{plot_pruning}} for the suffix-chain view.
 #' @export
@@ -120,9 +116,6 @@ plot_trajectories <- function(tree,
                               min_count = 4L) {
   stopifnot(inherits(tree, "transitiontrees"))
   measure <- match.arg(measure)
-  if (!requireNamespace("ggforce", quietly = TRUE))
-    stop("plot_trajectories() needs the 'ggforce' package; install it with ",
-         "install.packages(\"ggforce\").", call. = FALSE)
 
   states <- tree$alphabet
   D     <- .trajectory_data(tree, min_count = min_count)
@@ -175,12 +168,27 @@ plot_trajectories <- function(tree,
     "move inside, count below; colour & width = sequences (higher = darker)" else
     "colour = P(move | history) from the model; width = sequences"
 
-  ## fixed-size rounded node glyphs (variable size triggers a ggforce fill bug)
-  HWX <- 0.17; HWY <- 0.26; RAD <- grid::unit(4, "mm")
-  sqf <- function(df) do.call(rbind, lapply(seq_len(nrow(df)), function(i)
-    data.frame(id = df$node[i], x = df$x[i] + c(-1, 1, 1, -1) * HWX,
-               y = df$y[i] + c(-1, -1, 1, 1) * HWY,
-               val = df$valcol[i], stringsAsFactors = FALSE)))
+  ## fixed-size rectangular node glyphs (corners computed by hand below)
+  HWX <- 0.17; HWY <- 0.26
+  ## Pill-shaped (rounded-rectangle) node glyphs, traced in base R:
+  ## four quarter-circle corners; geom_polygon joins them with the
+  ## straight edges. Corner radius = the smaller half-extent, so the
+  ## short sides round into full caps (a capsule).
+  RAD <- min(HWX, HWY)
+  .corner <- function(cx, cy, ox, oy, a0) {
+    a <- seq(a0, a0 + pi / 2, length.out = 6L)
+    cbind(cx + ox + RAD * cos(a), cy + oy + RAD * sin(a))
+  }
+  sqf <- function(df) do.call(rbind, lapply(seq_len(nrow(df)), function(i) {
+    cx <- df$x[i]; cy <- df$y[i]
+    ox <- HWX - RAD; oy <- HWY - RAD               # corner-arc centres
+    pts <- rbind(.corner(cx, cy,  ox, -oy, -pi / 2),   # bottom-right
+                 .corner(cx, cy,  ox,  oy,  0),        # top-right
+                 .corner(cx, cy, -ox,  oy,  pi / 2),   # top-left
+                 .corner(cx, cy, -ox, -oy,  pi))       # bottom-left
+    data.frame(id = df$node[i], x = pts[, 1L], y = pts[, 2L],
+               val = df$valcol[i], stringsAsFactors = FALSE)
+  }))
 
   d <- NB; d$valcol <- nodeval; poly <- sqf(d)
   rt <- RT; rt$valcol <- NA_real_
@@ -196,14 +204,14 @@ plot_trajectories <- function(tree,
       lineend = "round") +
     ggplot2::scale_linewidth_continuous(range = c(0.4, 3.6),
                                         name = "flow (sequences)") +
-    ggforce::geom_shape(
+    ggplot2::geom_polygon(
       data = poly, ggplot2::aes(x = .data$x, y = .data$y, group = .data$id,
                                 fill = .data$val),
-      radius = RAD, colour = "grey30", linewidth = 0.3) +
-    ggforce::geom_shape(
+      colour = "grey30", linewidth = 0.3) +
+    ggplot2::geom_polygon(
       data = sqf(transform(rt, valcol = NA_real_)),
       ggplot2::aes(x = .data$x, y = .data$y, group = .data$id),
-      radius = RAD, fill = "grey15") +
+      fill = "grey15") +
     ggplot2::geom_text(data = NB, ggplot2::aes(x = .data$x, y = .data$y,
                                                label = .data$last),
                        colour = txt, size = 2.5, fontface = "bold") +

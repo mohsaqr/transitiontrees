@@ -19,7 +19,7 @@
 #' \code{$data}/\code{$sequences}/\code{$seqdata} slot. The structural
 #' arm means a new object that follows the same convention works with
 #' no code change here. Whether it can actually be fitted still depends
-#' on a usable sequence frame being present — see
+#' on a usable sequence frame being present -- see
 #' \code{.ct_unwrap_netobject()}.
 #' @noRd
 .ct_is_netobject <- function(x) {
@@ -42,16 +42,16 @@
 #'
 #' Network/transition objects optionally carry a
 #' \code{$data} slot: the wide, trailing-NA-padded character data.frame
-#' \code{context_tree()} consumes — one row per session, one column per
+#' \code{context_tree()} consumes -- one row per session, one column per
 #' step. \code{$nodes$label} holds the canonical alphabet (the network's
 #' node set), surfaced so the fitted tree's symbol set matches the
 #' network even when a code never appears within a counted window.
 #'
 #' The sequence frame is extracted "as is" by scanning every place a
-#' network object is known to keep it — the \code{$data}
+#' network object is known to keep it -- the \code{$data}
 #' slot first (the documented handoff), then other plausible
 #' slots/attributes (\code{$sequences}, \code{$seqdata}, an embedded
-#' netobject, or a \code{"data"}/\code{"sequences"} attribute) — so a
+#' netobject, or a \code{"data"}/\code{"sequences"} attribute) -- so a
 #' caller can hand over any such object without knowing where the
 #' upstream stashed it.
 #'
@@ -59,7 +59,7 @@
 #' \code{$nodes} id/label table (a common way such objects store
 #' sequences). The
 #' "reject numeric matrices" rule is about disambiguating a
-#' \emph{top-level} square transition matrix — it does \strong{not}
+#' \emph{top-level} square transition matrix -- it does \strong{not}
 #' apply here, because a network object's sequence slot is
 #' contractually sequences (its transition matrix lives in
 #' \code{$weights}). So a numeric frame found in the slot is decoded,
@@ -67,10 +67,10 @@
 #' (\code{label[match(code, id)]}) when a label table exists, else
 #' cast to character; \code{NA} is preserved as end-of-sequence.
 #'
-#' Only a \emph{pure graph} projection — nodes/edges/weights with the
+#' Only a \emph{pure graph} projection -- nodes/edges/weights with the
 #' sequences provably absent everywhere (e.g. an aggregated transition
 #' network whose constructor nulls the
-#' data slot) — cannot yield a variable-order tree: the original
+#' data slot) -- cannot yield a variable-order tree: the original
 #' sequences are unrecoverable from edge weights. Only then does this
 #' error, with explicit guidance, rather than fabricating sequences.
 #' @return list(data = <data.frame>, alphabet = <character or NULL>).
@@ -316,11 +316,6 @@
     ## documented dispatch list self-consistent.
     return(.ct_unwrap_netobject(data)$data)
   }
-  if (inherits(data, "stslist")) {
-    ## stslist sequence object: extract the wide character matrix.
-    m <- as.matrix(data); storage.mode(m) <- "character"
-    return(as.data.frame(m, stringsAsFactors = FALSE))
-  }
   if (is.matrix(data) && !is.numeric(data)) {
     return(as.data.frame(data, stringsAsFactors = FALSE))
   }
@@ -330,19 +325,9 @@
   }
   if (is.data.frame(data)) return(data)
   stop("'data' must be a wide data.frame, character/logical matrix, ",
-       "list of character vectors, an 'stslist', or a sequence-bearing ",
+       "list of character vectors, or a sequence-bearing ",
        "transition/network object.",
        call. = FALSE)
-}
-
-#' @noRd
-.ct_data_weights <- function(data) {
-  ## Pull stslist weights when present; NULL otherwise.
-  if (inherits(data, "stslist")) {
-    w <- attr(data, "weights")
-    if (!is.null(w)) return(as.numeric(w))
-  }
-  NULL
 }
 
 #' Refuse weighted trees on surfaces that resample/permute raw sequences
@@ -363,23 +348,30 @@
 
 #' @noRd
 .ct_data_n_rows <- function(data) {
-  if (inherits(data, "stslist") || is.matrix(data) || is.data.frame(data))
-    return(nrow(data))
+  if (is.matrix(data) || is.data.frame(data)) return(nrow(data))
   if (is.list(data)) return(length(data))
   NA_integer_
 }
 
+#' Symbols treated as "no observation" in a sequence: R's \code{NA} and
+#' the empty string, plus the two codes TraMineR uses in its state
+#' sequences -- \code{"\%"} (void / end-of-sequence) and \code{"*"}
+#' (missing). A column of such codes therefore never becomes a literal
+#' state in the alphabet.
+#' @noRd
+.CT_MISSING <- c("", "%", "*")
+
 #' Drop missing / empty cells from one sequence, leaving observed
-#' states in order. NA and "" are treated identically whether they fall
-#' at the end of a row (end-of-sequence padding) or internally (a gap in
-#' the recording): the gap is closed, never turned into a literal "NA"
-#' state. This is the single cleaning rule shared by the list and the
-#' matrix/data.frame paths so identical data yields identical trees
-#' regardless of input shape.
+#' states in order. Missing codes (see \code{.CT_MISSING}) and \code{NA}
+#' are treated identically whether they fall at the end of a row
+#' (end-of-sequence padding) or internally (a gap in the recording): the
+#' gap is closed, never turned into a literal state. This is the single
+#' cleaning rule shared by the list and the matrix/data.frame paths so
+#' identical data yields identical trees regardless of input shape.
 #' @noRd
 .ct_clean_seq <- function(x) {
   x <- as.character(x)
-  x[!is.na(x) & nzchar(x)]
+  x[!is.na(x) & !(x %in% .CT_MISSING)]
 }
 
 #' @noRd
@@ -504,8 +496,7 @@
       stop("Pass either a grouped object or 'group =', not both.",
            call. = FALSE)
     if (!is.null(weights))
-      stop("'weights' is not supported with a grouped object; each ",
-           "element carries its own weights (e.g. an 'stslist'), or fit ",
+      stop("'weights' is not supported with a grouped object; fit ",
            "each group separately.", call. = FALSE)
     elements <- .ct_group_elements(data)
     alpha    <- .ct_group_alphabet(elements, alphabet)
@@ -628,7 +619,7 @@
 #'
 #' @param data Sequence data in any of these forms: a wide data.frame /
 #'   character matrix (rows = trajectories, columns = time-steps), a
-#'   list of character vectors, an \code{stslist}, or a
+#'   list of character vectors, or a
 #'   \strong{supported network/transition model object}, taken
 #'   directly: a fitted network object carrying its sequences, or a
 #'   transition-network object. Any such object that
@@ -642,9 +633,13 @@
 #'   becomes the default alphabet so the tree shares the model's
 #'   symbol space. A \emph{pure graph} object that carries no
 #'   sequences anywhere (an aggregated transition network) is rejected
-#'   with guidance — sequences cannot be recovered from edge weights,
+#'   with guidance -- sequences cannot be recovered from edge weights,
 #'   the same reason numeric transition matrices are rejected; route
-#'   to the sequence-bearing object explicitly.
+#'   to the sequence-bearing object explicitly. In wide / list input,
+#'   \code{NA}, the empty string, and the TraMineR codes \code{"\%"}
+#'   (void) and \code{"*"} (missing) all mark "no observation": the cell
+#'   is dropped (gaps closed, trailing padding trimmed) rather than
+#'   treated as a state.
 #' @param max_depth Integer. Maximum context length the tree may
 #'   represent. Default 5.
 #' @param min_count Integer. Minimum number of times a context must occur
@@ -658,7 +653,7 @@
 #'   (\code{discount = 0.75}), \code{"witten_bell"},
 #'   \code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
 #'   method also takes \code{rule}: \code{"interpolate"} (default, the
-#'   interpolating floor — a distribution with a zero-count state is
+#'   interpolating floor -- a distribution with a zero-count state is
 #'   shifted toward uniform so each zero lands at exactly \code{ymin})
 #'   or \code{"cap"} (clamp every probability up to \code{ymin} and
 #'   renormalise), e.g. \code{list("floor", ymin = 0.001, rule = "cap")}.
@@ -666,9 +661,8 @@
 #'   alphabet (useful when the test set may include states unseen in
 #'   training).
 #' @param weights Numeric vector of per-sequence weights, length equal
-#'   to the number of input rows / list elements. If \code{NULL}
-#'   (default) and \code{data} is an \code{stslist} carrying
-#'   weights, those are auto-detected.
+#'   to the number of input rows / list elements. \code{NULL} (default)
+#'   fits unweighted.
 #' @param group Optional grouping for a \strong{batch fit}: a vector with
 #'   one entry per input sequence, a column name of a network object's
 #'   \code{$metadata}, or --- in long-format mode (\code{action} given)
@@ -716,7 +710,7 @@
 #'   \item{alphabet}{character vector of states.}
 #'   \item{max_depth}{Integer. The fitted depth (may be less than the
 #'     requested \code{max_depth} if data are short).}
-#'   \item{nmin}{the chosen min-count threshold.}
+#'   \item{nmin}{the \code{min_count} threshold used for the fit.}
 #'   \item{smoothing}{resolved smoothing list (\code{method} +
 #'     hyperparameters).}
 #'   \item{n_seq, n_obs}{number of sequences and observations.}
@@ -726,7 +720,16 @@
 #'     the criterion / alpha / threshold used; otherwise \code{NULL}.}
 #'   \item{data}{The cleaned trajectories (a list of character vectors)
 #'     retained for downstream bootstrap and permutation routines.}
+#'   \item{weights}{The per-sequence weights aligned to \code{data}, or
+#'     \code{NULL} for an unweighted fit. Weighted trees are refused by
+#'     \code{\link{bootstrap_pathways}()}, \code{\link{compare_trees}()}
+#'     and \code{\link{compare_groups}()}, which rebuild counts from the
+#'     raw sequences.}
 #' }
+#' Read the fitted tree through its accessors rather than these
+#' components: \code{\link{tree_pathways}()} / \code{as.data.frame()} for
+#' the node table, \code{\link{model_fit}()} for the fit scalars, and
+#' \code{\link{n_nodes}()} for the size.
 #'
 #' @details
 #' Construction is bottom-up via k-gram counting. The root holds the
@@ -737,19 +740,28 @@
 #' decides which to retain.
 #'
 #' @examples
-#' \donttest{
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
+#' # Wide character matrix: one learner per row, one time-step per column
+#' tree <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
 #' tree
-#' summary(tree)
-#' }
+#'
+#' # A list of character vectors works the same way
+#' set.seed(1)
+#' seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
+#'                   simplify = FALSE)
+#' context_tree(seqs, max_depth = 2L)
+#'
+#' # Long event log: name the columns and it is reshaped first
+#' context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'              action = "Action", max_depth = 2L)
+#'
+#' # One tree per group over a shared alphabet
+#' context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'              max_depth = 2L)
 #'
 #' @references
 #' Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia:
 #' learning probabilistic automata with variable memory length.
-#' \emph{Machine Learning}, 25, 117-149.
+#' \emph{Machine Learning}, 25, 117-149. \doi{10.1023/A:1026490906255}
 #'
 #' @export
 context_tree <- function(data,
@@ -819,7 +831,6 @@ context_tree <- function(data,
     if (is.null(alphabet)) alphabet <- no$alphabet
   }
   n_rows_in <- .ct_data_n_rows(data)
-  if (is.null(weights)) weights <- .ct_data_weights(data)
 
   data  <- .ct_coerce(data)
   trajs <- .ct_traj(data)
@@ -867,10 +878,8 @@ context_tree <- function(data,
 #' Coerce a context tree to a Tidy Data Frame
 #'
 #' @description
-#' Returns the canonical tidy node table — identical to
-#' \code{tree_pathways(tree)}. Lets users do
-#' \code{as.data.frame(tree)} and immediately filter, sort, or export
-#' with base-R idioms.
+#' Returns the canonical tidy node table, identical to
+#' \code{tree_pathways(tree)}: one row per context (pathway).
 #'
 #' @param x A \code{transitiontrees}.
 #' @param row.names,optional Ignored.
@@ -878,8 +887,12 @@ context_tree <- function(data,
 #'
 #' @return A data.frame with columns \code{pathway}, \code{depth},
 #'   \code{count}, \code{likely_next}, \code{next_probability},
-#'   \code{divergence}, \code{changes_prediction}. See
-#'   \code{\link{tree_pathways}}.
+#'   \code{divergence}, \code{changes_prediction}; one row per
+#'   pathway. See \code{\link{tree_pathways}} for the column meanings.
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' as.data.frame(tree)
+#' as.data.frame(tree, sort_by = "divergence")
 #' @export
 as.data.frame.transitiontrees <- function(x, row.names = NULL,
                                     optional = FALSE, ...) {
@@ -891,6 +904,10 @@ as.data.frame.transitiontrees <- function(x, row.names = NULL,
 #' @param x A \code{transitiontrees_group} (named list of \code{transitiontrees}s).
 #' @param ... Ignored.
 #' @return \code{x} invisibly.
+#' @examples
+#' grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'                     max_depth = 2L)
+#' print(grp)
 #' @export
 print.transitiontrees_group <- function(x, ...) {
   gv <- attr(x, "group")
@@ -916,8 +933,13 @@ print.transitiontrees_group <- function(x, ...) {
 #' @param row.names,optional Ignored.
 #' @param ... Forwarded to \code{\link{tree_pathways}()}.
 #'
-#' @return A data.frame: the canonical pathway columns with a leading
-#'   \code{group} column identifying the source tree.
+#' @return A data.frame with one row per (group, pathway): a leading
+#'   \code{group} column identifying the source tree, then the canonical
+#'   pathway columns of \code{\link{tree_pathways}}.
+#' @examples
+#' grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+#'                     max_depth = 2L)
+#' as.data.frame(grp)
 #' @export
 as.data.frame.transitiontrees_group <- function(x, row.names = NULL,
                                          optional = FALSE, ...) {
@@ -941,6 +963,9 @@ as.data.frame.transitiontrees_group <- function(x, row.names = NULL,
 #' @param digits Integer. Probability digits. Default 2.
 #' @param ... Ignored.
 #' @return \code{x} invisibly.
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' print(tree, max_lines = 10L)
 #' @export
 print.transitiontrees <- function(x, max_lines = 25L, digits = 2L, ...) {
   alpha <- x$alphabet
@@ -1007,7 +1032,12 @@ print.transitiontrees <- function(x, max_lines = 25L, digits = 2L, ...) {
 #'   \code{depth}, \code{count}, \code{likely_next},
 #'   \code{next_probability}, \code{divergence},
 #'   \code{changes_prediction}), re-sorted by \code{(depth, -count)} so
-#'   the structural tree order is read top-to-bottom.
+#'   the structural tree order is read top-to-bottom. Its other
+#'   components are the scalars \code{n_states}, \code{max_depth},
+#'   \code{n_nodes} and \code{pruned}.
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' summary(tree)
 #' @export
 summary.transitiontrees <- function(object, ...) {
   tbl <- tree_pathways(object, min_count = 1L)
@@ -1034,6 +1064,9 @@ summary.transitiontrees <- function(object, ...) {
 #' @param n Integer. Number of pathway rows to print. Default 10.
 #' @param ... Ignored.
 #' @return \code{x} invisibly.
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' print(summary(tree), n = 5L)
 #' @export
 print.summary.transitiontrees <- function(x, n = 10L, ...) {
   cat(sprintf("<transitiontrees summary>  %d nodes, depth <= %d, %d states  [%s]\n\n",

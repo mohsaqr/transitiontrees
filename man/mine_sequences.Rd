@@ -29,6 +29,7 @@ subsequences the model finds most \emph{surprising} (poor fit, high
 perplexity) or most \emph{expected} (good fit, low perplexity).
 }
 \examples{
+set.seed(1)
 fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 2L)

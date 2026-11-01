@@ -22,3 +22,11 @@ Default 3.}
 \description{
 Print a context tree Bootstrap
 }
+\examples{
+set.seed(1)
+seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
+                  simplify = FALSE)
+boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
+                           iter = 50L)
+print(boot, n = 5L)
+}

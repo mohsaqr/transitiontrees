@@ -26,10 +26,8 @@ pathway is preserved as a key), but the returned object has a
 \code{local_root} attribute pointing at the queried pathway.
 }
 \examples{
-\donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 subtree(tr, "A")   # prints "subtree of: A" in the banner
-}
 }

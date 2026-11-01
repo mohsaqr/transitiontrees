@@ -8,27 +8,23 @@ mk_traj_tree <- function(seed = 1L) {
 }
 
 test_that("plot_trajectories returns a ggplot for both measures", {
-  skip_if_not_installed("ggforce")
   tree <- mk_traj_tree()
   expect_s3_class(plot_trajectories(tree, "frequency"), "ggplot")
   expect_s3_class(plot_trajectories(tree, "predictability"), "ggplot")
 })
 
 test_that("plot_trajectories renders without error", {
-  skip_if_not_installed("ggforce")
   tree <- mk_traj_tree()
   p <- plot_trajectories(tree, "predictability")
   pdf(NULL); on.exit(dev.off()); expect_silent(print(p))
 })
 
 test_that("plot_trajectories errors when no prefix clears min_count", {
-  skip_if_not_installed("ggforce")
   tree <- mk_traj_tree()
   expect_error(plot_trajectories(tree, min_count = 1e6), "min_count")
 })
 
 test_that("plot_trajectories accepts a pruned tree", {
-  skip_if_not_installed("ggforce")
   tree <- mk_traj_tree()
   pruned <- prune_tree(tree)
   expect_s3_class(plot_trajectories(pruned, "predictability"), "ggplot")

@@ -13,12 +13,16 @@
 }
 \value{
 Integer. The number of state observations the tree was fitted
-  on — the (weight-adjusted) token total, equal to the \code{"nobs"}
+  on -- the (weight-adjusted) token total, equal to the \code{"nobs"}
   attribute of the \emph{in-sample} \code{\link{logLik.transitiontrees}()}.
-  (A held-out \code{logLik(newdata)} reports its own \code{"nobs"} —
+  (A held-out \code{logLik(newdata)} reports its own \code{"nobs"} --
   the positions actually scored, e.g. excluding states outside the
-  tree's alphabet — which can be smaller.)
+  tree's alphabet -- which can be smaller.)
 }
 \description{
 Number of Observations Used to Fit a context tree
+}
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+nobs(tree)
 }

@@ -13,9 +13,9 @@ compare_smoothing(
 \arguments{
 \item{data}{Either sequence data in any form accepted by
 \code{\link{context_tree}} (wide matrix / data.frame, list of
-character vectors, an \code{stslist}, or a transition/network
-object) — fitted afresh under each
-scheme — \strong{or} an already-fitted \code{transitiontrees}, which is
+character vectors, or a transition/network
+object) -- fitted afresh under each
+scheme -- \strong{or} an already-fitted \code{transitiontrees}, which is
 \emph{re-smoothed} under each scheme (topology frozen, no
 re-count; e.g. to sweep smoothers on a pruned tree).}
 
@@ -24,7 +24,7 @@ compare. Defaults to all five: \code{"floor"}, \code{"laplace"},
 \code{"kneser_ney"}, \code{"witten_bell"}, \code{"jelinek_mercer"}.}
 
 \item{...}{Further arguments passed to \code{\link{context_tree}}
-(e.g. \code{max_depth}, \code{nmin}, \code{alphabet}), held fixed
+(e.g. \code{max_depth}, \code{min_count}, \code{alphabet}), held fixed
 across every scheme. Ignored when \code{data} is a fitted tree.}
 }
 \value{
@@ -33,8 +33,8 @@ A \code{data.frame} with one row per scheme (in the order
   name), \code{n_nodes} (tree size) and \code{perplexity} (in-sample).
 }
 \description{
-Fits a context tree under several smoothing schemes — holding
-\code{max_depth}, \code{nmin} and every other argument fixed — and
+Fits a context tree under several smoothing schemes -- holding
+\code{max_depth}, \code{min_count} and every other argument fixed -- and
 returns a tidy one-row-per-scheme comparison of tree size and
 in-sample perplexity. A convenience wrapper over repeated
 \code{\link{context_tree}} calls that collapses the usual five-line
@@ -43,22 +43,29 @@ in-sample perplexity. A convenience wrapper over repeated
 \details{
 The perplexity reported is \strong{in-sample} (computed on the
 fitting data), so it rewards memorisation and must \emph{not} be used
-to pick a smoother — use \code{\link{tune_tree}()} for
+to pick a smoother -- use \code{\link{tune_tree}()} for
 out-of-sample selection. The point of this table is the side-by-side
 view and the invariance of \code{n_nodes} across schemes: smoothing
 changes the \emph{probabilities} inside the tree, never \emph{which}
-contexts exist (topology is set by \code{nmin}, not by the smoother).
+contexts exist (topology is set by \code{min_count}, not by the smoother).
 }
 \examples{
-\donttest{
 set.seed(1)
 seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
                   simplify = FALSE)
 compare_smoothing(seqs, max_depth = 3L, min_count = 5L)
 compare_smoothing(seqs, smoothing = c("floor", "kneser_ney"),
                   max_depth = 2L)
-}
 
+}
+\references{
+Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
+variable order Markov models. \emph{Journal of Artificial Intelligence
+Research}, 22, 385-421. \doi{10.1613/jair.1491}
+
+Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
+techniques for language modeling. \emph{Computer Speech and Language},
+13(4), 359-394. \doi{10.1006/csla.1999.0128}
 }
 \seealso{
 \code{\link{smooth_tree}} to re-smooth a fitted tree

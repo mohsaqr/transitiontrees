@@ -17,8 +17,8 @@ compare_pruning(
 \item{criterion}{Character vector of criteria to compare. Defaults
 to all four: \code{"G2"}, \code{"KL"}, \code{"AIC"}, \code{"BIC"}.}
 
-\item{alpha}{Significance level for \code{"G2"} (and the AIC/BIC
-penalties' chi-square cutoff). Default 0.05.}
+\item{alpha}{Significance level for \code{"G2"}; not used by
+\code{"KL"}, \code{"AIC"} or \code{"BIC"}. Default 0.05.}
 
 \item{threshold}{Minimum information gain in nats for \code{"KL"}.
 Default 0.005.}
@@ -30,21 +30,19 @@ A \code{data.frame} with one row per criterion (in the order
   of the original nodes removed).
 }
 \description{
-Prunes a fitted tree under several criteria — holding \code{alpha}
-and \code{threshold} fixed — and returns a tidy one-row-per-criterion
+Prunes a fitted tree under several criteria -- holding \code{alpha}
+and \code{threshold} fixed -- and returns a tidy one-row-per-criterion
 summary of how aggressively each trims the tree. A convenience
 wrapper over repeated \code{\link{prune_tree}} calls that
 collapses the usual \code{vapply()} criterion loop into one call.
 }
 \examples{
-\donttest{
 set.seed(1)
 seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 4L, min_count = 3L)
 compare_pruning(tree)
 compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
-}
 
 }
 \seealso{

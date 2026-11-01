@@ -1,9 +1,11 @@
-#' transitiontrees: Context Trees and Variable-Order Markov Models
+#' transitiontrees: Transition Trajectories and Dynamics of Variable-Length Pathways or Sequences
 #'
-#' Fits prediction suffix trees (Ron, Singer & Tishby 1996) and
-#' variable-order Markov models from categorical sequence data.
-#' Provides multiple pruning criteria, per-context Kullback-Leibler
-#' diagnostics, smoothing, prediction, and tree visualisation.
+#' Analyzes transition trajectories in event, sequence, and ordered data
+#' using variable-order prediction suffix trees (Ron, Singer & Tishby
+#' 1996), in frequency-based and prediction-based forms. Provides
+#' multiple pruning, validation, and smoothing methods, next-state
+#' prediction, and visualisation as transition trees, radial sunbursts,
+#' transition heatmaps, and forward trajectory trees.
 #'
 #' @keywords internal
 "_PACKAGE"
@@ -12,10 +14,5 @@
 #' @import ggplot2
 #' @importFrom stats predict simulate logLik nobs AIC BIC qchisq setNames
 #' @importFrom utils tail head capture.output modifyList
-#' @importFrom utils globalVariables
 ## usethis namespace: end
 NULL
-
-## ggraph evaluates `weight = <col>` via NSE inside a tbl_graph;
-## declare the column names here to silence R CMD check.
-utils::globalVariables(c("count", "leaf_weight"))

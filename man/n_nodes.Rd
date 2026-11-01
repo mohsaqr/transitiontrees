@@ -14,13 +14,12 @@ An integer. For a \code{transitiontrees_group}, a named integer
   vector with one count per group.
 }
 \description{
-The count of contexts the tree represents — an intuitive accessor for
-\code{length(tree$nodes)} (the number printed in the tree banner).
+The number of contexts (nodes, including the root) the tree
+represents -- the number printed in the tree banner.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 n_nodes(context_tree(seqs, max_depth = 3L))
-}
 }

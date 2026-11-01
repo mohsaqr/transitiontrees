@@ -30,13 +30,12 @@
 #' @return A ggplot object.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' plot_pathways(tree)
 #' plot_pathways(tree, sort_by = "divergence", top = 12)
-#' }
 #'
 #' @export
 plot_pathways <- function(tree,
@@ -145,12 +144,11 @@ plot_pathways <- function(tree,
 #' @return A ggplot object.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3L)
 #' plot_divergence(tree)
-#' }
 #'
 #' @export
 plot_divergence <- function(tree, top = 15L, min_count = 5L,

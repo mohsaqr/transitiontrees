@@ -12,14 +12,18 @@ score_positions(tree, newdata, worst = NULL)
 \item{newdata}{Sequence data.}
 
 \item{worst}{Integer or \code{NULL}. If given, return only the
-\code{worst} positions — those with the lowest
-\code{predicted_prob} (the moves the model was most surprised by).
-Default \code{NULL} (all positions, in sequence order).}
+\code{worst} positions -- those with the lowest
+\code{predicted_prob} (the moves the model was most surprised by),
+sorted ascending by \code{predicted_prob}. Must be a single positive
+integer. Default \code{NULL} (all positions, in sequence order).}
 }
 \value{
-A data.frame with columns \code{sequence_id},
-  \code{position}, \code{matched_context}, \code{observed},
-  \code{predicted_prob}, \code{log_lik}.
+A data.frame with one row per scored (sequence, position)
+  and columns \code{sequence_id}, \code{position},
+  \code{matched_context} (the longest context in the tree that matched
+  the history), \code{observed} (the state that occurred),
+  \code{predicted_prob} (its predicted probability) and \code{log_lik}
+  (its natural-log contribution).
 }
 \description{
 Returns one row per held-out (sequence, position) with the matched
@@ -28,6 +32,7 @@ log-likelihood contribution. Useful for diagnostic plots showing
 where the model is confident vs. surprised.
 }
 \examples{
+set.seed(1)
 fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 1L)

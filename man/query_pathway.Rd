@@ -16,7 +16,7 @@ vector of states (\code{c("A","B","C")}).}
 \item{next_state}{Character. Next-state symbol to query, or
 \code{NULL} (default) to return the full conditional distribution.}
 
-\item{exact}{Logical. Default \code{FALSE} — fall back to longest
+\item{exact}{Logical. Default \code{FALSE} -- fall back to longest
 matching suffix.}
 }
 \value{
@@ -30,16 +30,14 @@ Returns the probability the fitted tree assigns to a given pathway
   \item \code{exact = TRUE}: the pathway must appear as a node;
     otherwise returns \code{NA}.
   \item \code{exact = FALSE} (default): if the pathway is missing,
-    falls back to the longest matching suffix that *is* in the tree
+    falls back to the longest matching suffix that \emph{is} in the tree
     (mirrors \code{predict.transitiontrees()}).
 }
 }
 \examples{
-\donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 query_pathway(tr, c("A","B"))
 query_pathway(tr, "A -> B", next_state = "C")
-}
 }

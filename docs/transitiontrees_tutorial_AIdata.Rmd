@@ -1086,19 +1086,6 @@ plot(pruned, style = "icicle")
 > rare informative contexts. Best when you want to *show the
 > imbalance itself* as the message.
 
-## 13.1d Interactive collapsible tree
-
-```{r plot-interactive, fig.height = 6, fig.width = 9}
-plot(pruned, style = "interactive")
-```
-
-> **Reading it.** A `collapsibleTree` widget — click to fold/expand,
-> hover for the full pathway, count, modal next code and distribution.
-> This is the *exploration* tool: collapse the giant Specification
-> spine and the rare informative branches (the ones this whole
-> tutorial is about) become legible. In static print it renders
-> fully expanded; in the HTML, fold the Specification subtree first.
-
 ## 13.2 `plot_pathways()` — pathway × next-state heatmap
 
 ```{r plot-pathways, fig.height = 6.5}
@@ -1227,7 +1214,7 @@ which is the whole point of a pathway-centric, testable model.
 | `plot.transitiontrees_bootstrap()` | trust-quadrant forest plot | §12.3 |
 | `plot_pathway_resamples()` | per-pathway resample histograms | §12.4 |
 | `summary.transitiontrees_bootstrap()` | extract `$summary` | §12.1 |
-| `plot.transitiontrees()` | dendrogram / horizontal / icicle / interactive | §13.1 |
+| `plot.transitiontrees()` | dendrogram / horizontal / icicle | §13.1 |
 | `plot_pathways()` | pathway × next-state heatmap | §13.2 |
 | `plot_divergence()` | KL lollipop | §13.3 |
 | `as.data.frame.*` | uniform tidy-extract | §2.2, §14 |

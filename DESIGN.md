@@ -24,8 +24,7 @@ data.frame (the pathway-centric API), a scalar / numeric vector
 
 `verb_transitiontrees()` for any non-generic verb that acts on a tree, so
 the public surface does not collide with sibling packages
-(`tna::prune`, `rpart::prune`, `Nestimate::path_dependence`,
-`Nestimate::pathways`):
+(to avoid clashing with common generics):
 
 ```r
 context_tree()         # fit
@@ -58,23 +57,23 @@ n_nodes(tree)                 # context (node) count; accessor for length(tree$n
 ### Argument vocabulary (one concept = one name)
 
 Argument names are consistent across the package and aligned with the
-sibling package **Nestimate** wherever an equivalent exists. The same
+sibling packages wherever an equivalent exists. The same
 concept always gets the same argument name:
 
-| Concept | Argument | Notes / Nestimate match |
+| Concept | Argument | Notes |
 |---|---|---|
-| The input sequence data | `data` | matches `build_network(data=)` |
+| The input sequence data | `data` | the input sequence data |
 | A fitted tree (non-generic verbs) | `tree` | the transitiontrees object |
 | A fitted tree (S3 generics) | `x` / `object` | required by `predict`/`logLik`/`plot`/`print` generics |
 | Held-out data to score | `newdata` | standard R scoring convention |
-| Minimum observation count | `min_count` | matches Nestimate `min_count` |
+| Minimum observation count | `min_count` | minimum context occurrence count |
 | How many ranked rows to return | `top` | on `common_/divergent_/sharp_pathways()` |
-| Resamples / permutations | `iter` | matches Nestimate `iter` |
+| Resamples / permutations | `iter` | number of resamples / permutations |
 | CV folds | `folds` | on `tune_tree()` |
-| Significance level | `alpha` | matches Nestimate `alpha` |
-| CI tail probability | `ci_level` | matches Nestimate `ci_level` |
-| RNG seed | `seed` | matches Nestimate `seed` |
-| Grouping | `group` | matches Nestimate `group` |
+| Significance level | `alpha` | significance level |
+| CI tail probability | `ci_level` | confidence-interval tail probability |
+| RNG seed | `seed` | RNG seed |
+| Grouping | `group` | grouping variable |
 | Tree depth / context order | `max_depth` | the depth cap |
 
 `generate_sequences(tree, n =, length =)` keeps `n` for the **number of
@@ -143,15 +142,18 @@ diagnostics. `compare_trees()`'s breakdown uses `count_a`,
 `tune_tree()` returns a `data.frame` with one row per grid point:
 
 ```
-max_depth | nmin | smoothing | prune | logLik | n_scored | perplexity | n_nodes_avg
+max_depth | nmin | smoothing | prune | logLik | n_scored | perplexity | n_nodes_avg | folds_failed
 ```
 
 `smoothing` is rendered as a label (`"floor"`, `"floor(ymin=0.001)"`,
 `"kneser_ney(discount=0.5)"`, …) so multi-method or
 hyperparameter-sweep grids are unambiguous in one column.
 `n_nodes_avg` is the mean tree size across folds (the post-prune size
-when `prune = TRUE`). Sorted by `perplexity` ascending; the minimum
-row is exposed via `attr(grid, "best")`.
+when `prune = TRUE`). `folds_failed` counts CV folds that errored for a
+configuration. Sorted by `perplexity` ascending; `attr(grid, "best")`
+exposes the minimum-perplexity row **among configurations whose every
+fold scored** (`folds_failed == 0` and finite perplexity), and is `NULL`
+if none qualify — a failed configuration is never reported as best.
 
 ### Scoring
 
@@ -190,19 +192,19 @@ $pathways     # data.frame with per-pathway divergence
 `context_tree(..., smoothing = c("floor", "laplace", "kneser_ney", "witten_bell", "jelinek_mercer"))`
 
 - `"floor"` (default) — `ymin` floor, with a `rule` argument:
-  - `"interpolate"` (default) — PST-compatible: a distribution with a
-    zero-count state is shifted toward uniform,
+  - `"interpolate"` (default) — the interpolating rule: a distribution
+    with a zero-count state is shifted toward uniform,
     `p_i = (1 - k*ymin)*p_i + ymin`, so each zero lands at exactly
     `ymin`; fully observed distributions stay raw MLE. This is what
-    gives full-depth machine-precision parity with `PST` (see
-    `PARITY.md`).
+    gives full-depth machine-precision parity with the external
+    reference (see `PARITY.md`).
   - `"cap"` — the original transitiontrees rule: clamp every probability up to
     `ymin` and renormalise. Opt-in via
     `list("floor", ymin = .., rule = "cap")`.
 - `"laplace"` — additive-α; `alpha` argument, default 1
 - `"kneser_ney"` — back-off along the suffix path with discount `D` and
-  continuation probabilities; canonical for PSTs (Begleiter, El-Yaniv
-  & Yona 2004 §3); `discount` argument, default 0.75
+  continuation probabilities; canonical for prediction suffix trees
+  (Begleiter, El-Yaniv & Yona 2004 §3); `discount` argument, default 0.75
 - `"witten_bell"` — interpolation with novelty-based weight
 - `"jelinek_mercer"` — fixed-λ interpolation between order-k and
   order-(k-1); `lambda` argument
@@ -227,27 +229,25 @@ Four accepted shapes:
    so identical data yields an identical tree regardless of container.
    A sequence is kept as long as it has ≥ 1 observed state (it then
    contributes to the root marginal even if it admits no transition).
-3. **`stslist`** (TraMineR) — extracted via `as.matrix(stslist)`;
+3. **`stslist`** — extracted via `as.matrix(stslist)`;
    alphabet honoured; weights honoured if present.
-4. **Dynalytics / `mohsaqr`-family model object**, taken directly —
-   a Nestimate `netobject` (`c("netobject", "cograph_network")`), a
-   cograph network object (`"cograph_network"`), or a `tna` object
-   (`"tna"`; also what `codyna::to_tna()` returns). Detection is by
+4. **A fitted transition/network object**, taken directly —
+   auto-detected by its S3 class (e.g. `netobject`
+   (`c("netobject", "cograph_network")`), `cograph_network`, or
+   `tna`). Detection is by
    class **or structurally** (any list-like object exposing a 2-D
    `$data`/`$sequences`/`$seqdata` slot), so a future sibling that
    follows the convention needs no code change. The state-label map
-   is resolved across family conventions — `$nodes` id/label table,
+   is resolved across these conventions — `$nodes` id/label table,
    positional `$labels`, or a `labels`/`alphabet` attribute — and an
-   integer-coded frame (tna) is decoded through it. So any object in
-   the
-   family is accepted *as is*: the sequence frame is **extracted**
+   integer-coded frame is decoded through it. So any such object is
+   accepted *as is*: the sequence frame is **extracted**
    from wherever the upstream kept it — `$data` first (the documented
    handoff), then `$sequences` / `$seqdata` / a `"data"`/`"sequences"`
    attribute / an embedded `netobject` — so the caller need not know
    the storage slot. The frame is a non-empty wide trailing-NA-padded
-   frame (one row per session), either **character** (Nestimate
-   netobject) **or integer-coded** (tna sequences, surfaced by
-   `cograph::as_cograph(<tna>)`): an integer-coded frame is *decoded*
+   frame (one row per session), either **character**
+   **or integer-coded**: an integer-coded frame is *decoded*
    through the `$nodes` id/label table (`label[match(code, id)]`), NA
    preserved — not rejected. Positional `$labels` are read as
    **1-based** (code k = state k); a `0` or otherwise out-of-range
@@ -271,9 +271,9 @@ Four accepted shapes:
    edge weights — this is the *same* invariant as the numeric-matrix
    rejection below, applied to the object form.
 
-**Grouped inputs.** A grouped family object — Nestimate
-`netobject_group`, tna `group_tna`, or any *named* list whose every
-element is a single family object — fits one tree per element and
+**Grouped inputs.** A grouped family object (`netobject_group` /
+`group_tna`), or any *named* list whose every
+element is a single family object, fits one tree per element and
 returns a `transitiontrees_group`. Equivalently, a single dataset plus
 `group =` (a `$metadata` column name for a network object, or a vector
 with one entry per sequence) is split and batch-fitted. All groups
@@ -299,7 +299,7 @@ Public S3 classes:
 - `transitiontrees` — fitted tree
 - `transitiontrees_group` — named list of `transitiontrees`s, one per group, from a
   grouped fit (`context_tree(..., group =)` or a grouped family object).
-  Follows the Nestimate `*_group` convention: same-key same-order named
+  Follows a `*_group` convention: same-key same-order named
   list, plain `lapply` (a single-group failure aborts the batch), outer
   class `c("transitiontrees_group", "list")`. Has `print` and `as.data.frame`
   (row-binds per-group pathway tables with a leading `group` column);
@@ -321,9 +321,9 @@ Public S3 classes:
 - **`"dendrogram"`** — pure-ggplot2 radial dendrogram. Root at the
   centre, leaves on the outer ring; node size = count, fill = state.
   No optional-package dependency.
-- **`"icicle"`** — circular partition (sunburst) via `ggraph` (in
-  Suggests). Errors with an install hint if `ggraph`/`tidygraph` are
-  missing.
+- **`"icicle"`** — circular partition (sunburst) drawn in pure
+  ggplot2; the partition layout is computed in base R, so there is no
+  optional-package dependency.
 - **`"interactive"`** — draggable/zoomable hierarchical htmlwidget via
   `visNetwork` (in Suggests). Same encoding as the static styles —
   node size = count, edge width = child's count (flow), fill = last
@@ -331,24 +331,69 @@ Public S3 classes:
   `visNetwork` is missing. `point_size_range` / `edge_size_range`
   control the pixel sizing (defaults `c(10, 45)` / `c(1, 10)`).
 
-The two pure-ggplot2 styles (`dendrogram`, `horizontal`) carry no
-optional-package dependency, so the default render works in any R
-context (script, knitr, headless). `icicle` and `interactive` each
-gate on their Suggests package and error with an install hint when it
-is absent.
+The three static styles (`horizontal`, `dendrogram`, `icicle`) carry no
+optional-package dependency, so they render in any R context (script,
+knitr, headless). Only `interactive` gates on a Suggests package
+(`visNetwork`) and errors with an install hint when it is absent.
 
 `plot_pathways()` and `plot_divergence()` are pathway-centric views
 that complement (don't replace) the tree plot.
 
+`plot_trajectories(tree, measure = c("frequency", "predictability"))`
+is the **forward** complement to `plot.transitiontrees()`: a prefix tree
+that follows sequences left-to-right in time, coloured either by how many
+sequences walk each path (`"frequency"`) or by the model's
+\eqn{P(\text{move} \mid \text{history})} at each step
+(`"predictability"`). Added 2026-06-07 to replace bespoke per-analysis
+plotting code: it is a first-class verb taking the tree explicitly (no
+hidden state). Drawn in pure ggplot2 (rectangular node glyphs), with no
+optional-package dependency.
+
+### Diagnostic plots (in ggplot)
+
+These cover the standard visual diagnostics for this model, but as
+returned ggplot objects and built on existing tidy accessors:
+
+- **`plot_distributions(tree, ...)`** — small-multiples of the
+  per-context next-state distribution; a per-context distribution view.
+- **`plot_predictive(tree, newdata, type =)`** — held-out scoring views
+  built on `score_positions()`: `"position"` (predicted prob of the
+  observed move by position), `"ecdf"`, and `"logloss"`
+  (\eqn{-\log_2 P(\mathrm{observed})} with a mean reference line — a
+  per-position log-loss view). `"logloss"` was added
+  2026-06-07 to close the log-loss gap; it is a new `type` value with a
+  backward-compatible default, so it does not change existing calls.
+- **`plot_pruning(tree, pathway, alpha =)`** — a suffix-chain pruning
+  view: walks one pathway's suffix chain (full context → drop the
+  oldest move → … → root) and marks which contexts `prune_tree()`
+  (criterion `"G2"`) keeps vs. prunes, with each context's next-state
+  distribution drawn as a stacked bar. Added 2026-06-07. Backed by the
+  internal `.suffix_chain()` helper (not exported); the keep/prune
+  decision reuses `prune_tree`'s `.ct_g2` rule rather than
+  reimplementing it. The distributions and counts it shows are
+  bit-identical to the external reference's per-suffix query and node
+  counts; see `PARITY.md`.
+
+**Justification for the two 2026-06-07 additions** (per the contract:
+departures from this file are noted here before shipping): they close
+the only two genuine gaps in the diagnostic-plot surface
+(the suffix-chain pruning view and the log-loss view). Both are
+pure-ggplot2, add no
+dependency, reuse existing accessors/internals, and are covered by unit
+tests plus gated equivalence tests against the external reference.
+`plot_pruning` is a new
+export; `plot_predictive`'s `"logloss"` is a new enum value with a
+compatible default. Neither touches the numeric estimator surface or the
+parity baseline.
+
 ## 8. Hard rules
 
-- Pure base R + ggplot2 in core. `visNetwork` and `ggraph` /
-  `tidygraph` only loaded inside the relevant plot branches via
-  `requireNamespace()`; they are Suggests, not Imports.
+- Pure base R + ggplot2 in core. The only optional plotting dependency
+  is `visNetwork` (for `style = "interactive"`), loaded inside that
+  branch via `requireNamespace()`; it is a Suggest, not an Import.
 - No Rcpp. No data.table. No tidyverse anywhere.
 - All vectorised operations use `vapply` / `tapply` / matrix indexing.
-- No for loops in hot paths (training loop in EM is the one exception
-  in Nestimate; transitiontrees has no equivalent).
+- No for loops in hot paths (transitiontrees has no equivalent).
 - Roxygen documentation on every exported function. `@return` clause
   mandatory.
 - Tests for every public function in `tests/testthat/`.
@@ -359,11 +404,10 @@ that complement (don't replace) the tree plot.
 
 ## 9. What `transitiontrees` is not
 
-- Not a hidden-Markov-model package — that's `seqHMM`, `depmixS4`.
-- Not a sequence-distance / clustering package — that's `TraMineR`.
-- Not an HONEM / higher-order-network embedding package — that's the
-  `Nestimate::build_honem()` / `Saebi 2020` family.
-- Not a fixed-order Markov chain package — that's `markovchain`.
+- Not a hidden-Markov-model package.
+- Not a sequence-distance / clustering package.
+- Not a higher-order-network embedding package.
+- Not a fixed-order Markov chain package.
 
-`transitiontrees` is the variable-order PST toolkit. Anything that doesn't
+`transitiontrees` is the variable-order prediction-suffix-tree toolkit. Anything that doesn't
 serve that focus belongs in another package.

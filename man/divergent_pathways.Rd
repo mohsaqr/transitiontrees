@@ -30,12 +30,11 @@ Pathways whose most likely next state actually flips between orders
 are marked in the \code{changes_prediction} column.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 divergent_pathways(tree, top = 6)
 divergent_pathways(tree, flips_only = TRUE)
-}
 
 }

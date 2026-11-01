@@ -35,6 +35,7 @@ requested range. A tidy context-mining table:
 "in which histories is the next move \code{state} unusually likely or unlikely?"
 }
 \examples{
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)

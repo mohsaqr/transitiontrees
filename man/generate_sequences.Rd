@@ -9,26 +9,30 @@ generate_sequences(tree, n = 5L, length = 10L, start = NULL)
 \arguments{
 \item{tree}{A \code{transitiontrees}.}
 
-\item{n}{Integer. Number of sequences to sample.}
+\item{n}{Integer. Number of sequences to sample. Default 5.}
 
-\item{length}{Integer. Length of each sampled sequence.}
+\item{length}{Integer. Length of each sampled sequence. Default 10.}
 
 \item{start}{NULL or character vector. If NULL (default), each
 sequence starts from the root marginal; otherwise must have
 length \code{n} and supply the first state of each sequence.}
 }
 \value{
-A character matrix of dimension \code{n x length}.
+A character matrix with \code{n} rows (one sampled sequence
+  each) and \code{length} columns (time-steps).
 }
 \description{
-Sample Sequences from a Fitted Context Tree
+Draws sequences by walking the fitted conditional distributions: each
+next state is sampled from the longest context in the tree that
+matches the history so far. Uses the session RNG, so call
+\code{set.seed()} first (or use \code{\link{simulate.transitiontrees}()}
+with \code{seed}) for reproducible draws.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 generate_sequences(tree, n = 5, length = 10)
-}
 
 }

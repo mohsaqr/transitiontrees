@@ -25,3 +25,15 @@ A ggplot object.
 \description{
 Plot a Group Comparison
 }
+\examples{
+set.seed(1)
+gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.6,.2)), simplify = FALSE)
+gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.2,.6)), simplify = FALSE)
+grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+                    max_depth = 1L)
+cmp <- compare_groups(grp, iter = 99L)
+plot(cmp)
+plot(cmp, style = "matrix")
+}

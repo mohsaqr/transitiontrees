@@ -24,3 +24,14 @@ the omnibus behavioral and usage permutation p-values, and how many
 pathways pass the FDR cutoff on each axis or flip their modal next
 state between groups. Returns the per-pathway table invisibly.
 }
+\examples{
+set.seed(1)
+gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.6,.2)), simplify = FALSE)
+gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+                           prob = c(.2,.2,.6)), simplify = FALSE)
+grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+                    max_depth = 1L)
+cmp <- compare_groups(grp, iter = 99L)
+summary(cmp)
+}

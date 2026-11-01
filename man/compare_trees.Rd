@@ -7,26 +7,35 @@
 compare_trees(tree_a, tree_b = NULL, iter = 200L, seed = 1L, symmetric = TRUE)
 }
 \arguments{
-\item{tree_a, tree_b}{context trees fit on data subsets A and B.
+\item{tree_a, tree_b}{\code{transitiontrees} objects fit on data
+subsets A and B (unweighted: a weighted tree is refused because the
+permutation refits from the raw sequences).
 Alternatively, pass a two-element \code{transitiontrees_group} (from
 \code{context_tree(..., group =)}) as \code{tree_a} and leave
 \code{tree_b = NULL}; its two trees are compared in key order.}
 
 \item{iter}{Integer. Number of permutations. Default 200.}
 
-\item{seed}{Integer. RNG seed for reproducibility. Default 1.}
+\item{seed}{Integer. RNG seed for reproducibility, passed to
+\code{set.seed()}. Default 1.}
 
-\item{symmetric}{Logical. Default \code{TRUE}.}
+\item{symmetric}{Logical. \code{TRUE} (default) uses the symmetric
+distance; \code{FALSE} uses \eqn{D_{KL}(A\|B)} only (see
+\code{\link{tree_distance}()}).}
 }
 \value{
 A \code{transitiontrees_comparison} object with components:
 \describe{
-  \item{pdist}{observed scalar distance}
-  \item{null_dist}{numeric vector, length \code{iter}}
-  \item{p_value}{one-sided p-value (proportion of null at least as
-    extreme as observed)}
-  \item{pathways}{per-pathway breakdown data.frame}
+  \item{pdist}{observed scalar distance (\code{\link{tree_distance}()}).}
+  \item{null_dist}{numeric vector, length \code{iter}: the distance
+    after each label permutation.}
+  \item{p_value}{one-sided permutation p-value,
+    \code{(1 + sum(null_dist >= pdist)) / (iter + 1)}.}
+  \item{pathways}{per-pathway breakdown data.frame, one row per
+    context in either tree; returned by \code{as.data.frame()}.}
 }
+The print method shows the observed distance, p-value and the most
+divergent pathways; \code{plot()} draws the null distribution.
 }
 \description{
 Computes the count-weighted symmetric Kullback-Leibler divergence
@@ -37,12 +46,10 @@ Use this to ask: do two cohorts (group A vs. group B, baseline vs.
 intervention) generate significantly different pathway dynamics?
 }
 \examples{
-\donttest{
 set.seed(1)
 m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
 tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
 compare_trees(tr1, tr2, iter = 50)
-}
 }

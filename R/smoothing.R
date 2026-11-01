@@ -224,33 +224,43 @@
 #' scheme without refitting the tree. Walks nodes top-down by depth so
 #' each node's parent is re-smoothed before its children read it.
 #'
-#' @param tree A \code{transitiontrees}.
+#' @param tree A \code{transitiontrees}, or a \code{transitiontrees_group}
+#'   (each member is re-smoothed and the group wrapper is kept).
 #' @param smoothing Smoothing specification: either a method name as a
 #'   string (uses defaults for that method's hyperparameters) or a list
 #'   of the form \code{list(method, ...kwargs)} for explicit
 #'   hyperparameters. Available methods: \code{"floor"} (\code{ymin =
 #'   0.001}), \code{"laplace"} (\code{alpha = 1}), \code{"kneser_ney"}
 #'   (\code{discount = 0.75}), \code{"witten_bell"},
-#'   \code{"jelinek_mercer"} (\code{lambda = 0.5}).
+#'   \code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
+#'   method also takes \code{rule = "interpolate"} (default) or
+#'   \code{"cap"}; see \code{\link{context_tree}()}.
 #'
-#' @return A new \code{transitiontrees} with re-smoothed probabilities. Counts
-#'   and topology are unchanged.
+#' @return A new \code{transitiontrees} (or \code{transitiontrees_group})
+#'   with re-smoothed probabilities. Counts and topology are unchanged.
 #'
 #' @details
 #' For \code{"kneser_ney"} the canonical continuation-distribution
 #' formulation requires per-state \emph{type counts}. transitiontrees does
 #' not track these; the implementation uses the parent's smoothed
 #' probability as the back-off distribution, an approximation
-#' discussed in Begleiter, El-Yaniv & Yona (2004), \emph{JAIR} 22, §3.
+#' discussed in Begleiter, El-Yaniv & Yona (2004), Section 3.
+#'
+#' @references
+#' Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
+#' variable order Markov models. \emph{Journal of Artificial Intelligence
+#' Research}, 22, 385-421. \doi{10.1613/jair.1491}
+#'
+#' Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
+#' techniques for language modeling. \emph{Computer Speech and Language},
+#' 13(4), 359-394. \doi{10.1006/csla.1999.0128}
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m  <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 #' smooth_tree(tr, "kneser_ney")
 #' smooth_tree(tr, list("kneser_ney", discount = 0.5))
-#' }
 #' @export
 smooth_tree <- function(tree, smoothing = "floor") {
   ## A transitiontrees_group re-smooths each member, preserving the wrapper.
@@ -283,8 +293,8 @@ smooth_tree <- function(tree, smoothing = "floor") {
 #' Compare Smoothing Schemes on One Dataset
 #'
 #' @description
-#' Fits a context tree under several smoothing schemes — holding
-#' \code{max_depth}, \code{nmin} and every other argument fixed — and
+#' Fits a context tree under several smoothing schemes -- holding
+#' \code{max_depth}, \code{min_count} and every other argument fixed -- and
 #' returns a tidy one-row-per-scheme comparison of tree size and
 #' in-sample perplexity. A convenience wrapper over repeated
 #' \code{\link{context_tree}} calls that collapses the usual five-line
@@ -293,24 +303,24 @@ smooth_tree <- function(tree, smoothing = "floor") {
 #' @details
 #' The perplexity reported is \strong{in-sample} (computed on the
 #' fitting data), so it rewards memorisation and must \emph{not} be used
-#' to pick a smoother — use \code{\link{tune_tree}()} for
+#' to pick a smoother -- use \code{\link{tune_tree}()} for
 #' out-of-sample selection. The point of this table is the side-by-side
 #' view and the invariance of \code{n_nodes} across schemes: smoothing
 #' changes the \emph{probabilities} inside the tree, never \emph{which}
-#' contexts exist (topology is set by \code{nmin}, not by the smoother).
+#' contexts exist (topology is set by \code{min_count}, not by the smoother).
 #'
 #' @param data Either sequence data in any form accepted by
 #'   \code{\link{context_tree}} (wide matrix / data.frame, list of
-#'   character vectors, an \code{stslist}, or a transition/network
-#'   object) — fitted afresh under each
-#'   scheme — \strong{or} an already-fitted \code{transitiontrees}, which is
+#'   character vectors, or a transition/network
+#'   object) -- fitted afresh under each
+#'   scheme -- \strong{or} an already-fitted \code{transitiontrees}, which is
 #'   \emph{re-smoothed} under each scheme (topology frozen, no
 #'   re-count; e.g. to sweep smoothers on a pruned tree).
 #' @param smoothing Character vector of smoothing-method names to
 #'   compare. Defaults to all five: \code{"floor"}, \code{"laplace"},
 #'   \code{"kneser_ney"}, \code{"witten_bell"}, \code{"jelinek_mercer"}.
 #' @param ... Further arguments passed to \code{\link{context_tree}}
-#'   (e.g. \code{max_depth}, \code{nmin}, \code{alphabet}), held fixed
+#'   (e.g. \code{max_depth}, \code{min_count}, \code{alphabet}), held fixed
 #'   across every scheme. Ignored when \code{data} is a fitted tree.
 #'
 #' @return A \code{data.frame} with one row per scheme (in the order
@@ -318,14 +328,21 @@ smooth_tree <- function(tree, smoothing = "floor") {
 #'   name), \code{n_nodes} (tree size) and \code{perplexity} (in-sample).
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' compare_smoothing(seqs, max_depth = 3L, min_count = 5L)
 #' compare_smoothing(seqs, smoothing = c("floor", "kneser_ney"),
 #'                   max_depth = 2L)
-#' }
+#'
+#' @references
+#' Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
+#' variable order Markov models. \emph{Journal of Artificial Intelligence
+#' Research}, 22, 385-421. \doi{10.1613/jair.1491}
+#'
+#' Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
+#' techniques for language modeling. \emph{Computer Speech and Language},
+#' 13(4), 359-394. \doi{10.1006/csla.1999.0128}
 #'
 #' @seealso \code{\link{smooth_tree}} to re-smooth a fitted tree
 #'   without re-counting; \code{\link{tune_tree}} for

@@ -72,8 +72,6 @@ test_that("interactive style renders a root-only tree (single-count scale, empty
 #       depth-1 ring_width fallback (153), arc-text angle (8-10) --------
 
 test_that("icicle renders with label_abbrev_fraction = NULL", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   set.seed(1)
   m <- matrix(sample(c("A", "B", "C"), 30 * 12, replace = TRUE), 30, 12)
   tr <- context_tree(m, max_depth = 2L, min_count = 3L)
@@ -83,8 +81,6 @@ test_that("icicle renders with label_abbrev_fraction = NULL", {
 })
 
 test_that("icicle renders a single-depth-1 tree (separator else-branch)", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   tr <- mk_single_d1()
   d1 <- Filter(function(k) k != "<root>" &&
                  length(strsplit(k, " -> ", fixed = TRUE)[[1L]]) == 1L,
@@ -96,8 +92,6 @@ test_that("icicle renders a single-depth-1 tree (separator else-branch)", {
 })
 
 test_that("icicle renders a depth-1-only tree (ring-width fallback)", {
-  skip_if_not_installed("ggraph")
-  skip_if_not_installed("tidygraph")
   set.seed(3)
   seqs <- replicate(80, sample(c("A", "B", "C"), 5, replace = TRUE),
                     simplify = FALSE)

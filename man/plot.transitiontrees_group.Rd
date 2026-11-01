@@ -24,10 +24,9 @@ captioned with its group name; the named list of plot objects is
 returned invisibly for further use.
 }
 \examples{
-\donttest{
+set.seed(1)
 m   <- matrix(sample(c("A","B","C"), 200, replace = TRUE), 40, 5)
 grp <- context_tree(m, group = rep(c("x","y"), each = 20),
                     max_depth = 2L)
 plot(grp)                         # one tree per group
-}
 }

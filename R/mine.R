@@ -26,6 +26,7 @@
 #'   with the same schema.
 #'
 #' @examples
+#' set.seed(1)
 #' seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 2L)
@@ -89,6 +90,7 @@ mine_contexts <- function(tree, state, min_prob = NULL, max_prob = NULL,
 #'   \code{perplexity}), the top \code{n} by the chosen direction.
 #'
 #' @examples
+#' set.seed(1)
 #' fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(fit, max_depth = 2L)

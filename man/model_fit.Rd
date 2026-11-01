@@ -31,12 +31,11 @@ training \code{df}). A \code{transitiontrees_group} returns one row per
 group, tagged with a leading \code{group} column.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(60, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L, min_count = 3L)
 model_fit(tree)
-}
 
 }
 \seealso{

@@ -21,3 +21,7 @@ Print method for the object returned by
 \code{\link{summary.transitiontrees}}: a one-line banner followed by the
 leading rows of the canonical pathway table.
 }
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+print(summary(tree), n = 5L)
+}

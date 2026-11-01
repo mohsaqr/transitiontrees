@@ -14,12 +14,20 @@
 \item{...}{Ignored.}
 }
 \value{
-A data.frame with columns \code{pathway}, \code{count_a},
-  \code{count_b}, \code{divergence_ab}, \code{divergence_ba},
-  \code{divergence_sym}.
+A data.frame with one row per context in either tree, sorted
+  by \code{divergence_sym} descending, and columns \code{pathway},
+  \code{count_a}, \code{count_b} (the context's count in each tree,
+  0 when absent), \code{divergence_ab}, \code{divergence_ba} (the two
+  directed Kullback-Leibler divergences, nats) and
+  \code{divergence_sym} (their mean).
 }
 \description{
 Uniform tidy-extract: returns the per-pathway divergence breakdown
-(\code{object$pathways}) — the consumer-facing detail behind the
+(\code{object$pathways}) -- the consumer-facing detail behind the
 scalar \code{pdist} and the permutation \code{p_value}.
+}
+\examples{
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+as.data.frame(compare_trees(grp, iter = 50L))
 }

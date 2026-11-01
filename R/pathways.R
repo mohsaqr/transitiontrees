@@ -57,12 +57,11 @@
 #' where the longer history changes which next state is most likely.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' tree_pathways(tree)
-#' }
 #'
 #' @export
 tree_pathways <- function(tree, min_count = 1L,
@@ -155,13 +154,12 @@ tree_pathways <- function(tree, min_count = 1L,
 #'   sorted by count descending.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' common_pathways(tree, top = 8)
 #' common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
-#' }
 #'
 #' @export
 common_pathways <- function(tree, top = 10L, depth = NULL, min_count = 1L) {
@@ -194,13 +192,12 @@ common_pathways <- function(tree, top = 10L, depth = NULL, min_count = 1L) {
 #'   sorted by \code{divergence} descending.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' divergent_pathways(tree, top = 6)
 #' divergent_pathways(tree, flips_only = TRUE)
-#' }
 #'
 #' @export
 divergent_pathways <- function(tree, top = 10L, min_count = 1L,
@@ -232,12 +229,11 @@ divergent_pathways <- function(tree, top = 10L, min_count = 1L,
 #'   sorted by \code{next_probability} descending.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3)
 #' sharp_pathways(tree, top = 5)
-#' }
 #'
 #' @export
 sharp_pathways <- function(tree, top = 10L, min_count = 1L) {

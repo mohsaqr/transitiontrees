@@ -137,11 +137,14 @@
 #' does use \code{\link{tree_distance}()} (symmetric KL) for
 #' consistency with the pairwise function.
 #'
-#' @param group A \code{transitiontrees_group}.
+#' @param group A \code{transitiontrees_group} of unweighted trees (a
+#'   weighted member is refused: the permutation recounts the raw
+#'   sequences).
 #' @param iter Integer. Number of label permutations. Default 999.
 #' @param min_count Integer. Drop contexts whose total count across all
 #'   groups is below this. Default 1.
-#' @param seed Integer or \code{NULL}. RNG seed. Default 1.
+#' @param seed Integer or \code{NULL}. RNG seed passed to
+#'   \code{set.seed()}; \code{NULL} uses the current RNG state. Default 1.
 #' @param block Block ids for a \strong{stratified} permutation: group
 #'   labels are shuffled only \emph{within} each block, so the null
 #'   respects nested / repeated-measures structure (e.g. several
@@ -163,15 +166,30 @@
 #'       \code{jsd_padj}, \code{usage_g2}, \code{usage_p},
 #'       \code{usage_padj}. \code{usage_*} is \code{NA} for the root,
 #'       which has no prevalence test.}
-#'     \item{omnibus}{Two-row data.frame: the behavioral and usage
-#'       global statistics with permutation p-values.}
+#'     \item{omnibus}{Two-row data.frame (one row per axis) with columns
+#'       \code{axis}, \code{statistic}, \code{value} and \code{p_value}
+#'       (permutation p-value: one plus the number of permuted statistics
+#'       at least the observed one, over \code{iter + 1}).}
 #'     \item{distance_matrix}{K x K symmetric-KL distance matrix between
 #'       the groups (from \code{tree_distance()}).}
-#'     \item{groups, iter, seed, n_contexts}{Configuration.}
+#'     \item{groups, iter, seed, n_contexts, stratified}{Configuration;
+#'       \code{stratified} is \code{TRUE} when a \code{block} was used.}
 #'   }
+#' \code{as.data.frame()} returns the \code{pathways} table; the print
+#' method shows the omnibus table and the top pathways; \code{summary()}
+#' prints a compact verdict.
+#'
+#' @references
+#' Lin, J. (1991). Divergence measures based on the Shannon entropy.
+#' \emph{IEEE Transactions on Information Theory}, 37(1), 145-151.
+#'
+#' Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
+#' rate: a practical and powerful approach to multiple testing.
+#' \emph{Journal of the Royal Statistical Society: Series B}, 57(1),
+#' 289-300.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
 #'                            prob = c(.2,.6,.2)), simplify = FALSE)
 #' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
@@ -180,7 +198,7 @@
 #'                     max_depth = 1L)
 #' cmp <- compare_groups(grp, iter = 199L)
 #' cmp
-#' }
+#' as.data.frame(cmp)
 #' @seealso \code{\link{compare_trees}} for the pairwise permutation test.
 #' @export
 compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
@@ -352,6 +370,16 @@ compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
 #'   Default 3.
 #' @param ... Ignored.
 #' @return \code{x} invisibly.
+#' @examples
+#' set.seed(1)
+#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.6,.2)), simplify = FALSE)
+#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.2,.6)), simplify = FALSE)
+#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+#'                     max_depth = 1L)
+#' cmp <- compare_groups(grp, iter = 99L)
+#' print(cmp, n = 3L)
 #' @export
 print.transitiontrees_group_comparison <- function(x, n = 10L, digits = 3L, ...) {
   cat(sprintf("<transitiontrees_group_comparison>  %d groups, %d %spermutations\n",
@@ -393,6 +421,16 @@ print.transitiontrees_group_comparison <- function(x, n = 10L, digits = 3L, ...)
 #' @param ... Ignored.
 #' @return Invisibly, the per-pathway data.frame (\code{object$pathways});
 #'   see \code{\link{compare_groups}} for the column vocabulary.
+#' @examples
+#' set.seed(1)
+#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.6,.2)), simplify = FALSE)
+#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.2,.6)), simplify = FALSE)
+#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+#'                     max_depth = 1L)
+#' cmp <- compare_groups(grp, iter = 99L)
+#' summary(cmp)
 #' @export
 summary.transitiontrees_group_comparison <- function(object, alpha = 0.05, ...) {
   p <- object$pathways
@@ -418,8 +456,18 @@ summary.transitiontrees_group_comparison <- function(object, alpha = 0.05, ...) 
 #' @param x A \code{transitiontrees_group_comparison}.
 #' @param row.names,optional Ignored.
 #' @param ... Ignored.
-#' @return A data.frame of per-pathway results; see
+#' @return A data.frame with one row per tested context; see
 #'   \code{\link{compare_groups}} for the column vocabulary.
+#' @examples
+#' set.seed(1)
+#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.6,.2)), simplify = FALSE)
+#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.2,.6)), simplify = FALSE)
+#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+#'                     max_depth = 1L)
+#' cmp <- compare_groups(grp, iter = 99L)
+#' as.data.frame(cmp)
 #' @export
 as.data.frame.transitiontrees_group_comparison <- function(x, row.names = NULL,
                                                        optional = FALSE, ...) {
@@ -436,6 +484,17 @@ as.data.frame.transitiontrees_group_comparison <- function(x, row.names = NULL,
 #' @param alpha Numeric. FDR cutoff for highlighting. Default 0.05.
 #' @param ... Ignored.
 #' @return A ggplot object.
+#' @examples
+#' set.seed(1)
+#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.6,.2)), simplify = FALSE)
+#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
+#'                            prob = c(.2,.2,.6)), simplify = FALSE)
+#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
+#'                     max_depth = 1L)
+#' cmp <- compare_groups(grp, iter = 99L)
+#' plot(cmp)
+#' plot(cmp, style = "matrix")
 #' @export
 plot.transitiontrees_group_comparison <- function(x, style = c("divergence",
                                                             "matrix"),

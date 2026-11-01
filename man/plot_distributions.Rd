@@ -29,10 +29,9 @@ numbers as a heatmap, this shows each context's distribution as its
 own panel, with the modal bar highlighted.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)
 plot_distributions(tree, top = 9)
-}
 }

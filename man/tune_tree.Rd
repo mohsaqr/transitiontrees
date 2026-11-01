@@ -31,8 +31,8 @@ Default \code{2:5}.}
 Default \code{c(3L, 5L, 10L)}.}
 
 \item{smoothing}{Smoothing grid. A character vector of method names
-(e.g. \code{c("floor", "kneser_ney")}) — each method is tried with
-its default hyperparameters — or a list of explicit specs (e.g.
+(e.g. \code{c("floor", "kneser_ney")}) -- each method is tried with
+its default hyperparameters -- or a list of explicit specs (e.g.
 \code{list(list("floor", ymin = 0.001), list("floor", ymin = 0.005))}
 for a hyperparameter sweep within one method).}
 
@@ -44,7 +44,8 @@ Default \code{c(FALSE, TRUE)}.}
 
 \item{folds}{Integer. Number of CV folds. Default 5.}
 
-\item{seed}{Integer. RNG seed for reproducible folds. Default 1.}
+\item{seed}{Integer. RNG seed for reproducible folds, passed to
+\code{set.seed()}. Default 1.}
 
 \item{actor, time, action, order, session, time_threshold}{Long-format
 reshaping, forwarded to \code{\link{prepare_input}()} when
@@ -59,26 +60,27 @@ A \code{transitiontrees_tune} object: a data.frame with one row per
   \code{smoothing}, \code{prune}, \code{logLik}, \code{n_scored},
   \code{perplexity}, \code{n_nodes_avg}, and \code{folds_failed} (the
   number of CV folds that errored for that configuration), sorted by
-  \code{perplexity} ascending. \code{attr(result, "best")} carries the
-  minimum-perplexity row \strong{among configurations whose every fold
-  scored}; it is \code{NULL} if none did. A warning is issued when any
+  \code{perplexity} ascending. \code{nmin} is the \code{min_count}
+  grid value, \code{logLik} the summed held-out log-likelihood,
+  \code{n_scored} the number of held-out positions scored. The
+  \code{"best"} attribute holds the minimum-perplexity row
+  \strong{among configurations whose every fold scored} (\code{NULL}
+  if none did); the print method shows it under \dQuote{best} and
+  \code{plot()} marks it with a star. A warning is issued when any
   configuration had a failed fold.
 }
 \description{
 Runs k-fold cross-validation over a grid of fitting and pruning
-hyperparameters. Returns a data.frame ranked by held-out perplexity.
-The configuration with minimum perplexity is exposed via
-\code{attr(result, "best")}.
+hyperparameters. Returns a data.frame ranked by held-out perplexity;
+printing it also shows the minimum-perplexity configuration.
 
 Folds are at the sequence level (each fold holds out whole
 sequences, not positions within sequences).
 }
 \examples{
-\donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
 tune_tree(m, max_depth = 1:3,
               smoothing = c("floor", "kneser_ney"),
               prune = FALSE, folds = 4)
-}
 }

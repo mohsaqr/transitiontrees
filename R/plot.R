@@ -293,6 +293,18 @@
     body_df$context
   }
 
+  ## Per-node label clearance. The size aesthetic maps count -> area
+  ## (point diameter ~ sqrt of the rescaled count), so the large depth-1
+  ## hubs need their label pushed further below the glyph than the small
+  ## leaf nodes. Offset each label by an amount that grows with the
+  ## node's plotted radius instead of a single fixed nudge.
+  n_rng <- if (nrow(body_df) > 0L) range(body_df$n) else c(0, 0)
+  size_aes <- if (nrow(body_df) > 0L && diff(n_rng) > 0)
+    point_size_range[1L] +
+      sqrt((body_df$n - n_rng[1L]) / diff(n_rng)) * diff(point_size_range)
+  else rep(mean(point_size_range), nrow(body_df))
+  body_df$label_y <- body_df$y - (0.012 + size_aes * 0.0035)
+
   ggplot2::ggplot() +
     ggplot2::geom_path(
       data = e_paths,
@@ -309,8 +321,8 @@
     ) +
     ggplot2::geom_text(
       data = body_df,
-      ggplot2::aes(x = .data$x, y = .data$y, label = .data$label),
-      hjust = 0.5, vjust = 1, nudge_y = -0.035, size = 2.5,
+      ggplot2::aes(x = .data$x, y = .data$label_y, label = .data$label),
+      hjust = 0.5, vjust = 1, size = 2.5,
       lineheight = 0.9, colour = "grey20", family = "mono", na.rm = TRUE
     ) +
     ggplot2::geom_point(
@@ -358,7 +370,7 @@
 #' @description
 #' Renders a fitted transitiontrees in one of four styles:
 #' \itemize{
-#'   \item \code{"horizontal"} (default) — pure-ggplot2 left-to-right
+#'   \item \code{"horizontal"} (default) -- pure-ggplot2 left-to-right
 #'     phylogram: root on the left, contexts fanned out vertically to
 #'     the right, each labelled beneath with its full arrow-notation
 #'     context and (by default) its modal prediction
@@ -366,12 +378,12 @@
 #'     \emph{most recent} move (rightmost token), so each branch off a
 #'     depth-1 hub shares a colour. Set \code{show_prediction = FALSE}
 #'     for context-only labels.
-#'   \item \code{"dendrogram"} — pure-ggplot2 radial tree: root at the
+#'   \item \code{"dendrogram"} -- pure-ggplot2 radial tree: root at the
 #'     centre, leaves on the outer ring.
-#'   \item \code{"icicle"} — circular partition / sunburst via
-#'     \code{ggraph} (Suggests); inner ring carries full state
-#'     names, outer rings carry 3-letter abbreviations.
-#'   \item \code{"interactive"} — \code{visNetwork} htmlwidget
+#'   \item \code{"icicle"} -- pure-ggplot2 circular partition / sunburst;
+#'     inner ring carries full state names, outer rings carry 3-letter
+#'     abbreviations.
+#'   \item \code{"interactive"} -- \code{visNetwork} htmlwidget
 #'     (Suggests). A draggable, zoomable hierarchical tree; node size
 #'     = context count and edge width = child's count (\dQuote{flow}),
 #'     the same encoding as the static styles. Hover for a tooltip
@@ -407,22 +419,21 @@
 #'   \code{htmlwidget} for \code{"interactive"}.
 #'
 #' @details
-#' \code{"icicle"} requires \code{ggraph} + \code{tidygraph};
-#' \code{"interactive"} requires \code{visNetwork}. The dispatcher
-#' errors informatively if a needed Suggests dependency is missing.
+#' The three static styles (\code{"horizontal"}, \code{"dendrogram"},
+#' \code{"icicle"}) are drawn in pure \pkg{ggplot2}. \code{"interactive"}
+#' requires \code{visNetwork}; the dispatcher errors informatively if it
+#' is missing.
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 #' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
 #' plot(tr)                           # left-to-right phylogram (default)
 #' plot(tr, style = "dendrogram")     # radial dendrogram
-#' if (requireNamespace("ggraph", quietly = TRUE) &&
-#'     requireNamespace("tidygraph", quietly = TRUE))
-#'   plot(tr, style = "icicle")       # sunburst (needs ggraph + tidygraph)
-#' if (requireNamespace("visNetwork", quietly = TRUE))
-#'   plot(tr, style = "interactive")  # visNetwork htmlwidget (Suggests)
+#' plot(tr, style = "icicle")         # sunburst
+#' if (requireNamespace("visNetwork", quietly = TRUE)) {
+#'   widget <- plot(tr, style = "interactive")  # visNetwork htmlwidget
+#'   if (interactive()) print(widget)           # opens in the viewer
 #' }
 #' @export
 plot.transitiontrees <- function(x,
@@ -432,13 +443,6 @@ plot.transitiontrees <- function(x,
                           edge_size_range  = NULL,
                           ...) {
   style <- match.arg(style)
-  if (style == "icicle" &&
-      (!requireNamespace("ggraph", quietly = TRUE) ||
-       !requireNamespace("tidygraph", quietly = TRUE))) {
-    stop("plot(style = 'icicle') requires 'ggraph' and 'tidygraph'. ",
-         "Install both, or use style = 'dendrogram' / 'horizontal'.",
-         call. = FALSE)
-  }
   if (style == "interactive" &&
       !requireNamespace("visNetwork", quietly = TRUE)) {
     stop("plot(style = 'interactive') requires 'visNetwork'. ",
@@ -478,12 +482,11 @@ plot.transitiontrees <- function(x,
 #'   of the per-member plot objects.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' m   <- matrix(sample(c("A","B","C"), 200, replace = TRUE), 40, 5)
 #' grp <- context_tree(m, group = rep(c("x","y"), each = 20),
 #'                     max_depth = 2L)
 #' plot(grp)                         # one tree per group
-#' }
 #' @export
 plot.transitiontrees_group <- function(x, ...) {
   plots <- lapply(names(x), function(nm) {

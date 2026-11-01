@@ -1,7 +1,8 @@
 #' Student engagement trajectories
 #'
 #' An example set of categorical learning-engagement trajectories used in
-#' the \pkg{transitiontrees} examples and the \dQuote{trajectories} vignette.
+#' the \pkg{transitiontrees} examples and in the \dQuote{Getting started},
+#' \dQuote{Advanced analysis} and \dQuote{Visualization} vignettes.
 #' Each row is one learner, each column a time-step, and each cell the
 #' engagement state at that step. Trailing \code{NA}s mark the end of a
 #' trajectory. This wide character matrix is exactly the shape
@@ -51,10 +52,18 @@
 #' demonstrate long-format loading with Unix time and sessions. Bundled
 #' example dataset.
 #'
-#' @format A \code{data.frame} with 8551 rows and 9 columns, including
-#'   \code{project}, \code{session_id}, \code{timestamp} (Unix seconds),
-#'   \code{code} / \code{cluster} (the state at two granularities), and
-#'   \code{code_order} / \code{order_in_session} (within-sequence order).
+#' @format A \code{data.frame} with 8551 rows and 9 columns:
+#'   \describe{
+#'     \item{message_id}{integer; the message the code was assigned to.}
+#'     \item{project}{character; the project (the actor).}
+#'     \item{session_id}{character; the session id.}
+#'     \item{timestamp}{integer; Unix time in seconds.}
+#'     \item{session_date}{character; the session date (YYYY-MM-DD).}
+#'     \item{code}{character; the move (eight codes, the fine state).}
+#'     \item{cluster}{character; the coarse state the code belongs to.}
+#'     \item{code_order}{integer; order of the code within its message.}
+#'     \item{order_in_session}{integer; order within the session.}
+#'   }
 #' @source Bundled example dataset.
 #' @examples
 #' data(ai_long)
@@ -62,16 +71,16 @@
 #'              action = "code", max_depth = 2L)
 "ai_long"
 
-#' Student engagement state sequences (stslist)
+#' Student engagement state sequences (wide format)
 #'
-#' A wide set of student engagement-state sequences as a
-#' \code{stslist} (the state-sequence object \code{seqdef()} produces).
-#' Used to demonstrate loading sequence objects directly into
-#' \code{\link{context_tree}()}. Bundled example dataset.
+#' A wide set of student engagement-state sequences, one learner per row
+#' and one time-step per column. Used to demonstrate fitting from wide
+#' sequence data and from the network objects (\pkg{tna} / \pkg{Nestimate})
+#' built on top of it. Bundled example dataset.
 #'
-#' @format A \code{stslist} with 1000 rows (learners) and 25
-#'   columns (time-steps). States \code{"Active"}, \code{"Average"},
-#'   \code{"Disengaged"}; \code{"\%"} marks missing/void positions.
+#' @format A \code{data.frame} with 1000 rows (learners) and 25 columns
+#'   (time-steps). States \code{"Active"}, \code{"Average"},
+#'   \code{"Disengaged"}; \code{NA} marks missing / dropped-out positions.
 #' @source Bundled example dataset.
 #' @examples
 #' data(engagement)

@@ -119,12 +119,11 @@
 #'   \code{df} (number of free parameters in the fitted tree).
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
 #'                      max_depth = 2, min_count = 2)
 #' logLik(tree)
 #' AIC(tree); BIC(tree)
-#' }
 #' @export
 logLik.transitiontrees <- function(object, newdata = NULL, ...) {
   alpha_size <- length(object$alphabet)
@@ -146,11 +145,14 @@ logLik.transitiontrees <- function(object, newdata = NULL, ...) {
 #' @param object A \code{transitiontrees}.
 #' @param ... Ignored.
 #' @return Integer. The number of state observations the tree was fitted
-#'   on — the (weight-adjusted) token total, equal to the \code{"nobs"}
+#'   on -- the (weight-adjusted) token total, equal to the \code{"nobs"}
 #'   attribute of the \emph{in-sample} \code{\link{logLik.transitiontrees}()}.
-#'   (A held-out \code{logLik(newdata)} reports its own \code{"nobs"} —
+#'   (A held-out \code{logLik(newdata)} reports its own \code{"nobs"} --
 #'   the positions actually scored, e.g. excluding states outside the
-#'   tree's alphabet — which can be smaller.)
+#'   tree's alphabet -- which can be smaller.)
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 2L)
+#' nobs(tree)
 #' @export
 nobs.transitiontrees <- function(object, ...) {
   as.integer(object$n_obs)
@@ -171,11 +173,10 @@ nobs.transitiontrees <- function(object, ...) {
 #'   in-sample perplexity.
 #' @return Numeric scalar.
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
 #'                      max_depth = 2, min_count = 2)
 #' perplexity(tree)
-#' }
 #' @export
 perplexity <- function(tree, newdata = NULL) {
   stopifnot(inherits(tree, "transitiontrees"))
@@ -194,9 +195,12 @@ perplexity <- function(tree, newdata = NULL) {
 #'
 #' @param tree A \code{transitiontrees}.
 #' @param newdata Sequence data.
-#' @return A data.frame with columns \code{sequence_id},
-#'   \code{n_scored}, \code{log_lik}, \code{perplexity}.
+#' @return A data.frame with one row per sequence in \code{newdata} and
+#'   columns \code{sequence_id} (row / element index of \code{newdata}),
+#'   \code{n_scored} (positions scored), \code{log_lik} (natural-log
+#'   likelihood) and \code{perplexity}.
 #' @examples
+#' set.seed(1)
 #' fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(fit, max_depth = 1L)
@@ -236,13 +240,18 @@ score_sequences <- function(tree, newdata) {
 #' @param tree A \code{transitiontrees}.
 #' @param newdata Sequence data.
 #' @param worst Integer or \code{NULL}. If given, return only the
-#'   \code{worst} positions — those with the lowest
-#'   \code{predicted_prob} (the moves the model was most surprised by).
-#'   Default \code{NULL} (all positions, in sequence order).
-#' @return A data.frame with columns \code{sequence_id},
-#'   \code{position}, \code{matched_context}, \code{observed},
-#'   \code{predicted_prob}, \code{log_lik}.
+#'   \code{worst} positions -- those with the lowest
+#'   \code{predicted_prob} (the moves the model was most surprised by),
+#'   sorted ascending by \code{predicted_prob}. Must be a single positive
+#'   integer. Default \code{NULL} (all positions, in sequence order).
+#' @return A data.frame with one row per scored (sequence, position)
+#'   and columns \code{sequence_id}, \code{position},
+#'   \code{matched_context} (the longest context in the tree that matched
+#'   the history), \code{observed} (the state that occurred),
+#'   \code{predicted_prob} (its predicted probability) and \code{log_lik}
+#'   (its natural-log contribution).
 #' @examples
+#' set.seed(1)
 #' fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(fit, max_depth = 1L)
@@ -289,12 +298,11 @@ score_positions <- function(tree, newdata, worst = NULL) {
 #'   \code{nobs}, \code{AIC}, \code{BIC}, \code{perplexity}.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(60, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 2L, min_count = 3L)
 #' model_fit(tree)
-#' }
 #'
 #' @seealso \code{\link{perplexity}}, \code{\link{logLik.transitiontrees}}.
 #' @export
@@ -336,19 +344,18 @@ model_fit <- function(tree, newdata = NULL) {
 #' Number of Contexts (Nodes) in a Tree
 #'
 #' @description
-#' The count of contexts the tree represents — an intuitive accessor for
-#' \code{length(tree$nodes)} (the number printed in the tree banner).
+#' The number of contexts (nodes, including the root) the tree
+#' represents -- the number printed in the tree banner.
 #'
 #' @param tree A \code{transitiontrees} or \code{transitiontrees_group}.
 #' @return An integer. For a \code{transitiontrees_group}, a named integer
 #'   vector with one count per group.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' n_nodes(context_tree(seqs, max_depth = 3L))
-#' }
 #' @export
 n_nodes <- function(tree) {
   if (inherits(tree, "transitiontrees_group"))

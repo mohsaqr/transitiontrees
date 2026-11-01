@@ -7,27 +7,28 @@
 tree_distance(tree_a, tree_b, symmetric = TRUE)
 }
 \arguments{
-\item{tree_a, tree_b}{context trees with matching alphabets.}
+\item{tree_a, tree_b}{\code{transitiontrees} objects with matching
+alphabets.}
 
 \item{symmetric}{Logical. \code{TRUE} (default) returns
 \eqn{0.5(D_{KL}(A\|B) + D_{KL}(B\|A))}; \code{FALSE} returns
 \eqn{D_{KL}(A\|B)} only.}
 }
 \value{
-Numeric scalar.
+Numeric scalar (nats); 0 for identical predictions.
 }
 \description{
-Bare-metal scalar: a count-weighted average of per-context symmetric
-Kullback-Leibler divergence over the union of pathways present in
-either tree. No null distribution.
+A single number: the count-weighted average of per-context symmetric
+Kullback-Leibler divergence (in nats) over the union of pathways
+present in either tree. A context missing from one tree is read from
+its longest matching suffix there. No null distribution; use
+\code{\link{compare_trees}()} for a permutation test.
 }
 \examples{
-\donttest{
 set.seed(1)
 m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
 tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
 tree_distance(tr1, tr2)
-}
 }

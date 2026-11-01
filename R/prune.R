@@ -23,13 +23,24 @@
 #' @param threshold Numeric. Minimum information gain in nats for
 #'   \code{"KL"}; ignored otherwise. Default 0.005.
 #'
-#' @return A pruned \code{transitiontrees} with \code{tree$pruned = TRUE} and
-#'   \code{tree$pruning} carrying the criterion + threshold settings.
+#' @return A pruned \code{transitiontrees} (same structure as
+#'   \code{\link{context_tree}()} returns, fewer nodes) whose \code{pruned}
+#'   component is \code{TRUE} and whose \code{pruning} component records
+#'   \code{criterion}, \code{alpha} and \code{threshold}; the print banner
+#'   reports both. A \code{transitiontrees_group} input returns a
+#'   \code{transitiontrees_group} of pruned members.
 #'
 #' @details
 #' For each leaf, compute the criterion against its parent. If the
 #' criterion does not exceed its threshold, drop the leaf and revisit
 #' the parent. Repeat until stable. The root is never dropped.
+#' \code{"G2"} keeps a leaf when its likelihood-ratio statistic against
+#' the parent exceeds the chi-square critical value at \code{alpha} with
+#' \eqn{|S| - 1} degrees of freedom (one test per leaf, no multiplicity
+#' correction). \code{"AIC"} and \code{"BIC"} keep a leaf when its
+#' penalised log-likelihood beats the parent's, with penalty
+#' \eqn{2(|S| - 1)} and \eqn{\log(n)(|S| - 1)} respectively (\eqn{n} =
+#' the leaf's count).
 #' Surviving nodes keep their original smoothed \code{prob} vector
 #' (whatever smoothing scheme was applied at fit time).
 #'
@@ -40,16 +51,23 @@
 #' \code{1 / log(2)} (~1.4427) to read it on the pathway-table scale.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
 #'                     simplify = FALSE)
 #' tree   <- context_tree(seqs, max_depth = 4)
 #' pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
-#' }
+#' pruned
+#' prune_tree(tree, criterion = "BIC")
 #'
 #' @references
 #' Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia.
 #' \emph{Machine Learning}, 25, 117-149.
+#'
+#' Akaike, H. (1974). A new look at the statistical model identification.
+#' \emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
+#'
+#' Schwarz, G. (1978). Estimating the dimension of a model. \emph{The
+#' Annals of Statistics}, 6(2), 461-464.
 #'
 #' @export
 prune_tree <- function(tree,
@@ -134,8 +152,8 @@ prune_tree <- function(tree,
 #' Compare Pruning Criteria on One Tree
 #'
 #' @description
-#' Prunes a fitted tree under several criteria — holding \code{alpha}
-#' and \code{threshold} fixed — and returns a tidy one-row-per-criterion
+#' Prunes a fitted tree under several criteria -- holding \code{alpha}
+#' and \code{threshold} fixed -- and returns a tidy one-row-per-criterion
 #' summary of how aggressively each trims the tree. A convenience
 #' wrapper over repeated \code{\link{prune_tree}} calls that
 #' collapses the usual \code{vapply()} criterion loop into one call.
@@ -143,8 +161,8 @@ prune_tree <- function(tree,
 #' @param tree A \code{transitiontrees} (typically unpruned).
 #' @param criterion Character vector of criteria to compare. Defaults
 #'   to all four: \code{"G2"}, \code{"KL"}, \code{"AIC"}, \code{"BIC"}.
-#' @param alpha Significance level for \code{"G2"} (and the AIC/BIC
-#'   penalties' chi-square cutoff). Default 0.05.
+#' @param alpha Significance level for \code{"G2"}; not used by
+#'   \code{"KL"}, \code{"AIC"} or \code{"BIC"}. Default 0.05.
 #' @param threshold Minimum information gain in nats for \code{"KL"}.
 #'   Default 0.005.
 #'
@@ -154,14 +172,12 @@ prune_tree <- function(tree,
 #'   of the original nodes removed).
 #'
 #' @examples
-#' \donttest{
 #' set.seed(1)
 #' seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 4L, min_count = 3L)
 #' compare_pruning(tree)
 #' compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
-#' }
 #'
 #' @seealso \code{\link{prune_tree}} to apply one criterion,
 #'   \code{\link{tune_tree}} for cross-validated selection.

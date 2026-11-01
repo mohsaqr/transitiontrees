@@ -3,11 +3,11 @@
 \docType{data}
 \name{engagement}
 \alias{engagement}
-\title{Student engagement state sequences (stslist)}
+\title{Student engagement state sequences (wide format)}
 \format{
-A \code{stslist} with 1000 rows (learners) and 25
-  columns (time-steps). States \code{"Active"}, \code{"Average"},
-  \code{"Disengaged"}; \code{"\%"} marks missing/void positions.
+A \code{data.frame} with 1000 rows (learners) and 25 columns
+  (time-steps). States \code{"Active"}, \code{"Average"},
+  \code{"Disengaged"}; \code{NA} marks missing / dropped-out positions.
 }
 \source{
 Bundled example dataset.
@@ -16,10 +16,10 @@ Bundled example dataset.
 engagement
 }
 \description{
-A wide set of student engagement-state sequences as a
-\code{stslist} (the state-sequence object \code{seqdef()} produces).
-Used to demonstrate loading sequence objects directly into
-\code{\link{context_tree}()}. Bundled example dataset.
+A wide set of student engagement-state sequences, one learner per row
+and one time-step per column. Used to demonstrate fitting from wide
+sequence data and from the network objects (\pkg{tna} / \pkg{Nestimate})
+built on top of it. Bundled example dataset.
 }
 \examples{
 data(engagement)

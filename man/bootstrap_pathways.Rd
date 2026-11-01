@@ -46,8 +46,7 @@ compatible stability-rate threshold. A pathway is
 is \code{informative = TRUE} when \code{informative_rate >=
 informative_threshold}. Default \code{0.80}: a pathway must
 clear the \eqn{G^2} critical value in at least 80\% of resamples
-to be called informative, relaxing the earlier 0.95 gate that
-suppressed many genuinely informative deeper pathways.}
+to be called informative.}
 
 \item{alpha}{Numeric in \eqn{(0, 1)}. Significance level for
 the \eqn{G^2} test against parent. Default \code{0.05}.}
@@ -56,7 +55,8 @@ the \eqn{G^2} test against parent. Default \code{0.05}.}
 bootstrap CIs on \code{count}, \code{next_probability},
 \code{divergence}, \code{G2}. Default \code{0.05} (95\% CI).}
 
-\item{seed}{Integer or \code{NULL}. RNG seed.
+\item{seed}{Integer or \code{NULL}. RNG seed passed to
+\code{set.seed()}; \code{NULL} uses the current RNG state.
 Default \code{1L}.}
 
 \item{keep_resamples}{Logical. If \code{TRUE} (default), the
@@ -73,9 +73,23 @@ Default \code{FALSE}.}
 \value{
 A \code{transitiontrees_bootstrap} object: a list with
   \describe{
-    \item{summary}{Per-pathway data.frame, sorted so that
+    \item{summary}{Per-pathway data.frame (one row per pathway of the
+      original tree; the root row has \code{NA} \code{G2}), sorted so that
       \code{stable & informative} pathways come first then by
-      \code{stability_rate} descending.}
+      \code{stability_rate} descending. Columns: the canonical
+      \code{pathway}, \code{depth}, \code{count}, \code{likely_next},
+      \code{next_probability}, \code{divergence},
+      \code{changes_prediction} (computed from raw counts, no
+      smoothing); \code{G2} (likelihood-ratio statistic against the
+      parent); \code{p_stability}, \code{stability_rate},
+      \code{stable}; \code{informative_rate}, \code{informative};
+      \code{flip_consistency} (share of resamples reproducing the
+      original \code{changes_prediction} flag); and, for each of
+      \code{count}, \code{next_probability}, \code{divergence} and
+      \code{G2}, the bootstrap \code{mean_*}, \code{sd_*},
+      \code{ci_*_lo} and \code{ci_*_hi} (percentile interval at
+      \code{ci_level}). Returned by \code{summary()} and
+      \code{as.data.frame()}.}
     \item{pathways_orig}{Empirical original-pathway statistics
       (no smoothing) as a tidy data.frame.}
     \item{M_count, M_next_probability, M_divergence, M_G2,
@@ -83,7 +97,8 @@ A \code{transitiontrees_bootstrap} object: a list with
       \code{iter x n_pathways}, columns named by pathway.}
     \item{iter, stat, consistency_range, stability_threshold,
       informative_threshold, alpha_g2, ci_level, seed,
-      g2_critical_value}{Configuration.}
+      g2_critical_value}{Configuration (\code{alpha_g2} stores
+      \code{alpha}).}
   }
 }
 \description{
@@ -96,7 +111,7 @@ The bootstrap tracks every pathway in the original tree. Each
 iteration resamples whole sequences with replacement, aggregates
 raw counts per depth, and reads each pathway's count vector
 directly from the resample. \strong{No smoothing, no \code{nmin}
-filter, no extra parameters} inside the loop — the bootstrap
+filter, no extra parameters} inside the loop -- the bootstrap
 operates on counts analogously to an edge-weight bootstrap.
 
 Two complementary measures are reported per pathway:
@@ -114,7 +129,7 @@ Two complementary measures are reported per pathway:
   \item{\code{informative_rate}}{Fraction of resamples where the
     pathway's empirical \eqn{G^2} likelihood-ratio statistic
     against its parent context exceeds the chi-square critical
-    value at level \code{alpha_g2} (df = \code{|alphabet| - 1}).
+    value at level \code{alpha} (df = \code{|alphabet| - 1}).
     Tests \emph{reproducibly significant divergence from the
     shorter-history baseline}.}
 }
@@ -132,6 +147,7 @@ Read \code{stable} and \code{informative} together:
 }
 }
 \examples{
+set.seed(1)
 seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 1L)
@@ -140,6 +156,10 @@ summary(boot)
 }
 \references{
 Saqr, M., Tikka, S., & López-Pernas, S. (2025). Transition
-Network Analysis. \emph{LAK '25},
-doi:10.1145/3706468.3706513.
+Network Analysis. In \emph{Proceedings of the 15th International
+Learning Analytics and Knowledge Conference (LAK '25)}.
+\doi{10.1145/3706468.3706513}
+
+Efron, B., & Tibshirani, R. J. (1993). \emph{An Introduction to the
+Bootstrap}. Chapman & Hall.
 }

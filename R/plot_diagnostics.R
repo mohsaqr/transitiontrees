@@ -20,12 +20,11 @@
 #' @return A ggplot object.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 2L)
 #' plot_distributions(tree, top = 9)
-#' }
 #' @export
 plot_distributions <- function(tree, contexts = NULL, top = 12L,
                                min_count = 1L) {
@@ -78,14 +77,14 @@ plot_distributions <- function(tree, contexts = NULL, top = 12L,
 #' built on \code{\link{score_positions}()}:
 #' \describe{
 #'   \item{\code{type = "position"}}{predicted probability of the
-#'     observed next state against position in the sequence — where the
+#'     observed next state against position in the sequence -- where the
 #'     model is confident vs. surprised as a sequence unfolds.}
 #'   \item{\code{type = "ecdf"}}{the empirical cumulative distribution of
-#'     those predicted probabilities — a calibration-style view of how
+#'     those predicted probabilities -- a calibration-style view of how
 #'     often the model assigns high vs. low probability to what actually
 #'     happened.}
 #'   \item{\code{type = "logloss"}}{the per-position log-loss
-#'     \eqn{-\log_2 P(\mathrm{observed})} against position — a
+#'     \eqn{-\log_2 P(\mathrm{observed})} against position -- a
 #'     per-position log-loss view. Lower is better
 #'     (0 = certain and correct); the dashed line is the mean log-loss
 #'     over all scored positions.}
@@ -100,7 +99,7 @@ plot_distributions <- function(tree, contexts = NULL, top = 12L,
 #' @return A ggplot object.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(fit, max_depth = 2L)
@@ -109,7 +108,6 @@ plot_distributions <- function(tree, contexts = NULL, top = 12L,
 #' plot_predictive(tree, new, type = "position")
 #' plot_predictive(tree, new, type = "ecdf")
 #' plot_predictive(tree, new, type = "logloss")
-#' }
 #' @export
 plot_predictive <- function(tree, newdata,
                             type = c("position", "ecdf", "logloss")) {
@@ -199,16 +197,16 @@ plot_predictive <- function(tree, newdata,
 
 #' Suffix-chain pruning data for one pathway (internal)
 #'
-#' Walks the suffix chain of \code{pathway} — the full context, then the
+#' Walks the suffix chain of \code{pathway} -- the full context, then the
 #' context with its oldest (leftmost) move dropped, and so on down to the
-#' root — and, at each link, evaluates the \code{G2} gain of a context
+#' root -- and, at each link, evaluates the \code{G2} gain of a context
 #' against its one-shorter parent under the same rule as
 #' \code{\link{prune_tree}} (criterion \code{"G2"}). The requested pathway
 #' must itself be a fitted context; the function errors rather than
 #' silently starting from a shorter suffix. Each context is classified into
 #' one of three states: \code{"informative"} (its own \code{G2} clears the
 #' cutoff, so it adds memory over its parent), \code{"pruned"} (it and every
-#' deeper context fail to diverge — the redundant tail), or \code{"retained"}
+#' deeper context fail to diverge -- the redundant tail), or \code{"retained"}
 #' (its own \code{G2} is below the cutoff but a deeper context diverges, so
 #' \code{prune_tree()} keeps it only as a structural bridge).
 #'
@@ -316,17 +314,17 @@ plot_predictive <- function(tree, newdata,
 #' @description
 #' A suffix-chain pruning view: take one pathway and show, side by
 #' side, the next-state distribution at every context along its suffix
-#' chain — the full context, then the context with its oldest move
-#' dropped, and so on down to the root — marking which contexts
+#' chain -- the full context, then the context with its oldest move
+#' dropped, and so on down to the root -- marking which contexts
 #' \code{\link{prune_tree}} (criterion \code{"G2"}) keeps versus prunes.
 #' It answers "how much memory does this pathway actually need?": each
 #' context is drawn as its own panel (deepest memory on the left, root on
 #' the right) and classified into three states by opacity. \strong{Solid}
-#' contexts are \emph{informative} — their own \eqn{G^2} clears the cutoff,
+#' contexts are \emph{informative} -- their own \eqn{G^2} clears the cutoff,
 #' so they add predictive information over their one-shorter parent.
 #' \strong{Mid-opacity} contexts are \emph{retained}: their own \eqn{G^2} is
 #' below the cutoff, but a deeper context diverges, so \code{prune_tree()}
-#' keeps them only as a structural bridge — they do not themselves add
+#' keeps them only as a structural bridge -- they do not themselves add
 #' memory. \strong{Faded} contexts are \emph{pruned} (the redundant tail).
 #' The panel title carries the full context, the decision, and the
 #' \eqn{G^2}. The requested pathway must be a fitted context; the function
@@ -346,15 +344,14 @@ plot_predictive <- function(tree, newdata,
 #' (\eqn{2N \cdot \mathrm{KL} > \chi^2_{1-\alpha, k-1}}); the cumulative
 #' \code{pruned} flag follows the leaf-up amnesia rule. The distributions
 #' and counts shown are the same node values reported throughout the
-#' pathway API (see \code{PARITY.md}).
+#' pathway API (\code{\link{tree_pathways}()}, \code{\link{query_pathway}()}).
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' seqs <- replicate(80, sample(c("A","B","C"), 12, replace = TRUE),
 #'                   simplify = FALSE)
 #' tree <- context_tree(seqs, max_depth = 3L, min_count = 3L)
 #' plot_pruning(tree, "A -> B -> C")
-#' }
 #' @seealso \code{\link{prune_tree}}, \code{\link{plot_distributions}}.
 #' @export
 plot_pruning <- function(tree, pathway, alpha = 0.05) {
@@ -462,19 +459,19 @@ plot_pruning <- function(tree, pathway, alpha = 0.05) {
 #' @param layout One of \code{"tile"} (default; per-context heatmap over
 #'   all shared contexts) or \code{"tree"} (the horizontal context-tree
 #'   phylogram drawn on a pooled backbone, with each node and branch
-#'   coloured by which group reaches that context more — red for the first
+#'   coloured by which group reaches that context more -- red for the first
 #'   group, blue for the second; node size = pooled count).
 #' @param measure For \code{layout = "tile"}, what each cell encodes:
 #'   \code{"residual"} (default) is the Pearson standardized residual of
 #'   the first group against the no-group null (observed vs expected from
-#'   the context's margins) — support-aware and decomposing the per-context
+#'   the context's margins) -- support-aware and decomposing the per-context
 #'   \eqn{G^2}; \code{"probability"} is the raw next-state probability
 #'   difference \code{P(group1) - P(group2)}. Ignored by \code{"tree"}.
 #'
 #' @return A ggplot object.
 #'
 #' @examples
-#' \donttest{
+#' set.seed(1)
 #' gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
 #'                            prob = c(.2,.6,.2)), simplify = FALSE)
 #' gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
@@ -483,7 +480,6 @@ plot_pruning <- function(tree, pathway, alpha = 0.05) {
 #'                     max_depth = 2L)
 #' plot_difference(grp)                       # residual heatmap
 #' plot_difference(grp, layout = "tree")      # difference on the tree map
-#' }
 #' @seealso \code{\link{compare_groups}} for the significance test.
 #' @export
 plot_difference <- function(group, groups = NULL, depth = NULL,

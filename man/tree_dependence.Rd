@@ -61,13 +61,12 @@ the chain-level mutual-information gain from the variable-depth
 model over the order-1 model.
 }
 \examples{
-\donttest{
+set.seed(1)
 seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                     simplify = FALSE)
 tree   <- context_tree(seqs, max_depth = 3)
 pruned <- prune_tree(tree, criterion = "G2")
 tree_dependence(pruned)
-}
 
 }
 \references{

@@ -5,10 +5,18 @@
 \alias{ai_long}
 \title{AI-collaboration messages (long format)}
 \format{
-A \code{data.frame} with 8551 rows and 9 columns, including
-  \code{project}, \code{session_id}, \code{timestamp} (Unix seconds),
-  \code{code} / \code{cluster} (the state at two granularities), and
-  \code{code_order} / \code{order_in_session} (within-sequence order).
+A \code{data.frame} with 8551 rows and 9 columns:
+  \describe{
+    \item{message_id}{integer; the message the code was assigned to.}
+    \item{project}{character; the project (the actor).}
+    \item{session_id}{character; the session id.}
+    \item{timestamp}{integer; Unix time in seconds.}
+    \item{session_date}{character; the session date (YYYY-MM-DD).}
+    \item{code}{character; the move (eight codes, the fine state).}
+    \item{cluster}{character; the coarse state the code belongs to.}
+    \item{code_order}{integer; order of the code within its message.}
+    \item{order_in_session}{integer; order within the session.}
+  }
 }
 \source{
 Bundled example dataset.

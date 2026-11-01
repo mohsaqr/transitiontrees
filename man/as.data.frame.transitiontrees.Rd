@@ -16,12 +16,15 @@
 \value{
 A data.frame with columns \code{pathway}, \code{depth},
   \code{count}, \code{likely_next}, \code{next_probability},
-  \code{divergence}, \code{changes_prediction}. See
-  \code{\link{tree_pathways}}.
+  \code{divergence}, \code{changes_prediction}; one row per
+  pathway. See \code{\link{tree_pathways}} for the column meanings.
 }
 \description{
-Returns the canonical tidy node table — identical to
-\code{tree_pathways(tree)}. Lets users do
-\code{as.data.frame(tree)} and immediately filter, sort, or export
-with base-R idioms.
+Returns the canonical tidy node table, identical to
+\code{tree_pathways(tree)}: one row per context (pathway).
+}
+\examples{
+tree <- context_tree(trajectories, max_depth = 2L)
+as.data.frame(tree)
+as.data.frame(tree, sort_by = "divergence")
 }

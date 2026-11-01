@@ -7,14 +7,17 @@
 compare_groups(group, iter = 999L, min_count = 1L, seed = 1L, block = NULL)
 }
 \arguments{
-\item{group}{A \code{transitiontrees_group}.}
+\item{group}{A \code{transitiontrees_group} of unweighted trees (a
+weighted member is refused: the permutation recounts the raw
+sequences).}
 
 \item{iter}{Integer. Number of label permutations. Default 999.}
 
 \item{min_count}{Integer. Drop contexts whose total count across all
 groups is below this. Default 1.}
 
-\item{seed}{Integer or \code{NULL}. RNG seed. Default 1.}
+\item{seed}{Integer or \code{NULL}. RNG seed passed to
+\code{set.seed()}; \code{NULL} uses the current RNG state. Default 1.}
 
 \item{block}{Block ids for a \strong{stratified} permutation: group
 labels are shuffled only \emph{within} each block, so the null
@@ -38,12 +41,18 @@ A \code{transitiontrees_group_comparison}: a list with
       \code{jsd_padj}, \code{usage_g2}, \code{usage_p},
       \code{usage_padj}. \code{usage_*} is \code{NA} for the root,
       which has no prevalence test.}
-    \item{omnibus}{Two-row data.frame: the behavioral and usage
-      global statistics with permutation p-values.}
+    \item{omnibus}{Two-row data.frame (one row per axis) with columns
+      \code{axis}, \code{statistic}, \code{value} and \code{p_value}
+      (permutation p-value: one plus the number of permuted statistics
+      at least the observed one, over \code{iter + 1}).}
     \item{distance_matrix}{K x K symmetric-KL distance matrix between
       the groups (from \code{tree_distance()}).}
-    \item{groups, iter, seed, n_contexts}{Configuration.}
+    \item{groups, iter, seed, n_contexts, stratified}{Configuration;
+      \code{stratified} is \code{TRUE} when a \code{block} was used.}
   }
+\code{as.data.frame()} returns the \code{pathways} table; the print
+method shows the omnibus table and the top pathways; \code{summary()}
+prints a compact verdict.
 }
 \description{
 Test how a set of fitted group trees (a \code{transitiontrees_group} from
@@ -73,7 +82,7 @@ does use \code{\link{tree_distance}()} (symmetric KL) for
 consistency with the pairwise function.
 }
 \examples{
-\donttest{
+set.seed(1)
 gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
                            prob = c(.2,.6,.2)), simplify = FALSE)
 gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
@@ -82,7 +91,16 @@ grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
                     max_depth = 1L)
 cmp <- compare_groups(grp, iter = 199L)
 cmp
+as.data.frame(cmp)
 }
+\references{
+Lin, J. (1991). Divergence measures based on the Shannon entropy.
+\emph{IEEE Transactions on Information Theory}, 37(1), 145-151.
+
+Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
+rate: a practical and powerful approach to multiple testing.
+\emph{Journal of the Royal Statistical Society: Series B}, 57(1),
+289-300.
 }
 \seealso{
 \code{\link{compare_trees}} for the pairwise permutation test.

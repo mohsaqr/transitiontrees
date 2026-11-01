@@ -23,21 +23,21 @@ Visual diagnostics for how a fitted tree scores held-out sequences,
 built on \code{\link{score_positions}()}:
 \describe{
   \item{\code{type = "position"}}{predicted probability of the
-    observed next state against position in the sequence — where the
+    observed next state against position in the sequence -- where the
     model is confident vs. surprised as a sequence unfolds.}
   \item{\code{type = "ecdf"}}{the empirical cumulative distribution of
-    those predicted probabilities — a calibration-style view of how
+    those predicted probabilities -- a calibration-style view of how
     often the model assigns high vs. low probability to what actually
     happened.}
   \item{\code{type = "logloss"}}{the per-position log-loss
-    \eqn{-\log_2 P(\mathrm{observed})} against position — a
+    \eqn{-\log_2 P(\mathrm{observed})} against position -- a
     per-position log-loss view. Lower is better
     (0 = certain and correct); the dashed line is the mean log-loss
     over all scored positions.}
 }
 }
 \examples{
-\donttest{
+set.seed(1)
 fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 2L)
@@ -46,5 +46,4 @@ new  <- replicate(15, sample(c("A", "B", "C"), 10, replace = TRUE),
 plot_predictive(tree, new, type = "position")
 plot_predictive(tree, new, type = "ecdf")
 plot_predictive(tree, new, type = "logloss")
-}
 }
