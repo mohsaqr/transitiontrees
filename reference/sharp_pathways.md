@@ -35,22 +35,21 @@ sorted by `next_probability` descending.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 sharp_pathways(tree, top = 5)
 #>       pathway depth count likely_next next_probability divergence
-#> 1 C -> A -> C     3    11           B        0.6363636 0.13121800
-#> 2 C -> B -> B     3    15           A        0.6000000 0.13746158
-#> 3 C -> A -> A     3    17           A        0.5882353 0.12401427
-#> 4 B -> C -> A     3    19           B        0.5789474 0.04083662
-#> 5 A -> C -> B     3    21           C        0.5714286 0.15093086
+#> 1 A -> B -> B     3    20           B        0.7000000 0.27863441
+#> 2 A -> B -> A     3    22           A        0.6363636 0.07652960
+#> 3 B -> C -> B     3     8           A        0.6241250 0.49292214
+#> 4 A -> A -> B     3    20           B        0.6000000 0.15408490
+#> 5 C -> A -> B     3    16           A        0.5625000 0.06185401
 #>   changes_prediction
 #> 1              FALSE
 #> 2              FALSE
 #> 3              FALSE
-#> 4              FALSE
+#> 4               TRUE
 #> 5              FALSE
-# }
 ```

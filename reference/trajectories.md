@@ -1,10 +1,11 @@
 # Student engagement trajectories
 
 An example set of categorical learning-engagement trajectories used in
-the transitiontrees examples and the “trajectories” vignette. Each row
-is one learner, each column a time-step, and each cell the engagement
-state at that step. Trailing `NA`s mark the end of a trajectory. This
-wide character matrix is exactly the shape
+the transitiontrees examples and in the “Getting started”, “Advanced
+analysis” and “Visualization” vignettes. Each row is one learner, each
+column a time-step, and each cell the engagement state at that step.
+Trailing `NA`s mark the end of a trajectory. This wide character matrix
+is exactly the shape
 [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
 consumes.
 

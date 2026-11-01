@@ -41,47 +41,46 @@ sorted by `divergence` descending.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 divergent_pathways(tree, top = 6)
 #>       pathway depth count likely_next next_probability divergence
-#> 1 A -> A -> B     3    12           A        0.5825833  0.5737596
-#> 2 C -> A -> B     3    19           C        0.5263158  0.2240645
-#> 3 A -> B -> A     3    14           B        0.5714286  0.2173227
-#> 4 B -> C -> A     3    17           A        0.5882353  0.1732741
-#> 5 B -> B -> A     3    17           A        0.4705882  0.1606417
-#> 6 C -> C -> B     3    12           B        0.5000000  0.1107270
+#> 1 B -> C -> B     3     8           A        0.6241250 0.49292214
+#> 2 A -> B -> B     3    20           B        0.7000000 0.27863441
+#> 3 A -> A -> B     3    20           B        0.6000000 0.15408490
+#> 4 B -> B -> B     3    22           A        0.4090909 0.13625381
+#> 5 C -> A -> C     3    17           A        0.4705882 0.11128385
+#> 6 A -> B -> C     3     9           C        0.4444444 0.08368479
 #>   changes_prediction
-#> 1               TRUE
-#> 2               TRUE
+#> 1              FALSE
+#> 2              FALSE
 #> 3               TRUE
-#> 4              FALSE
-#> 5              FALSE
+#> 4               TRUE
+#> 5               TRUE
 #> 6              FALSE
 divergent_pathways(tree, flips_only = TRUE)
 #>        pathway depth count likely_next next_probability divergence
-#> 1  A -> A -> B     3    12           A        0.5825833 0.57375959
-#> 2  C -> A -> B     3    19           C        0.5263158 0.22406455
-#> 3  A -> B -> A     3    14           B        0.5714286 0.21732269
-#> 7  C -> A -> A     3    21           A        0.4761905 0.10217770
-#> 8  A -> C -> A     3    21           B        0.4285714 0.09413230
-#> 11 B -> A -> C     3    13           B        0.5384615 0.06615899
-#> 12 C -> B -> A     3    13           C        0.4615385 0.06590266
-#> 15 C -> B -> C     3    18           A        0.4444444 0.05257821
-#> 17 A -> A -> A     3    20           B        0.4000000 0.04762184
-#> 18 B -> C -> B     3    23           C        0.4347826 0.04672169
+#> 3  A -> A -> B     3    20           B        0.6000000 0.15408490
+#> 4  B -> B -> B     3    22           A        0.4090909 0.13625381
+#> 5  C -> A -> C     3    17           A        0.4705882 0.11128385
+#> 9  B -> B -> C     3    14           A        0.4285714 0.06417903
+#> 11 B -> A -> C     3    19           C        0.4736842 0.06159616
+#> 12      C -> A     2    49           C        0.4081633 0.05968289
+#> 17 B -> C -> C     3    15           A        0.4666667 0.04319042
+#> 18 C -> C -> A     3    17           B        0.4117647 0.04042774
+#> 26 B -> A -> A     3    31           C        0.3870968 0.02360426
+#> 28      B -> B     2    58           B        0.4310345 0.02109727
 #>    changes_prediction
-#> 1                TRUE
-#> 2                TRUE
 #> 3                TRUE
-#> 7                TRUE
-#> 8                TRUE
+#> 4                TRUE
+#> 5                TRUE
+#> 9                TRUE
 #> 11               TRUE
 #> 12               TRUE
-#> 15               TRUE
 #> 17               TRUE
 #> 18               TRUE
-# }
+#> 26               TRUE
+#> 28               TRUE
 ```

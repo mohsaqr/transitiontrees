@@ -7,7 +7,7 @@ next-state pair. Two lookup modes:
   `NA`.
 
 - `exact = FALSE` (default): if the pathway is missing, falls back to
-  the longest matching suffix that \*is\* in the tree (mirrors
+  the longest matching suffix that *is* in the tree (mirrors
   [`predict.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/predict.transitiontrees.md)).
 
 ## Usage
@@ -35,7 +35,7 @@ query_pathway(tree, pathway, next_state = NULL, exact = FALSE)
 
 - exact:
 
-  Logical. Default `FALSE` — fall back to longest matching suffix.
+  Logical. Default `FALSE` – fall back to longest matching suffix.
 
 ## Value
 
@@ -45,7 +45,6 @@ vector indexed by alphabet.
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
@@ -54,5 +53,4 @@ query_pathway(tr, c("A","B"))
 #> 0.5294118 0.2352941 0.2352941 
 query_pathway(tr, "A -> B", next_state = "C")
 #> [1] 0.2352941
-# }
 ```

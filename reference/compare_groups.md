@@ -29,7 +29,8 @@ compare_groups(group, iter = 999L, min_count = 1L, seed = 1L, block = NULL)
 
 - group:
 
-  A `transitiontrees_group`.
+  A `transitiontrees_group` of unweighted trees (a weighted member is
+  refused: the permutation recounts the raw sequences).
 
 - iter:
 
@@ -42,7 +43,9 @@ compare_groups(group, iter = 999L, min_count = 1L, seed = 1L, block = NULL)
 
 - seed:
 
-  Integer or `NULL`. RNG seed. Default 1.
+  Integer or `NULL`. RNG seed passed to
+  [`set.seed()`](https://rdrr.io/r/base/Random.html); `NULL` uses the
+  current RNG state. Default 1.
 
 - block:
 
@@ -71,17 +74,24 @@ A `transitiontrees_group_comparison`: a list with
 
 - omnibus:
 
-  Two-row data.frame: the behavioral and usage global statistics with
-  permutation p-values.
+  Two-row data.frame (one row per axis) with columns `axis`,
+  `statistic`, `value` and `p_value` (permutation p-value: one plus the
+  number of permuted statistics at least the observed one, over
+  `iter + 1`).
 
 - distance_matrix:
 
   K x K symmetric-KL distance matrix between the groups (from
   [`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)).
 
-- groups, iter, seed, n_contexts:
+- groups, iter, seed, n_contexts, stratified:
 
-  Configuration.
+  Configuration; `stratified` is `TRUE` when a `block` was used.
+
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) returns
+the `pathways` table; the print method shows the omnibus table and the
+top pathways; [`summary()`](https://rdrr.io/r/base/summary.html) prints
+a compact verdict.
 
 ## Details
 
@@ -96,6 +106,15 @@ the `distance_matrix` component does use
 [`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)
 (symmetric KL) for consistency with the pairwise function.
 
+## References
+
+Lin, J. (1991). Divergence measures based on the Shannon entropy. *IEEE
+Transactions on Information Theory*, 37(1), 145-151.
+
+Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
+rate: a practical and powerful approach to multiple testing. *Journal of
+the Royal Statistical Society: Series B*, 57(1), 289-300.
+
 ## See also
 
 [`compare_trees`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md)
@@ -104,7 +123,7 @@ for the pairwise permutation test.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
                            prob = c(.2,.6,.2)), simplify = FALSE)
 gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
@@ -118,15 +137,25 @@ cmp
 #>   contexts : 4 tested
 #> 
 #> omnibus (permutation):
-#>        axis                 statistic   value p_value
-#>  behavioral count-weighted JSD (bits) 206.318   0.005
-#>       usage                   sum G^2 235.718   0.005
+#>        axis                 statistic  value p_value
+#>  behavioral count-weighted JSD (bits) 184.09   0.005
+#>       usage                   sum G^2 208.68   0.005
 #> 
 #> top pathways by behavioral divergence (JSD):
 #>  pathway depth count_total modal_x modal_y flips jsd_bits jsd_padj usage_padj
-#>        C     1         213       B       C  TRUE    0.217    0.005      0.007
-#>  (start)     0         640       B       C  TRUE    0.189    0.005         NA
-#>        B     1         224       B       C  TRUE    0.129    0.005      0.007
-#>        A     1         123       B       C  TRUE    0.085    0.005      1.000
-# }
+#>        B     1         226       B       C  TRUE    0.171    0.005      0.007
+#>  (start)     0         640       B       C  TRUE    0.162    0.005         NA
+#>        A     1         117       B       C  TRUE    0.142    0.005      0.050
+#>        C     1         217       B       C  TRUE    0.116    0.005      0.007
+as.data.frame(cmp)
+#>   pathway depth count_total count_x count_y modal_x modal_y flips  jsd_bits
+#> 1       B     1         226     175      51       B       C  TRUE 0.1706917
+#> 2 (start)     0         640     320     320       B       C  TRUE 0.1619964
+#> 3       A     1         117      49      68       B       C  TRUE 0.1418159
+#> 4       C     1         217      56     161       B       C  TRUE 0.1163298
+#>   jsd_p jsd_padj   usage_g2 usage_p usage_padj
+#> 1 0.005    0.005 119.098496   0.005     0.0075
+#> 2 0.005    0.005         NA      NA         NA
+#> 3 0.005    0.005   3.914325   0.050     0.0500
+#> 4 0.005    0.005  85.666722   0.005     0.0075
 ```

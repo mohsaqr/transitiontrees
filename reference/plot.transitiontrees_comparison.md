@@ -29,3 +29,11 @@ plot(x, bins = 30L, ...)
 ## Value
 
 A ggplot object.
+
+## Examples
+
+``` r
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+plot(compare_trees(grp, iter = 50L))
+```

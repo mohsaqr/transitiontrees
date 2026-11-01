@@ -1,5 +1,37 @@
 # Changelog
 
+## transitiontrees 0.1.3
+
+### Documentation
+
+- Every help page now has examples that run unwrapped (no
+  `\donttest{}`), with fixed seeds, and examples were added for the
+  [`print()`](https://rdrr.io/r/base/print.html),
+  [`summary()`](https://rdrr.io/r/base/summary.html),
+  [`plot()`](https://rdrr.io/r/graphics/plot.default.html) and
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html)
+  methods, [`simulate()`](https://rdrr.io/r/stats/simulate.html) and
+  [`nobs()`](https://rdrr.io/r/stats/nobs.html).
+- `@return` sections describe the returned structure (one row per what,
+  every column), including the bootstrap summary columns, the
+  [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+  omnibus table and `stratified` flag, and the `weights` component of a
+  fitted tree.
+- Corrected stale or wrong statements: `compare_pruning(alpha =)` is
+  used by `"G2"` only (not by AIC/BIC);
+  [`compare_smoothing()`](https://pak.dynasite.org/transitiontrees/reference/compare_smoothing.md)
+  holds `min_count` (not `nmin`) fixed; the bootstrap G-squared level is
+  the `alpha` argument; the `trajectories` help no longer points at a
+  non-existent vignette;
+  [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
+  no longer cites the unshipped `PARITY.md`.
+- Added method references (AIC, BIC, smoothing, Jensen-Shannon
+  divergence, Benjamini-Hochberg, bootstrap) and replaced non-ASCII
+  punctuation in the help pages.
+- README and vignettes: examples run on the bundled data, and results
+  are read through the package’s printed objects and accessors instead
+  of `$` / [`attr()`](https://rdrr.io/r/base/attr.html) extraction.
+
 ## transitiontrees 0.1.2
 
 CRAN release: 2026-06-18
@@ -12,8 +44,9 @@ Initial CRAN release.
   fits a variable-depth pathway tree (prediction suffix tree; Ron,
   Singer & Tishby 1996) from a wide character matrix / data.frame, a
   list of character vectors, a long event log (`actor` / `time` /
-  `action` / `order` / `session` arguments), an `stslist` state-sequence
-  object, or a transition/network object.
+  `action` / `order` / `session` arguments), or a transition/network
+  object. `NA`, `""`, and the TraMineR codes `%` (void) and `*`
+  (missing) are treated as gaps in wide / list input.
 - [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
   reshapes a long event log to a wide sequence frame (timestamp /
   session logic), and can carry per-sequence metadata through the
@@ -95,8 +128,8 @@ Initial CRAN release.
 
 - [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on a
   `transitiontrees` offers four styles: `"horizontal"` (default),
-  `"dendrogram"`, `"icicle"` (`ggraph`), and `"interactive"`
-  (`visNetwork`).
+  `"dendrogram"`, and `"icicle"` (all pure ggplot2), plus
+  `"interactive"` (`visNetwork`).
   [`plot()`](https://rdrr.io/r/graphics/plot.default.html) on a
   `transitiontrees_group` draws one figure per group.
 - [`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md),

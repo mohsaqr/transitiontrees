@@ -41,6 +41,7 @@ columns (`sequence_id`, `n_scored`, `log_lik`, `perplexity`), the top
 ## Examples
 
 ``` r
+set.seed(1)
 fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 2L)
@@ -48,9 +49,9 @@ new  <- replicate(20, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 mine_sequences(tree, new, n = 5, which = "surprising")
 #>   sequence_id n_scored   log_lik perplexity
-#> 1           2       10 -12.49314   3.487950
-#> 2           7       10 -12.22352   3.395164
-#> 3          12       10 -11.91339   3.291486
-#> 4           5       10 -11.77453   3.246095
-#> 5          11       10 -11.61271   3.193989
+#> 1           3       10 -13.12440   3.715229
+#> 2          17       10 -12.89721   3.631772
+#> 3           1       10 -12.80947   3.600046
+#> 4          14       10 -12.25846   3.407048
+#> 5          11       10 -11.81596   3.259574
 ```

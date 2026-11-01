@@ -42,4 +42,20 @@ simulate(object, nsim = 5L, seed = NULL, length = 10L, start = NULL, ...)
 
 ## Value
 
-A character matrix of dimension `nsim x length`.
+A character matrix with `nsim` rows (one simulated sequence each) and
+`length` columns (time-steps).
+
+## Examples
+
+``` r
+tree <- context_tree(trajectories, max_depth = 2L)
+simulate(tree, nsim = 3L, seed = 42L, length = 8L)
+#>      [,1]         [,2]      [,3]         [,4]         [,5]      [,6]        
+#> [1,] "Disengaged" "Average" "Disengaged" "Disengaged" "Active"  "Disengaged"
+#> [2,] "Disengaged" "Average" "Average"    "Average"    "Average" "Disengaged"
+#> [3,] "Average"    "Average" "Average"    "Active"     "Active"  "Active"    
+#>      [,7]         [,8]        
+#> [1,] "Disengaged" "Disengaged"
+#> [2,] "Disengaged" "Active"    
+#> [3,] "Average"    "Disengaged"
+```

@@ -21,10 +21,18 @@ nobs(object, ...)
 
 ## Value
 
-Integer. The number of state observations the tree was fitted on — the
+Integer. The number of state observations the tree was fitted on – the
 (weight-adjusted) token total, equal to the `"nobs"` attribute of the
 *in-sample*
 [`logLik.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md).
-(A held-out `logLik(newdata)` reports its own `"nobs"` — the positions
-actually scored, e.g. excluding states outside the tree's alphabet —
+(A held-out `logLik(newdata)` reports its own `"nobs"` – the positions
+actually scored, e.g. excluding states outside the tree's alphabet –
 which can be smaller.)
+
+## Examples
+
+``` r
+tree <- context_tree(trajectories, max_depth = 2L)
+nobs(tree)
+#> [1] 1870
+```

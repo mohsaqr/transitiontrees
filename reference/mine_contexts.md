@@ -43,11 +43,13 @@ schema.
 ## Examples
 
 ``` r
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)
 mine_contexts(tree, state = "A", min_prob = 0.4)
 #>   pathway depth count state      prob is_modal
-#> 1  A -> B     2    54     A 0.4259259     TRUE
-#> 2  C -> A     2    45     A 0.4000000     TRUE
+#> 1  A -> B     2    53     A 0.4528302     TRUE
+#> 2  B -> A     2    61     A 0.4426230     TRUE
+#> 3  C -> B     2    52     A 0.4230769     TRUE
 ```

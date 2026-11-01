@@ -22,3 +22,14 @@ print(x, ...)
 ## Value
 
 `x` invisibly.
+
+## Examples
+
+``` r
+grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
+                    max_depth = 2L)
+print(grp)
+#> <transitiontrees_group>  2 groups
+#>   early           13 nodes, depth <= 2, 69 seq, 969 obs
+#>   late            13 nodes, depth <= 2, 67 seq, 901 obs
+```

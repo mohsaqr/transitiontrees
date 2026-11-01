@@ -13,10 +13,43 @@ ai_long
 
 ## Format
 
-A `data.frame` with 8551 rows and 9 columns, including `project`,
-`session_id`, `timestamp` (Unix seconds), `code` / `cluster` (the state
-at two granularities), and `code_order` / `order_in_session`
-(within-sequence order).
+A `data.frame` with 8551 rows and 9 columns:
+
+- message_id:
+
+  integer; the message the code was assigned to.
+
+- project:
+
+  character; the project (the actor).
+
+- session_id:
+
+  character; the session id.
+
+- timestamp:
+
+  integer; Unix time in seconds.
+
+- session_date:
+
+  character; the session date (YYYY-MM-DD).
+
+- code:
+
+  character; the move (eight codes, the fine state).
+
+- cluster:
+
+  character; the coarse state the code belongs to.
+
+- code_order:
+
+  integer; order of the code within its message.
+
+- order_in_session:
+
+  integer; order within the session.
 
 ## Source
 

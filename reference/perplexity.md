@@ -29,10 +29,9 @@ Numeric scalar.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
                      max_depth = 2, min_count = 2)
 perplexity(tree)
-#> [1] 2.715389
-# }
+#> [1] 2.845175
 ```

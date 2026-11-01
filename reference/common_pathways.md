@@ -37,47 +37,46 @@ sorted by count descending.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 common_pathways(tree, top = 8)
-#>   pathway depth count likely_next next_probability   divergence
-#> 1 (start)     0   600           B        0.3500000           NA
-#> 2       A     1   193           A        0.3523316 0.0002749574
-#> 3       B     1   190           A        0.3578947 0.0007928251
-#> 4       C     1   167           B        0.4071856 0.0101555958
-#> 5  A -> A     2    65           C        0.3538462 0.0094907810
-#> 6  B -> A     2    64           A        0.3593750 0.0012072641
-#> 7  A -> B     2    62           A        0.4193548 0.0146403185
-#> 8  B -> B     2    61           B        0.3442623 0.0044815150
+#>   pathway depth count likely_next next_probability  divergence
+#> 1 (start)     0   600           A        0.3666667          NA
+#> 2       A     1   200           A        0.3800000 0.003825681
+#> 3       B     1   181           A        0.3977901 0.013246404
+#> 4       C     1   169           C        0.3491124 0.008133498
+#> 5  B -> A     2    67           A        0.4776119 0.030761672
+#> 6  A -> A     2    66           A        0.3787879 0.003552395
+#> 7  A -> C     2    60           B        0.3500000 0.001283401
+#> 8  B -> B     2    58           B        0.4310345 0.021097272
 #>   changes_prediction
 #> 1                 NA
-#> 2               TRUE
-#> 3               TRUE
-#> 4              FALSE
-#> 5               TRUE
+#> 2              FALSE
+#> 3              FALSE
+#> 4               TRUE
+#> 5              FALSE
 #> 6              FALSE
-#> 7              FALSE
+#> 7               TRUE
 #> 8               TRUE
 common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
-#>        pathway depth count likely_next next_probability  divergence
-#> 14 A -> B -> A     3    25           A        0.4000000 0.005868202
-#> 15 B -> A -> A     3    23           C        0.4782609 0.089534432
-#> 16 A -> C -> A     3    20           A        0.4000000 0.026560781
-#> 17 B -> A -> B     3    20           A        0.4000000 0.013307423
-#> 18 C -> B -> A     3    20           B        0.3500000 0.011654583
-#> 19 B -> B -> B     3    20           C        0.5000000 0.091211911
-#> 20 A -> A -> A     3    20           C        0.4000000 0.018680728
-#> 21 A -> A -> C     3    19           A        0.4210526 0.007066973
+#>        pathway depth count likely_next next_probability divergence
+#> 14 B -> A -> A     3    31           C        0.3870968 0.02360426
+#> 15 A -> B -> A     3    22           A        0.6363636 0.07652960
+#> 16 B -> B -> B     3    22           A        0.4090909 0.13625381
+#> 17 C -> B -> A     3    21           A        0.3809524 0.03090333
+#> 18 A -> A -> B     3    20           B        0.6000000 0.15408490
+#> 19 A -> B -> B     3    20           B        0.7000000 0.27863441
+#> 20 B -> A -> C     3    19           C        0.4736842 0.06159616
+#> 21 C -> C -> B     3    18           A        0.3888889 0.01229457
 #>    changes_prediction
-#> 14              FALSE
+#> 14               TRUE
 #> 15              FALSE
-#> 16              FALSE
+#> 16               TRUE
 #> 17              FALSE
 #> 18               TRUE
-#> 19               TRUE
-#> 20              FALSE
+#> 19              FALSE
+#> 20               TRUE
 #> 21              FALSE
-# }
 ```

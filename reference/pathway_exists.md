@@ -25,10 +25,9 @@ Logical scalar.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 tr <- context_tree(matrix(sample(c("A","B"), 50, TRUE), 5),
                    max_depth = 2L, min_count = 1L)
 pathway_exists(tr, "A")
 #> [1] TRUE
-# }
 ```

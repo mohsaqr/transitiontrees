@@ -1,9 +1,8 @@
 # Cross-Validated Hyperparameter Tuning for context trees
 
 Runs k-fold cross-validation over a grid of fitting and pruning
-hyperparameters. Returns a data.frame ranked by held-out perplexity. The
-configuration with minimum perplexity is exposed via
-`attr(result, "best")`.
+hyperparameters. Returns a data.frame ranked by held-out perplexity;
+printing it also shows the minimum-perplexity configuration.
 
 Folds are at the sequence level (each fold holds out whole sequences,
 not positions within sequences).
@@ -48,8 +47,8 @@ tune_tree(
 - smoothing:
 
   Smoothing grid. A character vector of method names (e.g.
-  `c("floor", "kneser_ney")`) — each method is tried with its default
-  hyperparameters — or a list of explicit specs (e.g.
+  `c("floor", "kneser_ney")`) – each method is tried with its default
+  hyperparameters – or a list of explicit specs (e.g.
   `list(list("floor", ymin = 0.001), list("floor", ymin = 0.005))` for a
   hyperparameter sweep within one method).
 
@@ -69,7 +68,8 @@ tune_tree(
 
 - seed:
 
-  Integer. RNG seed for reproducible folds. Default 1.
+  Integer. RNG seed for reproducible folds, passed to
+  [`set.seed()`](https://rdrr.io/r/base/Random.html). Default 1.
 
 - actor, time, action, order, session, time_threshold:
 
@@ -86,14 +86,17 @@ A `transitiontrees_tune` object: a data.frame with one row per grid
 point and columns `max_depth`, `nmin`, `smoothing`, `prune`, `logLik`,
 `n_scored`, `perplexity`, `n_nodes_avg`, and `folds_failed` (the number
 of CV folds that errored for that configuration), sorted by `perplexity`
-ascending. `attr(result, "best")` carries the minimum-perplexity row
-**among configurations whose every fold scored**; it is `NULL` if none
-did. A warning is issued when any configuration had a failed fold.
+ascending. `nmin` is the `min_count` grid value, `logLik` the summed
+held-out log-likelihood, `n_scored` the number of held-out positions
+scored. The `"best"` attribute holds the minimum-perplexity row **among
+configurations whose every fold scored** (`NULL` if none did); the print
+method shows it under “best” and
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) marks it with a
+star. A warning is issued when any configuration had a failed fold.
 
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
 tune_tree(m, max_depth = 1:3,
@@ -128,5 +131,4 @@ tune_tree(m, max_depth = 1:3,
 #>          1    3 floor(ymin=0.001, rule=interpolate) FALSE -400.6736      360
 #>  perplexity n_nodes_avg folds_failed
 #>    3.043421           4            0
-# }
 ```

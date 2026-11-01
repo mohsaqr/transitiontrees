@@ -49,15 +49,16 @@ nothing to condition on).
 ## Examples
 
 ``` r
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 8, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)
 gappy <- list(c("A", NA, "C"), c("B", "B", NA, "A"))
 impute_sequences(tree, gappy)
 #> [[1]]
-#> [1] "A" "C" "C"
+#> [1] "A" "A" "C"
 #> 
 #> [[2]]
-#> [1] "B" "B" "C" "A"
+#> [1] "B" "B" "B" "A"
 #> 
 ```

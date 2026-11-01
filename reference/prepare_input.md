@@ -48,7 +48,7 @@ prepare_input(
 
 - action:
 
-  Character. Column holding the event's state / code — the symbol that
+  Character. Column holding the event's state / code – the symbol that
   becomes a cell of the sequence. Required.
 
 - order:

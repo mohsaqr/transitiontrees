@@ -42,18 +42,17 @@ vector of modal predictions.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
 predict(tree, newdata = list(c("A","B"), c("C","C","B")))
 #>              A         B         C
-#> [1,] 0.3333333 0.3518519 0.3148148
-#> [2,] 0.4117647 0.2941176 0.2941176
+#> [1,] 0.4285714 0.3750000 0.1964286
+#> [2,] 0.3888889 0.3333333 0.2777778
 predict(tree, newdata = list(c("A","B")), type = "class")
-#> [1] "B"
-predict(tree, newdata = c("A","B"))   # bare vector → named vector
+#> [1] "A"
+predict(tree, newdata = c("A","B"))   # bare vector -> named vector
 #>         A         B         C 
-#> 0.3333333 0.3518519 0.3148148 
-# }
+#> 0.4285714 0.3750000 0.1964286 
 ```

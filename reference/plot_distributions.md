@@ -40,11 +40,9 @@ A ggplot object.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L)
 plot_distributions(tree, top = 9)
-
-# }
 ```

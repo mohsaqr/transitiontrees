@@ -40,11 +40,10 @@ A ggplot object.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3L)
 plot_divergence(tree)
 
-# }
 ```

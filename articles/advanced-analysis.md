@@ -83,24 +83,27 @@ compare_pruning(tree)
 ```
 
 `G2` (the likelihood-ratio test) and `AIC` ask “is the extra depth
-justified given its sample size?”; `BIC` punishes parameters harder (its
-penalty scales with `log n`); `KL` at a lenient absolute `threshold`
-keeps almost everything. Use `G2` (or `AIC`) unless you have a specific
-reason, and report the reduction – “most grown contexts were
-unjustified” is itself a finding.
+justified given its sample size?”; `BIC` punishes parameters harder than
+`AIC` (its penalty scales with `log n`); `KL` at a lenient absolute
+`threshold` keeps almost everything. On these data `G2` is the
+strictest, keeping 25 of 82 contexts; `BIC` and `AIC` keep 36 and 42,
+and `KL` 78. Use `G2` (or `AIC`) unless you have a specific reason, and
+report the reduction – “most grown contexts were unjustified” is itself
+a finding.
 
 ## 3. Cross-validated tuning
 
 [`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
 runs k-fold CV at the **sequence level** over a grid of
-`(max_depth, min_count, smoothing, prune)` and returns a ranked
-data.frame with the winner on `attr(., "best")`.
+`(max_depth, min_count, smoothing, prune)` and returns a data.frame
+ranked by held-out perplexity; printing it also shows the winning
+configuration under “best”.
 
 ``` r
 
 tg <- tune_tree(trajectories, max_depth = 1L:4L, folds = 5L, seed = 42L)
-head(tg, 6)
-#> <transitiontrees_tune>  6 configurations
+print(tg, n = 6L)
+#> <transitiontrees_tune>  24 configurations
 #>  max_depth nmin                           smoothing prune    logLik n_scored
 #>          4   10 floor(ymin=0.001, rule=interpolate) FALSE -1568.594     1870
 #>          3   10 floor(ymin=0.001, rule=interpolate) FALSE -1578.793     1870
@@ -121,11 +124,6 @@ head(tg, 6)
 #>          4   10 floor(ymin=0.001, rule=interpolate) FALSE -1568.594     1870
 #>  perplexity n_nodes_avg folds_failed
 #>    2.313636        59.8            0
-attr(tg, "best")
-#>   max_depth nmin                           smoothing prune    logLik n_scored
-#> 1         4   10 floor(ymin=0.001, rule=interpolate) FALSE -1568.594     1870
-#>   perplexity n_nodes_avg folds_failed
-#> 1   2.313636        59.8            0
 ```
 
 (`min_count` and `prune` are swept by their defaults; add `smoothing =`
@@ -140,9 +138,15 @@ plot(tg)
 
 The shape of the curve is as informative as the winning point: if
 perplexity keeps falling with `max_depth` the process has long memory;
-if it flattens early (as engagement data tends to) the useful memory is
-short and deeper trees just overfit. Refit at the chosen configuration
-on the full data for downstream use.
+if it flattens early the useful memory is short and deeper trees mostly
+fit noise. Here the drop from one to two steps of memory is the large
+one (held-out perplexity about 2.42 to 2.33); every configuration with
+`max_depth >= 2` lies between 2.31 and 2.35, and which of them wins
+depends on the fold split (with `seed = 1` the winner is a pruned
+depth-4 tree with `min_count = 3`). The defensible reading is that
+memory beyond two steps adds little, so prefer the simpler tree unless
+the deeper contexts are themselves of interest. Refit at the chosen
+configuration on the full data for downstream use.
 
 ## 4. Bootstrap pathway reliability
 
@@ -154,37 +158,37 @@ resamples lets you also see the full distribution of any statistic.
 
 ``` r
 
-boot <- bootstrap_pathways(pruned, iter = 200L, stat = "count",
+boot <- bootstrap_pathways(pruned, iter = 100L, stat = "count",
                           seed = 1L, keep_resamples = TRUE)
 boot
-#> <transitiontrees_bootstrap>  200 resamples
+#> <transitiontrees_bootstrap>  100 resamples
 #>   stability  : count in [0.50, 1.50] x observed, p < 0.05
 #>   informative: G^2 > qchisq(0.95, df=k-1) = 5.99, threshold 0.80
-#>   pathways   : 25 total, 22 stable, 16 informative, 15 both
+#>   pathways   : 25 total, 23 stable, 16 informative, 15 both
 #> 
 #> top pathways (stable + informative first):
 #>                                pathway depth count p_stability stability_rate
-#>                                Average     1   751       0.005              1
-#>                                 Active     1   658       0.005              1
-#>                       Active -> Active     2   433       0.005              1
-#>                             Disengaged     1   325       0.005              1
-#>                      Active -> Average     2   160       0.005              1
-#>                      Average -> Active     2   144       0.005              1
-#>                  Disengaged -> Average     2   122       0.005              1
-#>           Active -> Average -> Average     3    80       0.005              1
-#>            Average -> Active -> Active     3    70       0.005              1
-#>  Average -> Active -> Active -> Active     4    37       0.005              1
+#>                                Average     1   751        0.01              1
+#>                                 Active     1   658        0.01              1
+#>                       Active -> Active     2   433        0.01              1
+#>                             Disengaged     1   325        0.01              1
+#>                      Active -> Average     2   160        0.01              1
+#>                      Average -> Active     2   144        0.01              1
+#>                  Disengaged -> Average     2   122        0.01              1
+#>           Active -> Average -> Average     3    80        0.01              1
+#>            Average -> Active -> Active     3    70        0.01              1
+#>  Average -> Active -> Active -> Active     4    37        0.01              1
 #>  stable informative_rate informative mean_G2 ci_G2_lo ci_G2_hi
-#>    TRUE            1.000        TRUE 118.478   75.640  167.234
-#>    TRUE            1.000        TRUE 320.221  252.539  400.370
-#>    TRUE            0.990        TRUE  17.883    7.760   29.091
-#>    TRUE            1.000        TRUE 180.794  112.545  264.322
-#>    TRUE            1.000        TRUE  28.771   13.505   44.901
-#>    TRUE            1.000        TRUE  30.211   11.246   51.521
-#>    TRUE            1.000        TRUE  32.634   14.488   53.156
-#>    TRUE            0.875        TRUE  13.152    2.924   26.802
-#>    TRUE            0.990        TRUE  24.345    9.173   44.483
-#>    TRUE            0.860        TRUE  13.638    2.414   32.937
+#>    TRUE             1.00        TRUE 121.332   77.334  169.750
+#>    TRUE             1.00        TRUE 323.544  262.193  397.656
+#>    TRUE             0.99        TRUE  17.429    7.540   28.547
+#>    TRUE             1.00        TRUE 182.436  116.621  263.531
+#>    TRUE             1.00        TRUE  29.705   14.895   44.565
+#>    TRUE             1.00        TRUE  29.645   11.605   50.310
+#>    TRUE             1.00        TRUE  32.180   14.405   51.494
+#>    TRUE             0.83        TRUE  12.651    2.896   26.037
+#>    TRUE             0.99        TRUE  24.531    8.339   45.878
+#>    TRUE             0.88        TRUE  13.321    2.527   30.223
 #> # ... 15 more pathways (use summary(x) for full table)
 ```
 
@@ -206,40 +210,40 @@ head(summary(boot))
 #> 5 Active -> Average     2   160     Average        0.5187500 0.12282588
 #> 6 Average -> Active     2   144      Active        0.5000000 0.14727560
 #>   changes_prediction        G2 p_stability stability_rate stable
-#> 1              FALSE 118.23068 0.004975124              1   TRUE
-#> 2               TRUE 318.79579 0.004975124              1   TRUE
-#> 3              FALSE  17.16853 0.004975124              1   TRUE
-#> 4               TRUE 181.59944 0.004975124              1   TRUE
-#> 5              FALSE  27.24365 0.004975124              1   TRUE
-#> 6              FALSE  29.40010 0.004975124              1   TRUE
+#> 1              FALSE 118.23068  0.00990099              1   TRUE
+#> 2               TRUE 318.79579  0.00990099              1   TRUE
+#> 3              FALSE  17.16853  0.00990099              1   TRUE
+#> 4               TRUE 181.59944  0.00990099              1   TRUE
+#> 5              FALSE  27.24365  0.00990099              1   TRUE
+#> 6              FALSE  29.40010  0.00990099              1   TRUE
 #>   informative_rate informative flip_consistency mean_count sd_count ci_count_lo
-#> 1             1.00        TRUE            0.885    752.070 49.62366      652.95
-#> 2             1.00        TRUE            0.885    657.700 55.88071      550.90
-#> 3             0.99        TRUE            1.000    433.105 49.77925      347.75
-#> 4             1.00        TRUE            0.785    326.365 33.36492      265.00
-#> 5             1.00        TRUE            0.950    159.290 13.32115      136.00
-#> 6             1.00        TRUE            0.620    143.935 13.10494      121.95
+#> 1             1.00        TRUE             0.90     751.89 46.40073      669.90
+#> 2             1.00        TRUE             0.90     656.33 55.93558      548.90
+#> 3             0.99        TRUE             1.00     433.31 48.66266      342.75
+#> 4             1.00        TRUE             0.78     329.07 35.83725      257.65
+#> 5             1.00        TRUE             0.97     157.98 13.71645      134.90
+#> 6             1.00        TRUE             0.64     142.04 13.40279      119.90
 #>   ci_count_hi mean_next_probability sd_next_probability ci_next_probability_lo
-#> 1     844.325             0.6074684          0.02383435              0.5602254
-#> 2     769.175             0.6970828          0.02745211              0.6442147
-#> 3     535.200             0.7840172          0.02690600              0.7281187
-#> 4     396.050             0.4872506          0.03622112              0.4314732
-#> 5     183.050             0.5208427          0.03928445              0.4550557
-#> 6     168.025             0.5250488          0.02598869              0.4843571
+#> 1     838.100             0.6089800          0.02291564              0.5633791
+#> 2     758.400             0.6984192          0.02710968              0.6430115
+#> 3     518.525             0.7838157          0.02776100              0.7310934
+#> 4     398.000             0.4890828          0.04122430              0.4257269
+#> 5     180.000             0.5239125          0.03932595              0.4610542
+#> 6     167.525             0.5263975          0.02480997              0.4924242
 #>   ci_next_probability_hi mean_divergence sd_divergence ci_divergence_lo
-#> 1              0.6549035      0.11439634    0.02594025       0.07183403
-#> 2              0.7533809      0.35344122    0.05055127       0.26995876
-#> 3              0.8310155      0.03012959    0.01054014       0.01320413
-#> 4              0.5611873      0.39995240    0.08188558       0.26407728
-#> 5              0.5894276      0.13121723    0.04498657       0.05884796
-#> 6              0.5811224      0.15297707    0.05681028       0.05396748
-#>   ci_divergence_hi   mean_G2     sd_G2  ci_G2_lo  ci_G2_hi
-#> 1       0.16703707 118.47766 24.209041  75.64028 167.23404
-#> 2       0.44497422 320.22058 39.049877 252.53941 400.37042
-#> 3       0.05071584  17.88321  5.887328   7.75980  29.09055
-#> 4       0.57174185 180.79424 40.744883 112.54453 264.32204
-#> 5       0.21775813  28.77083  9.600579  13.50545  44.90087
-#> 6       0.26903470  30.21052 10.582009  11.24551  51.52106
+#> 1              0.6551483       0.1170732    0.02630261       0.07344001
+#> 2              0.7444871       0.3580817    0.05090311       0.27501751
+#> 3              0.8300447       0.0292888    0.01077040       0.01297239
+#> 4              0.5679302       0.4003099    0.08610383       0.26712291
+#> 5              0.5880668       0.1367369    0.04571332       0.06137939
+#> 6              0.5732639       0.1529062    0.05971739       0.05510873
+#>   ci_divergence_hi   mean_G2     sd_G2   ci_G2_lo  ci_G2_hi
+#> 1       0.16545642 121.33164 25.049863  77.334459 169.75013
+#> 2       0.44831966 323.54387 37.804208 262.192780 397.65569
+#> 3       0.05001702  17.42938  6.133403   7.540294  28.54731
+#> 4       0.57597705 182.43597 43.775724 116.621329 263.53131
+#> 5       0.22509244  29.70501  9.751262  14.895484  44.56477
+#> 6       0.26864894  29.64515 10.691417  11.604989  50.30995
 ```
 
 [`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md)

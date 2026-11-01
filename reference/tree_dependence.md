@@ -75,19 +75,18 @@ ed. Wiley.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                     simplify = FALSE)
 tree   <- context_tree(seqs, max_depth = 3)
 pruned <- prune_tree(tree, criterion = "G2")
 tree_dependence(pruned)
-#>       pathway depth count  divergence  entropy entropy_before entropy_drop
-#> 1 C -> B -> C     3    11 0.415780328 1.004468       1.560781  0.556313425
-#> 2      B -> C     2    44 0.019366728 1.560781       1.584554  0.023772726
-#> 3           C     1   157 0.005768993 1.584554       1.577429 -0.007125206
+#>       pathway depth count divergence  entropy entropy_before entropy_drop
+#> 1 A -> B -> B     3    20 0.27863441 1.076298       1.545740    0.4694421
+#> 2      B -> B     2    58 0.02109727 1.545740       1.558586    0.0128466
+#> 3           B     1   181 0.01324640 1.558586       1.581209    0.0226228
 #>   likely_next likely_before changes_prediction
-#> 1           C             A               TRUE
-#> 2           A             A              FALSE
+#> 1           B             B              FALSE
+#> 2           B             A               TRUE
 #> 3           A             A              FALSE
-# }
 ```

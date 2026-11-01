@@ -33,7 +33,6 @@ programmatic use).
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
@@ -43,5 +42,4 @@ subtree(tr, "A")   # prints "subtree of: A" in the banner
 #>   fit on   : 20 sequences, 200 observations
 #>   smoothing: floor(ymin=0.001, rule=interpolate)   min_count = 3
 #>   subtree of: A
-# }
 ```

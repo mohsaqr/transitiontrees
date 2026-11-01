@@ -26,3 +26,13 @@ plot(x, ...)
 ## Value
 
 A ggplot object.
+
+## Examples
+
+``` r
+set.seed(1)
+m  <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
+tg <- tune_tree(m, max_depth = 1:2, min_count = 5L, prune = FALSE,
+                folds = 3L)
+plot(tg)
+```

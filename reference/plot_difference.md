@@ -70,14 +70,14 @@ plot_difference(
   One of `"tile"` (default; per-context heatmap over all shared
   contexts) or `"tree"` (the horizontal context-tree phylogram drawn on
   a pooled backbone, with each node and branch coloured by which group
-  reaches that context more — red for the first group, blue for the
+  reaches that context more – red for the first group, blue for the
   second; node size = pooled count).
 
 - measure:
 
   For `layout = "tile"`, what each cell encodes: `"residual"` (default)
   is the Pearson standardized residual of the first group against the
-  no-group null (observed vs expected from the context's margins) —
+  no-group null (observed vs expected from the context's margins) –
   support-aware and decomposing the per-context \\G^2\\; `"probability"`
   is the raw next-state probability difference `P(group1) - P(group2)`.
   Ignored by `"tree"`.
@@ -94,7 +94,7 @@ for the significance test.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
                            prob = c(.2,.6,.2)), simplify = FALSE)
 gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
@@ -104,6 +104,4 @@ grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 60),
 plot_difference(grp)                       # residual heatmap
 
 plot_difference(grp, layout = "tree")      # difference on the tree map
-
-# }
 ```

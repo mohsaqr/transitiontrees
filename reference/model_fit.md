@@ -42,12 +42,11 @@ use the held-out deviance with the model's training `df`). A
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(60, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 2L, min_count = 3L)
 model_fit(tree)
-#>    logLik df nobs     AIC     BIC perplexity
-#> 1 -781.96 26  720 1615.92 1734.98   2.962565
-# }
+#>    logLik df nobs     AIC      BIC perplexity
+#> 1 -781.31 26  720 1614.62 1733.681   2.959892
 ```

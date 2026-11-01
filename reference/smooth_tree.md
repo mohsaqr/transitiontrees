@@ -14,7 +14,8 @@ smooth_tree(tree, smoothing = "floor")
 
 - tree:
 
-  A `transitiontrees`.
+  A `transitiontrees`, or a `transitiontrees_group` (each member is
+  re-smoothed and the group wrapper is kept).
 
 - smoothing:
 
@@ -23,12 +24,14 @@ smooth_tree(tree, smoothing = "floor")
   `list(method, ...kwargs)` for explicit hyperparameters. Available
   methods: `"floor"` (`ymin = 0.001`), `"laplace"` (`alpha = 1`),
   `"kneser_ney"` (`discount = 0.75`), `"witten_bell"`,
-  `"jelinek_mercer"` (`lambda = 0.5`).
+  `"jelinek_mercer"` (`lambda = 0.5`). The `"floor"` method also takes
+  `rule = "interpolate"` (default) or `"cap"`; see
+  [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
 
 ## Value
 
-A new `transitiontrees` with re-smoothed probabilities. Counts and
-topology are unchanged.
+A new `transitiontrees` (or `transitiontrees_group`) with re-smoothed
+probabilities. Counts and topology are unchanged.
 
 ## Details
 
@@ -36,12 +39,23 @@ For `"kneser_ney"` the canonical continuation-distribution formulation
 requires per-state *type counts*. transitiontrees does not track these;
 the implementation uses the parent's smoothed probability as the
 back-off distribution, an approximation discussed in Begleiter, El-Yaniv
-& Yona (2004), *JAIR* 22, §3.
+& Yona (2004), Section 3.
+
+## References
+
+Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
+variable order Markov models. *Journal of Artificial Intelligence
+Research*, 22, 385-421.
+[doi:10.1613/jair.1491](https://doi.org/10.1613/jair.1491)
+
+Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
+techniques for language modeling. *Computer Speech and Language*, 13(4),
+359-394.
+[doi:10.1006/csla.1999.0128](https://doi.org/10.1006/csla.1999.0128)
 
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 m  <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 tr <- context_tree(m, max_depth = 2L, min_count = 3L)
@@ -81,5 +95,4 @@ smooth_tree(tr, list("kneser_ney", discount = 0.5))
 #>     |-- A         n=22     -> B (0.42)
 #>     |-- B         n=16     -> C (0.50)
 #>     `-- C         n=15     -> B (0.48) 
-# }
 ```

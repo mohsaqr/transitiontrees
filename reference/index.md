@@ -32,7 +32,7 @@
 - [`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md)
   : Most Predictively Divergent Pathways
 - [`engagement`](https://pak.dynasite.org/transitiontrees/reference/engagement.md)
-  : Student engagement state sequences (stslist)
+  : Student engagement state sequences (wide format)
 - [`generate_sequences()`](https://pak.dynasite.org/transitiontrees/reference/generate_sequences.md)
   : Sample Sequences from a Fitted Context Tree
 - [`group_regulation_long`](https://pak.dynasite.org/transitiontrees/reference/group_regulation_long.md)

@@ -1,9 +1,11 @@
-# transitiontrees: Context Trees and Variable-Order Markov Models
+# transitiontrees: Transition Trajectories and Dynamics of Variable-Length Pathways or Sequences
 
-Fits prediction suffix trees (Ron, Singer & Tishby 1996) and
-variable-order Markov models from categorical sequence data. Provides
-multiple pruning criteria, per-context Kullback-Leibler diagnostics,
-smoothing, prediction, and tree visualisation.
+Analyzes transition trajectories in event, sequence, and ordered data
+using variable-order prediction suffix trees (Ron, Singer & Tishby
+1996), in frequency-based and prediction-based forms. Provides multiple
+pruning, validation, and smoothing methods, next-state prediction, and
+visualisation as transition trees, radial sunbursts, transition
+heatmaps, and forward trajectory trees.
 
 ## See also
 
@@ -16,3 +18,7 @@ Useful links:
 ## Author
 
 **Maintainer**: Mohammed Saqr <saqr@saqr.me> \[copyright holder\]
+
+Authors:
+
+- Sonsoles López-Pernas <sonsoles.lopez@uef.fi>

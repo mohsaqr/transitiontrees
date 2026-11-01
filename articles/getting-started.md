@@ -9,18 +9,18 @@ core workflow end to end and finishes with the two **trajectory trees**
 that draw the sequences forward in time.
 
 The other vignettes go further: *Complete analysis case* reads one
-dataset all the way through, *Ecosystem compatibility* shows the
-`TraMineR` / `tna` / `Nestimate` hand-off, *Advanced analysis* covers
-tuning, bootstrapping and comparison, and *Visualization* tours every
-plot.
+dataset all the way through, *Ecosystem compatibility* shows the `tna` /
+`Nestimate` hand-off (and `TraMineR`-export compatibility), *Advanced
+analysis* covers tuning, bootstrapping and comparison, and
+*Visualization* tours every plot.
 
 ## 1. Fit
 
 [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
 accepts a wide character matrix or data.frame, a list of character
-vectors, a state-sequence (`stslist`) object, or a long event log. We
-start with the bundled `trajectories` matrix (138 learners x 15
-time-steps, three engagement states; trailing `NA`s mark dropouts).
+vectors, or a long event log. We start with the bundled `trajectories`
+matrix (138 learners x 15 time-steps, three engagement states; trailing
+`NA`s mark dropouts).
 
 ``` r
 
@@ -123,7 +123,10 @@ model_fit(tree)   # logLik, df, nobs, AIC, BIC, perplexity
 
 Perplexity is the effective number of equally likely next states; it
 sits below the uniform baseline (the alphabet size, here 3) when history
-is informative.
+is informative. Here it is about 2.24: knowing the recent history cuts
+the effective number of candidate next states from 3 to about 2.2. It is
+an in-sample figure, so it flatters the deep, unpruned tree; the
+*Advanced analysis* vignette gives the cross-validated one.
 
 ## 3. The pathway tables
 
@@ -196,7 +199,13 @@ sharp_pathways(tree, top = 6)       # by how peaked the next-state prediction is
 next state differs from its parent’s – the histories where memory
 overturns the corpus-wide default. The lesson the tables teach together:
 **common is not the same as informative**. The most frequent pathways
-are the backbone of the corpus; the divergent ones carry the insight.
+are the backbone of the corpus; the divergent ones carry the insight. In
+this fit the corpus-wide default next state is `Average`, but after
+`Disengaged` (325 occurrences) the most likely next state is
+`Disengaged` again – a well-supported redirection. The two top divergent
+rows, by contrast, rest on 6 and 10 occurrences: large divergence on a
+small count is the kind of result pruning and the bootstrap exist to
+test.
 
 ## 4. Prune to the reliable tree
 
@@ -325,8 +334,7 @@ tree_ai
 ```
 
 [`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
-draws the forward prefix tree and colours the one tree two ways. These
-plots use `ggforce` (a suggested package), so the chunks are guarded.
+draws the forward prefix tree and colours the one tree two ways.
 
 ### By frequency – how many sequences walk each path
 
@@ -363,6 +371,6 @@ where behaviour is decided rather than executed.
 | You want to… | See vignette |
 |----|----|
 | Read one dataset all the way through | *Complete analysis case* |
-| Feed in a `TraMineR` / `tna` / `Nestimate` object | *Ecosystem compatibility* |
+| Feed in a `tna` / `Nestimate` object (or `TraMineR` export) | *Ecosystem compatibility* |
 | Tune, bootstrap, and compare cohorts | *Advanced analysis* |
 | Tour every plot style | *Visualization* |

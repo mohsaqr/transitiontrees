@@ -1,13 +1,17 @@
 # 5. Visualization: every plot, and how to read it
 
-`transitiontrees` ships a pure-`ggplot2` visual layer (no JavaScript
-dependency in the core) plus two optional richer renderers. Every plot
-returns a standard object you can theme, save, or further modify. This
-vignette tours them all and reads each one.
+`transitiontrees` draws every static plot in pure `ggplot2` – no extra
+plotting dependency – plus one optional interactive renderer
+(`visNetwork`). Every plot returns a standard object you can theme,
+save, or further modify. This vignette tours them all and reads each
+one.
 
 A shared convention across the static tree styles: **node size = context
-count**, **node fill = the most-recent state of the pathway**, and
-**edge thickness = the volume of sequences flowing down that branch**.
+count** and **edge thickness = the volume of sequences flowing down that
+branch**. Node fill differs by style: the horizontal phylogram colours
+each node by the **most-recent** state of its pathway, while the
+dendrogram and icicle colour by the **oldest** (branching) state, so
+each first-level branch keeps one colour.
 
 ## Setup
 
@@ -90,7 +94,7 @@ plot(pruned, style = "dendrogram")
 
 ![](visualization_files/figure-html/dendrogram-1.png)
 
-### Icicle / sunburst (needs `ggraph` + `tidygraph`)
+### Icicle / sunburst
 
 A space-filling partition: arc angular width is proportional to count,
 so a dominant state visually swallows the ring – an honest depiction of
@@ -103,17 +107,11 @@ plot(pruned, style = "icicle")
 
 ![](visualization_files/figure-html/icicle-1.png)
 
-### Interactive collapsible tree (needs `visNetwork`)
-
-A draggable, zoomable widget carrying the same encodings, with a hover
-tooltip for each node’s full pathway, count, and distribution. The
-exploration tool: collapse the dominant spine and the rare informative
-branches become legible.
-
-``` r
-
-plot(pruned, style = "interactive")
-```
+A fourth style, `style = "interactive"`, renders the same tree as a
+draggable, zoomable `visNetwork` widget (collapse the dominant spine and
+the rare informative branches become legible). It produces an HTML
+widget rather than a static figure, so it is best run in an interactive
+session rather than shown inline here.
 
 ## 2. Pathway-centric plots
 
@@ -224,7 +222,7 @@ per-sequence view that only reads cleanly for a handful of sequences, so
 it is omitted here; reach for it when you want to inspect a few specific
 trajectories rather than the corpus as a whole.
 
-## 4. Forward trajectory trees (needs `ggforce`)
+## 4. Forward trajectory trees
 
 The context tree reads backward;
 [`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
@@ -270,7 +268,7 @@ quadrant. A bar entirely to the right is reproducibly informative.
 
 ``` r
 
-boot <- bootstrap_pathways(pruned, iter = 200L, seed = 1L)
+boot <- bootstrap_pathways(pruned, iter = 100L, seed = 1L)
 plot(boot)
 #> `height` was translated to `width`.
 ```
@@ -306,8 +304,9 @@ plot(cmp)
 
 ![](visualization_files/figure-html/compare-plot-1.png)
 
-The observed distance (orange line) sits in the right tail of the
-label-shuffled null (grey) – the visual form of the permutation p-value.
+The observed distance (orange line) sits against the label-shuffled null
+(blue histogram); the share of the null at or beyond the line is the
+permutation p-value printed in the subtitle.
 
 ### Tuning surface
 
@@ -319,8 +318,10 @@ plot(tg)
 
 ![](visualization_files/figure-html/tune-plot-1.png)
 
-A flat-then-rising perplexity curve is the picture of a short-memory
-process; the orange star marks the cross-validated winner.
+Held-out perplexity drops sharply from depth 1 to depth 2 and is nearly
+flat beyond it – the picture of a process whose useful memory is about
+two steps. The orange star marks the cross-validated winner; on a curve
+this flat, the winner is one of several near-equivalent configurations.
 
 ### Group difference map
 
@@ -341,7 +342,7 @@ plot_difference(grp_reg, depth = 1L)
 
 | Goal | Function |
 |----|----|
-| The tree | `plot(style = c("horizontal", "dendrogram", "icicle", "interactive"))` |
+| The tree | `plot(style = c("horizontal", "dendrogram", "icicle", "interactive"))` (interactive = `visNetwork` widget) |
 | Rank pathways | [`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md), [`plot_divergence()`](https://pak.dynasite.org/transitiontrees/reference/plot_divergence.md), [`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md) |
 | Memory of one pathway | [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md) |
 | Held-out quality | `plot_predictive(type = c("logloss", "ecdf", "position"))` |

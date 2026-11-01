@@ -1,10 +1,9 @@
-# Student engagement state sequences (stslist)
+# Student engagement state sequences (wide format)
 
-A wide set of student engagement-state sequences as a `stslist` (the
-state-sequence object `seqdef()` produces). Used to demonstrate loading
-sequence objects directly into
-[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
-Bundled example dataset.
+A wide set of student engagement-state sequences, one learner per row
+and one time-step per column. Used to demonstrate fitting from wide
+sequence data and from the network objects (tna / Nestimate) built on
+top of it. Bundled example dataset.
 
 ## Usage
 
@@ -14,9 +13,9 @@ engagement
 
 ## Format
 
-A `stslist` with 1000 rows (learners) and 25 columns (time-steps).
-States `"Active"`, `"Average"`, `"Disengaged"`; `"%"` marks missing/void
-positions.
+A `data.frame` with 1000 rows (learners) and 25 columns (time-steps).
+States `"Active"`, `"Average"`, `"Disengaged"`; `NA` marks missing /
+dropped-out positions.
 
 ## Source
 
@@ -27,25 +26,21 @@ Bundled example dataset.
 ``` r
 data(engagement)
 context_tree(engagement, max_depth = 2L)
-#> <transitiontrees>  17 nodes, depth <= 2, 4 states  [unpruned]
-#>   alphabet : %, Active, Average, Disengaged
-#>   fit on   : 1000 sequences, 25000 observations
+#> <transitiontrees>  13 nodes, depth <= 2, 3 states  [unpruned]
+#>   alphabet : Active, Average, Disengaged
+#>   fit on   : 1000 sequences, 24555 observations
 #>   smoothing: floor(ymin=0.001, rule=interpolate)   min_count = 5
-#> (start)   n=25000  -> Active (0.50)
-#> |-- %         n=145    -> % (1.00)
-#> |   |-- Active    n=88     -> % (1.00)
-#> |   |-- Average   n=15     -> % (1.00)
-#> |   `-- Disengaged  n=42     -> % (1.00)
-#> |-- Active    n=12063  -> Active (0.85)
-#> |   |-- Active    n=9915   -> Active (0.85)
-#> |   |-- Average   n=1490   -> Active (0.85)
-#> |   `-- Disengaged  n=315    -> Active (0.84)
-#> |-- Average   n=5118   -> Average (0.54)
-#> |   |-- Active    n=1044   -> Average (0.53)
-#> |   |-- Average   n=2699   -> Average (0.53)
-#> |   `-- Disengaged  n=1056   -> Average (0.56)
-#> `-- Disengaged  n=6674   -> Disengaged (0.78)
-#>     |-- Active    n=586    -> Disengaged (0.81)
-#>     |-- Average   n=723    -> Disengaged (0.73)
-#>     `-- Disengaged  n=5027   -> Disengaged (0.78) 
+#> (start)   n=24555  -> Active (0.51)
+#> |-- Active    n=11894  -> Active (0.86)
+#> |   |-- Active    n=9766   -> Active (0.86)
+#> |   |-- Average   n=1473   -> Active (0.86)
+#> |   `-- Disengaged  n=312    -> Active (0.85)
+#> |-- Average   n=5063   -> Average (0.55)
+#> |   |-- Active    n=1031   -> Average (0.54)
+#> |   |-- Average   n=2670   -> Average (0.54)
+#> |   `-- Disengaged  n=1043   -> Average (0.57)
+#> `-- Disengaged  n=6598   -> Disengaged (0.79)
+#>     |-- Active    n=581    -> Disengaged (0.82)
+#>     |-- Average   n=719    -> Disengaged (0.73)
+#>     `-- Disengaged  n=4960   -> Disengaged (0.79) 
 ```

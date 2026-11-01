@@ -66,7 +66,7 @@ A ggplot object.
 ## Examples
 
 ``` r
-# \donttest{
+set.seed(1)
 seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(seqs, max_depth = 3)
@@ -74,5 +74,4 @@ plot_pathways(tree)
 
 plot_pathways(tree, sort_by = "divergence", top = 12)
 
-# }
 ```

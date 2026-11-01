@@ -22,12 +22,14 @@ score_sequences(tree, newdata)
 
 ## Value
 
-A data.frame with columns `sequence_id`, `n_scored`, `log_lik`,
-`perplexity`.
+A data.frame with one row per sequence in `newdata` and columns
+`sequence_id` (row / element index of `newdata`), `n_scored` (positions
+scored), `log_lik` (natural-log likelihood) and `perplexity`.
 
 ## Examples
 
 ``` r
+set.seed(1)
 fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 tree <- context_tree(fit, max_depth = 1L)
@@ -35,9 +37,9 @@ new  <- replicate(5, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 score_sequences(tree, new)
 #>   sequence_id n_scored   log_lik perplexity
-#> 1           1       10 -10.34191   2.812829
-#> 2           2       10 -11.38681   3.122645
-#> 3           3       10 -10.96508   2.993695
-#> 4           4       10 -11.80214   3.255072
-#> 5           5       10 -11.80038   3.254499
+#> 1           1       10 -10.57935   2.880417
+#> 2           2       10 -10.54631   2.870915
+#> 3           3       10 -11.09127   3.031711
+#> 4           4       10 -10.99497   3.002655
+#> 5           5       10 -10.71298   2.919165
 ```

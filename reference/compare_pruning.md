@@ -1,7 +1,7 @@
 # Compare Pruning Criteria on One Tree
 
-Prunes a fitted tree under several criteria — holding `alpha` and
-`threshold` fixed — and returns a tidy one-row-per-criterion summary of
+Prunes a fitted tree under several criteria – holding `alpha` and
+`threshold` fixed – and returns a tidy one-row-per-criterion summary of
 how aggressively each trims the tree. A convenience wrapper over
 repeated
 [`prune_tree`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
@@ -33,8 +33,8 @@ compare_pruning(
 
 - alpha:
 
-  Significance level for `"G2"` (and the AIC/BIC penalties' chi-square
-  cutoff). Default 0.05.
+  Significance level for `"G2"`; not used by `"KL"`, `"AIC"` or `"BIC"`.
+  Default 0.05.
 
 - threshold:
 
@@ -56,7 +56,6 @@ for cross-validated selection.
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
                   simplify = FALSE)
@@ -71,5 +70,4 @@ compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
 #>   criterion n_nodes reduction_pct
 #> 1        G2       1          99.2
 #> 2       BIC      24          80.2
-# }
 ```

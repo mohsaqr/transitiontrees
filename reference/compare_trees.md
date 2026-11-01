@@ -17,10 +17,11 @@ compare_trees(tree_a, tree_b = NULL, iter = 200L, seed = 1L, symmetric = TRUE)
 
 - tree_a, tree_b:
 
-  context trees fit on data subsets A and B. Alternatively, pass a
-  two-element `transitiontrees_group` (from
-  `context_tree(..., group =)`) as `tree_a` and leave `tree_b = NULL`;
-  its two trees are compared in key order.
+  `transitiontrees` objects fit on data subsets A and B (unweighted: a
+  weighted tree is refused because the permutation refits from the raw
+  sequences). Alternatively, pass a two-element `transitiontrees_group`
+  (from `context_tree(..., group =)`) as `tree_a` and leave
+  `tree_b = NULL`; its two trees are compared in key order.
 
 - iter:
 
@@ -28,11 +29,14 @@ compare_trees(tree_a, tree_b = NULL, iter = 200L, seed = 1L, symmetric = TRUE)
 
 - seed:
 
-  Integer. RNG seed for reproducibility. Default 1.
+  Integer. RNG seed for reproducibility, passed to
+  [`set.seed()`](https://rdrr.io/r/base/Random.html). Default 1.
 
 - symmetric:
 
-  Logical. Default `TRUE`.
+  Logical. `TRUE` (default) uses the symmetric distance; `FALSE` uses
+  \\D\_{KL}(A\\B)\\ only (see
+  [`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)).
 
 ## Value
 
@@ -41,23 +45,32 @@ A `transitiontrees_comparison` object with components:
 - pdist:
 
   observed scalar distance
+  ([`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)).
 
 - null_dist:
 
-  numeric vector, length `iter`
+  numeric vector, length `iter`: the distance after each label
+  permutation.
 
 - p_value:
 
-  one-sided p-value (proportion of null at least as extreme as observed)
+  one-sided permutation p-value,
+  `(1 + sum(null_dist >= pdist)) / (iter + 1)`.
 
 - pathways:
 
-  per-pathway breakdown data.frame
+  per-pathway breakdown data.frame, one row per context in either tree;
+  returned by
+  [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html).
+
+The print method shows the observed distance, p-value and the most
+divergent pathways;
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws the null
+distribution.
 
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
 m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
@@ -77,5 +90,4 @@ compare_trees(tr1, tr2, iter = 50)
 #>   C -> C      15      21         0.162         0.199          0.181
 #>        A      58      72         0.074         0.080          0.077
 #>   A -> B      17      17         0.067         0.066          0.066
-# }
 ```

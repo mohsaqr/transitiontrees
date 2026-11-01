@@ -1,9 +1,9 @@
 # Compare Smoothing Schemes on One Dataset
 
-Fits a context tree under several smoothing schemes — holding
-`max_depth`, `nmin` and every other argument fixed — and returns a tidy
-one-row-per-scheme comparison of tree size and in-sample perplexity. A
-convenience wrapper over repeated
+Fits a context tree under several smoothing schemes – holding
+`max_depth`, `min_count` and every other argument fixed – and returns a
+tidy one-row-per-scheme comparison of tree size and in-sample
+perplexity. A convenience wrapper over repeated
 [`context_tree`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
 calls that collapses the usual five-line
 [`lapply()`](https://rdrr.io/r/base/lapply.html) loop into a single
@@ -25,11 +25,11 @@ compare_smoothing(
 
   Either sequence data in any form accepted by
   [`context_tree`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
-  (wide matrix / data.frame, list of character vectors, an `stslist`, or
-  a transition/network object) — fitted afresh under each scheme —
-  **or** an already-fitted `transitiontrees`, which is *re-smoothed*
-  under each scheme (topology frozen, no re-count; e.g. to sweep
-  smoothers on a pruned tree).
+  (wide matrix / data.frame, list of character vectors, or a
+  transition/network object) – fitted afresh under each scheme – **or**
+  an already-fitted `transitiontrees`, which is *re-smoothed* under each
+  scheme (topology frozen, no re-count; e.g. to sweep smoothers on a
+  pruned tree).
 
 - smoothing:
 
@@ -41,7 +41,7 @@ compare_smoothing(
 
   Further arguments passed to
   [`context_tree`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
-  (e.g. `max_depth`, `nmin`, `alphabet`), held fixed across every
+  (e.g. `max_depth`, `min_count`, `alphabet`), held fixed across every
   scheme. Ignored when `data` is a fitted tree.
 
 ## Value
@@ -53,13 +53,25 @@ size) and `perplexity` (in-sample).
 ## Details
 
 The perplexity reported is **in-sample** (computed on the fitting data),
-so it rewards memorisation and must *not* be used to pick a smoother —
+so it rewards memorisation and must *not* be used to pick a smoother –
 use
 [`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
 for out-of-sample selection. The point of this table is the side-by-side
 view and the invariance of `n_nodes` across schemes: smoothing changes
 the *probabilities* inside the tree, never *which* contexts exist
-(topology is set by `nmin`, not by the smoother).
+(topology is set by `min_count`, not by the smoother).
+
+## References
+
+Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
+variable order Markov models. *Journal of Artificial Intelligence
+Research*, 22, 385-421.
+[doi:10.1613/jair.1491](https://doi.org/10.1613/jair.1491)
+
+Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
+techniques for language modeling. *Computer Speech and Language*, 13(4),
+359-394.
+[doi:10.1006/csla.1999.0128](https://doi.org/10.1006/csla.1999.0128)
 
 ## See also
 
@@ -71,7 +83,6 @@ for cross-validated selection.
 ## Examples
 
 ``` r
-# \donttest{
 set.seed(1)
 seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
                   simplify = FALSE)
@@ -87,5 +98,4 @@ compare_smoothing(seqs, smoothing = c("floor", "kneser_ney"),
 #>    smoothing n_nodes perplexity
 #> 1      floor      13   2.938122
 #> 2 kneser_ney      13   2.938189
-# }
 ```

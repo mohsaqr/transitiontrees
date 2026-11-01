@@ -46,6 +46,7 @@ A ggplot object.
 ## Examples
 
 ``` r
+set.seed(1)
 seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
                   simplify = FALSE)
 boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
