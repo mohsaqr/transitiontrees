@@ -32,3 +32,4 @@
 ^\.codex$
 ^[^/]+\.html$
 ^sidelined$
+^_pkgdown\.yml$

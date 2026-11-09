@@ -1,3 +1,7 @@
+# transitiontrees 0.1.4
+
+* `_pkgdown.yml` is left out of the built package.
+
 # transitiontrees 0.1.3
 
 ## Documentation

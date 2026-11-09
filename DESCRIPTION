@@ -2,7 +2,7 @@ Package: transitiontrees
 Type: Package
 Title: Transition Trajectories and Dynamics of Variable-Length Pathways
     or Sequences
-Version: 0.1.3
+Version: 0.1.4
 Authors@R: c(
     person(given = "Mohammed",
            family = "Saqr",
