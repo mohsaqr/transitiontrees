@@ -1,6 +1,6 @@
 # Changelog
 
-## transitiontrees 0.1.6
+## transitiontrees 0.2.0
 
 This release collects the changes made since the CRAN release 0.1.2
 (including the unreleased 0.1.3 and 0.1.4).
@@ -55,31 +55,19 @@ This release collects the changes made since the CRAN release 0.1.2
   `transitiontrees_empty_result`, `transitiontrees_missing_package`, and
   the warnings `transitiontrees_fold_failed`, `transitiontrees_no_best`,
   `transitiontrees_unknown_state`,
-  `transitiontrees_degenerate_permutation`); argument checks use named
-  [`stopifnot()`](https://rdrr.io/r/base/stopifnot.html) messages.
+  `transitiontrees_degenerate_permutation`).
 - `plot(tune_tree(...))` marks the selected configuration only in its
   own facet; [`plot()`](https://rdrr.io/r/graphics/plot.default.html) of
   a bootstrap result no longer emits a ggplot2 message.
 - [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
   labels use ASCII text, so the plot draws in any locale.
-- `common_pathways(depth = )` returns consecutive row names.
 - ggplot2 (\>= 3.5.0) is required.
 
 ### Documentation
 
-- Help pages rewritten: each describes the method, the returned
-  structure and the conditions raised, with examples on the bundled
-  data, and the references were checked (Bühlmann and Wyner, 1999, and
-  Gabadinho and Ritschard, 2016, added; the author list of the
-  transition network analysis reference corrected).
 - New vignettes “Variable-order transition trees” and “Comparing
-  groups”, and on the package website eight guides (workflow, data
-  input, smoothing and pruning, model selection, pathway reliability,
-  prediction and scoring, visualization, verification against PST) and
-  three case studies. The previous five vignettes are folded into these.
-- Every example runs unwrapped with fixed seeds; examples were added for
-  the print, summary, plot and as.data.frame methods.
-- `_pkgdown.yml` is left out of the built package.
+  groups”. Eight guides and three case studies on the package website
+  replace the previous five vignettes.
 
 ## transitiontrees 0.1.2
 

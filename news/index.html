@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">transitiontrees</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.2.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,10 +55,10 @@
     </div>
 
     <div class="section level2">
-<h2 class="pkg-version" data-toc-text="0.1.6" id="transitiontrees-016">transitiontrees 0.1.6<a class="anchor" aria-label="anchor" href="#transitiontrees-016"></a></h2>
+<h2 class="pkg-version" data-toc-text="0.2.0" id="transitiontrees-020">transitiontrees 0.2.0<a class="anchor" aria-label="anchor" href="#transitiontrees-020"></a></h2>
 <p>This release collects the changes made since the CRAN release 0.1.2 (including the unreleased 0.1.3 and 0.1.4).</p>
 <div class="section level3">
-<h3 id="new-functions-and-arguments-0-1-6">New functions and arguments<a class="anchor" aria-label="anchor" href="#new-functions-and-arguments-0-1-6"></a></h3>
+<h3 id="new-functions-and-arguments-0-2-0">New functions and arguments<a class="anchor" aria-label="anchor" href="#new-functions-and-arguments-0-2-0"></a></h3>
 <ul><li>
 <code><a href="../reference/state_frequencies.html">state_frequencies()</a></code> returns the count and proportion of each state (one table per group for a grouped fit).</li>
 <li>
@@ -71,27 +71,21 @@
 <code><a href="../reference/context_tree.html">context_tree()</a></code> accepts the object returned by <code><a href="https://sonsoles.me/tna/reference/prepare_data.html" class="external-link">tna::prepare_data()</a></code>.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="changes-in-behavior-0-1-6">Changes in behavior<a class="anchor" aria-label="anchor" href="#changes-in-behavior-0-1-6"></a></h3>
+<h3 id="changes-in-behavior-0-2-0">Changes in behavior<a class="anchor" aria-label="anchor" href="#changes-in-behavior-0-2-0"></a></h3>
 <ul><li>The column of the <code><a href="../reference/tune_tree.html">tune_tree()</a></code> grid that holds the minimum count is now named <code>min_count</code>, matching the argument (it was <code>nmin</code>).</li>
 <li>A tuning configuration whose folds all fail now reports <code>logLik</code>, <code>perplexity</code> and <code>n_nodes_avg</code> as <code>NA</code> (the log-likelihood was 0). The warning includes the first fold error.</li>
 <li>
 <code><a href="https://rdrr.io/r/stats/predict.html" class="external-link">predict()</a></code> splits a history given as an arrow-notation string (<code>"A -&gt; B"</code>) into its states, and warns when a history contains a state outside the alphabet.</li>
-<li>Errors and warnings carry condition classes (<code>transitiontrees_bad_input</code>, <code>transitiontrees_alphabet_mismatch</code>, <code>transitiontrees_no_data</code>, <code>transitiontrees_weighted_unsupported</code>, <code>transitiontrees_empty_result</code>, <code>transitiontrees_missing_package</code>, and the warnings <code>transitiontrees_fold_failed</code>, <code>transitiontrees_no_best</code>, <code>transitiontrees_unknown_state</code>, <code>transitiontrees_degenerate_permutation</code>); argument checks use named <code><a href="https://rdrr.io/r/base/stopifnot.html" class="external-link">stopifnot()</a></code> messages.</li>
+<li>Errors and warnings carry condition classes (<code>transitiontrees_bad_input</code>, <code>transitiontrees_alphabet_mismatch</code>, <code>transitiontrees_no_data</code>, <code>transitiontrees_weighted_unsupported</code>, <code>transitiontrees_empty_result</code>, <code>transitiontrees_missing_package</code>, and the warnings <code>transitiontrees_fold_failed</code>, <code>transitiontrees_no_best</code>, <code>transitiontrees_unknown_state</code>, <code>transitiontrees_degenerate_permutation</code>).</li>
 <li>
 <code>plot(tune_tree(...))</code> marks the selected configuration only in its own facet; <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> of a bootstrap result no longer emits a ggplot2 message.</li>
 <li>
 <code><a href="../reference/plot_pruning.html">plot_pruning()</a></code> labels use ASCII text, so the plot draws in any locale.</li>
-<li>
-<code>common_pathways(depth = )</code> returns consecutive row names.</li>
 <li>ggplot2 (&gt;= 3.5.0) is required.</li>
 </ul></div>
 <div class="section level3">
-<h3 id="documentation-0-1-6">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-1-6"></a></h3>
-<ul><li>Help pages rewritten: each describes the method, the returned structure and the conditions raised, with examples on the bundled data, and the references were checked (Bühlmann and Wyner, 1999, and Gabadinho and Ritschard, 2016, added; the author list of the transition network analysis reference corrected).</li>
-<li>New vignettes “Variable-order transition trees” and “Comparing groups”, and on the package website eight guides (workflow, data input, smoothing and pruning, model selection, pathway reliability, prediction and scoring, visualization, verification against PST) and three case studies. The previous five vignettes are folded into these.</li>
-<li>Every example runs unwrapped with fixed seeds; examples were added for the print, summary, plot and as.data.frame methods.</li>
-<li>
-<code>_pkgdown.yml</code> is left out of the built package.</li>
+<h3 id="documentation-0-2-0">Documentation<a class="anchor" aria-label="anchor" href="#documentation-0-2-0"></a></h3>
+<ul><li>New vignettes “Variable-order transition trees” and “Comparing groups”. Eight guides and three case studies on the package website replace the previous five vignettes.</li>
 </ul></div>
 </div>
     <div class="section level2">
