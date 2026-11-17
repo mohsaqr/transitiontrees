@@ -3,34 +3,51 @@
 \docType{data}
 \name{group_regulation_long}
 \alias{group_regulation_long}
-\title{Collaborative-regulation events (long format)}
+\title{Regulation of collaborative learning (long event log)}
 \format{
-A \code{data.frame} with 27533 rows and 6 columns:
+A \code{data.frame} with 27,533 rows (actions) and 6 columns:
   \describe{
-    \item{Actor}{integer; the learner.}
-    \item{Achiever}{character; an achievement-level covariate.}
-    \item{Group}{numeric; the collaboration group.}
-    \item{Course}{character; the course.}
-    \item{Time}{POSIXct; the event timestamp.}
-    \item{Action}{character; the regulation move (the state).}
+    \item{Actor}{Integer student identifier, 1 to 2,000.}
+    \item{Achiever}{Achievement level, \code{"High"} or \code{"Low"},
+      constant within a student.}
+    \item{Group}{Numeric collaboration group, 1 to 200; each student
+      belongs to one group.}
+    \item{Course}{Course, \code{"A"}, \code{"B"} or \code{"C"}.}
+    \item{Time}{\code{POSIXct} timestamp of the action.}
+    \item{Action}{The regulation move, the state of the sequence.}
   }
 }
 \source{
-Bundled example dataset.
+Identical to \code{group_regulation_long} in the \pkg{tna}
+  package (there a tibble), where it is described as generated
+  synthetically from that package's \code{group_regulation} data.
 }
 \usage{
 group_regulation_long
 }
 \description{
-A long, one-row-per-event log of collaborative regulation moves, with
-timestamps. Used to demonstrate long-format loading: reshape with
-\code{\link{prepare_input}()} (or name \code{action =} in
-\code{\link{context_tree}()}) to split each actor's events into
-time-gap sessions. Bundled example dataset.
+\code{group_regulation_long} is a coded dataset of the regulation actions of
+2,000 students working in 200 small groups across three courses, one row per
+action with a timestamp. Each action is one of nine regulation moves:
+\code{adapt}, \code{cohesion}, \code{consensus}, \code{coregulate},
+\code{discuss}, \code{emotion}, \code{monitor}, \code{plan} and
+\code{synthesis}. Each student is classified as a high or low achiever (1,000
+each), which makes the data suited to comparing the regulation pathways of
+two groups.
+
+The data are in long format. Name the columns in
+\code{\link{context_tree}()} (\code{actor = "Actor"},
+\code{time = "Time"}, \code{action = "Action"}) or reshape them with
+\code{\link{prepare_input}()}; with the default 15-minute session gap,
+each student's actions form one sequence of 2 to 26 actions.
 }
 \examples{
-data(group_regulation_long)
-context_tree(group_regulation_long, actor = "Actor", time = "Time",
-             action = "Action", max_depth = 3L)
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+summary(groups)
+}
+\seealso{
+\code{\link{compare_groups}()}, \code{\link{prepare_input}()}.
 }
 \keyword{datasets}

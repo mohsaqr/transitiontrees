@@ -1,44 +1,57 @@
 # ---- Mining contexts and sequences ----
 
-#' Mine Contexts by Next-State Probability
+#' Find the contexts that make a given next state likely or unlikely
 #'
 #' @description
-#' Scan every context in a fitted tree for a chosen next state and
-#' return those whose predicted probability for that state falls in a
-#' requested range. A tidy context-mining table:
-#' "in which histories is the next move \code{state} unusually likely or unlikely?"
+#' \code{mine_contexts()} finds the contexts that make a given next state likely
+#' or unlikely. It scans every context of a fitted tree for the probability it
+#' gives one chosen next state and returns the contexts whose probability lies
+#' in a requested range, from the highest probability down. This serves
+#' questions about one outcome state, such as after which histories
+#' disengagement is most likely, or after which histories a learner almost never
+#' returns to planning.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param state Character. The next state to score, one of the tree's
-#'   alphabet.
-#' @param min_prob,max_prob Numeric in \eqn{[0, 1]} or \code{NULL}.
-#'   Keep contexts whose \code{P(state | context)} is at least
-#'   \code{min_prob} and/or at most \code{max_prob}. \code{NULL}
-#'   (default) leaves that side unbounded.
-#' @param min_count Integer. Drop contexts with fewer than this many
-#'   occurrences. Default 1.
+#' Each row reports the context, its depth and count, the probability of
+#' the chosen state after it, and whether that state is the context's most
+#' likely next state. Probabilities in rare contexts are imprecise; set
+#' \code{min_count} to keep only contexts with enough occurrences. To
+#' compare the state's probability across groups, fit a grouped tree and
+#' use \code{\link{compare_groups}()}.
 #'
-#' @return A data.frame with columns \code{pathway}, \code{depth},
-#'   \code{count}, \code{state}, \code{prob} (\code{P(state | context)}),
-#'   and \code{is_modal} (whether \code{state} is the context's most
-#'   likely next state; ties broken by alphabet order), sorted by
-#'   \code{prob} descending. The empty case returns a 0-row data.frame
-#'   with the same schema.
+#' @param tree A \code{transitiontrees} object.
+#' @param state The next state of interest, one of the tree's states.
+#' @param min_prob,max_prob Keep contexts whose probability of \code{state}
+#'   is at least \code{min_prob} and at most \code{max_prob}. \code{NULL}
+#'   (default) leaves that bound open.
+#' @param min_count Keep contexts that occurred at least this many times.
+#'   Default 1.
+#'
+#' @return A \code{data.frame} with one row per context and columns
+#'   \code{pathway}, \code{depth}, \code{count}, \code{state}, \code{prob}
+#'   (probability of \code{state} after the context) and \code{is_modal}
+#'   (whether \code{state} is the most likely next state), sorted by
+#'   \code{prob} and then \code{count}, both decreasing. No matching context
+#'   gives a zero-row table with these columns.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+#' \code{state} is not a single one of its states.
+#'
+#' @seealso \code{\link{query_pathway}()}, \code{\link{sharp_pathways}()},
+#'   \code{\link{mine_sequences}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 2L)
-#' mine_contexts(tree, state = "A", min_prob = 0.4)
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' mine_contexts(tree, state = "Disengaged", min_prob = 0.4, min_count = 10)
+#' mine_contexts(tree, state = "Active", max_prob = 0.05)
 #' @export
 mine_contexts <- function(tree, state, min_prob = NULL, max_prob = NULL,
                           min_count = 1L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   alpha <- tree$alphabet
   if (missing(state) || length(state) != 1L || !state %in% alpha)
-    stop("'state' must be a single state from the alphabet: ",
-         paste(alpha, collapse = ", "), call. = FALSE)
+    .tt_abort("'state' must be a single state from the alphabet: ",
+         paste(alpha, collapse = ", "))
   sidx      <- match(state, alpha)
   min_count <- as.integer(min_count)
 
@@ -70,37 +83,51 @@ mine_contexts <- function(tree, state, min_prob = NULL, max_prob = NULL,
   out
 }
 
-#' Mine Sequences by Predictive Surprise
+#' Find the least and most typical sequences
 #'
 #' @description
-#' Rank held-out sequences by how well the fitted tree predicts them.
-#' A tidy pattern-mining table: surface the
-#' subsequences the model finds most \emph{surprising} (poor fit, high
-#' perplexity) or most \emph{expected} (good fit, low perplexity).
+#' \code{mine_sequences()} ranks sequences by how well a fitted tree predicts
+#' them and returns the top \code{n}. With \code{which = "surprising"}, the
+#' sequences with the highest perplexity come first: those whose transitions the
+#' tree finds least expected, which are candidates for atypical cases or for
+#' patterns that the fitting data did not contain. With \code{which =
+#' "expected"}, the sequences with the lowest perplexity come first: the most
+#' typical sequences under the tree.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param newdata Sequence data in any format accepted by
-#'   \code{context_tree()}.
-#' @param n Integer. Number of sequences to return. Default 10.
-#' @param which One of \code{"surprising"} (default; highest perplexity
-#'   first) or \code{"expected"} (lowest perplexity first).
+#' The ranking is by per-sequence perplexity from
+#' \code{\link{score_sequences}()}, which adjusts for sequence length. When
+#' \code{newdata} are the fitting sequences themselves, the ranking
+#' describes typicality within the data; with other sequences it describes
+#' how well the tree generalizes to them. To find where within a sequence
+#' the unexpected moves occur, use \code{\link{score_positions}()}.
 #'
-#' @return A data.frame with the \code{\link{score_sequences}} columns
-#'   (\code{sequence_id}, \code{n_scored}, \code{log_lik},
-#'   \code{perplexity}), the top \code{n} by the chosen direction.
+#' @param tree A \code{transitiontrees} object.
+#' @param newdata Sequences to rank, in any form accepted by
+#'   \code{\link{context_tree}()}.
+#' @param n Number of sequences to return. Default 10.
+#' @param which \code{"surprising"} (default; highest perplexity first) or
+#'   \code{"expected"} (lowest perplexity first).
+#'
+#' @return A \code{data.frame} with the columns of
+#'   \code{\link{score_sequences}()} (\code{sequence_id}, \code{n_scored},
+#'   \code{log_lik}, \code{perplexity}), one row per sequence, at most
+#'   \code{n} rows.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+#' \code{newdata} has no usable sequence.
+#'
+#' @seealso \code{\link{score_sequences}()}, \code{\link{score_positions}()},
+#'   \code{\link{mine_contexts}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(fit, max_depth = 2L)
-#' new  <- replicate(20, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' mine_sequences(tree, new, n = 5, which = "surprising")
+#' tree <- context_tree(trajectories, max_depth = 2)
+#' mine_sequences(tree, engagement, n = 5)
+#' mine_sequences(tree, engagement, n = 5, which = "expected")
 #' @export
 mine_sequences <- function(tree, newdata, n = 10L,
                            which = c("surprising", "expected")) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   which <- match.arg(which)
   sc <- score_sequences(tree, newdata)
   if (nrow(sc) == 0L) return(sc)

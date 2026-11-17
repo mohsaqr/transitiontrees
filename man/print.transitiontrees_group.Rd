@@ -2,23 +2,30 @@
 % Please edit documentation in R/context_tree.R
 \name{print.transitiontrees_group}
 \alias{print.transitiontrees_group}
-\title{Print a Group of Context Trees}
+\title{Print a group of fitted transition trees}
 \usage{
 \method{print}{transitiontrees_group}(x, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_group} (named list of \code{transitiontrees}s).}
+\item{x}{A \code{transitiontrees_group} object.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print a Group of Context Trees
+\code{print()} prints one line per group of a \code{transitiontrees_group}:
+the number of contexts, the depth of the tree, and the numbers of sequences
+and observations it was fitted on.
 }
 \examples{
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-print(grp)
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+print(groups)
+}
+\seealso{
+\code{\link{summary.transitiontrees_group}()} for the fit of
+  each group; \code{\link{context_tree}()}.
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/context_tree.R
 \name{context_tree}
 \alias{context_tree}
-\title{Fit a Prediction Suffix Tree from Categorical Sequence Data}
+\title{Fit a variable-order transition tree}
 \usage{
 context_tree(
   data,
@@ -22,168 +22,147 @@ context_tree(
 )
 }
 \arguments{
-\item{data}{Sequence data in any of these forms: a wide data.frame /
-character matrix (rows = trajectories, columns = time-steps), a
-list of character vectors, or a
-\strong{supported network/transition model object}, taken
-directly: a fitted network object carrying its sequences, or a
-transition-network object. Any such object that
-follows the same convention (a \code{$data}/\code{$sequences}/
-\code{$seqdata} sequence slot) is detected structurally and works
-with no special-casing. For these objects the sequence frame is
-extracted from wherever the upstream stored it; an integer-coded
-frame is decoded through the object's label map
-(\code{$nodes} id/label table, positional \code{$labels}, or a
-\code{labels}/\code{alphabet} attribute), and that label set
-becomes the default alphabet so the tree shares the model's
-symbol space. A \emph{pure graph} object that carries no
-sequences anywhere (an aggregated transition network) is rejected
-with guidance -- sequences cannot be recovered from edge weights,
-the same reason numeric transition matrices are rejected; route
-to the sequence-bearing object explicitly. In wide / list input,
-\code{NA}, the empty string, and the TraMineR codes \code{"\%"}
-(void) and \code{"*"} (missing) all mark "no observation": the cell
-is dropped (gaps closed, trailing padding trimmed) rather than
-treated as a state.}
+\item{data}{Sequences: a wide \code{data.frame} or character matrix (one
+row per sequence, one column per time point), a list of character
+vectors, a long event log (with \code{action}), or a \pkg{tna} or
+\pkg{Nestimate} model object that carries its sequence data.
+\code{NA}, \code{""} and the \pkg{TraMineR} codes \code{"\%"} and
+\code{"*"} mark positions without an observation and are dropped.
+Numeric matrices are not accepted; convert them to character first.}
 
-\item{max_depth}{Integer. Maximum context length the tree may
-represent. Default 5.}
+\item{max_depth}{Longest context, in states, that the tree may contain.
+Default 5.}
 
-\item{min_count}{Integer. Minimum number of times a context must occur
-to receive its own node. Default 5. Contexts seen fewer than
-\code{min_count} times are absorbed into their parent.}
+\item{min_count}{Minimum number of occurrences for a context to become a
+node. Default 5.}
 
-\item{smoothing}{Smoothing specification: a method name as a string
-(uses defaults for that method's hyperparameters) or a list of
-the form \code{list(method, ...kwargs)} for explicit hyperparameters.
-Methods: \code{"floor"} (default; \code{ymin = 0.001}),
-\code{"laplace"} (\code{alpha = 1}), \code{"kneser_ney"}
-(\code{discount = 0.75}), \code{"witten_bell"},
-\code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
-method also takes \code{rule}: \code{"interpolate"} (default, the
-interpolating floor -- a distribution with a zero-count state is
-shifted toward uniform so each zero lands at exactly \code{ymin})
-or \code{"cap"} (clamp every probability up to \code{ymin} and
-renormalise), e.g. \code{list("floor", ymin = 0.001, rule = "cap")}.}
+\item{smoothing}{Smoothing scheme for the next-state probabilities: a
+method name or a list of the method name and its hyperparameters.
+Methods are \code{"floor"} (default; \code{ymin = 0.001},
+\code{rule = "interpolate"} or \code{"cap"}), \code{"laplace"}
+(\code{alpha = 1}), \code{"kneser_ney"} (\code{discount = 0.75}),
+\code{"witten_bell"} and \code{"jelinek_mercer"} (\code{lambda = 0.5}).
+See \code{\link{smooth_tree}()}.}
 
-\item{alphabet}{Character vector. Optional. Override the data-derived
-alphabet (useful when the test set may include states unseen in
-training).}
+\item{alphabet}{Character vector of states. \code{NULL} (default) uses
+the states observed in \code{data} (for a network object, its node
+labels). Supply it when new data may contain states unseen here.}
 
-\item{weights}{Numeric vector of per-sequence weights, length equal
-to the number of input rows / list elements. \code{NULL} (default)
-fits unweighted.}
+\item{weights}{Non-negative weight per sequence, one per row or list
+element of \code{data}. \code{NULL} (default) fits unweighted.}
 
-\item{group}{Optional grouping for a \strong{batch fit}: a vector with
-one entry per input sequence, a column name of a network object's
-\code{$metadata}, or --- in long-format mode (\code{action} given)
---- a column name of \code{data} (collapsed to one value per
-sequence). When supplied (or when \code{data} is itself a grouped
-object such as a \code{netobject_group} or a
-\code{group_tna}), \code{context_tree()} fits one tree per
-group over a shared alphabet and returns a \code{transitiontrees_group}
-(a named list of \code{transitiontrees}s). Default \code{NULL} (single
-tree).}
+\item{group}{Grouping for one tree per group: a vector with one value per
+sequence, the name of a column of \code{data} (long format) or of a
+network object's metadata. \code{NULL} (default) fits a single tree.}
 
-\item{block}{Optional block id for a stratified group comparison, in
-the same shapes as \code{group} (per-sequence vector, or a column
-name of \code{data} in long-format mode). Carried on the returned
-\code{transitiontrees_group} and used automatically by
-\code{\link{compare_groups}()} so the caller never re-aligns it.
-Only meaningful alongside \code{group}. Default \code{NULL}.}
+\item{block}{Optional block (stratum) identifier in the same forms as
+\code{group}, kept with the fitted group and used by
+\code{\link{compare_groups}()} for a stratified permutation test.
+Default \code{NULL}.}
 
-\item{actor, time, order, session, time_threshold}{Passed to
-\code{\link{prepare_input}()} when \code{action} is given: the unit
-each sequence belongs to (\code{actor}), the timestamp column
-(\code{time}), an explicit ordering (\code{order}) or session id
-(\code{session}), and the gap in seconds that starts a new session
-(\code{time_threshold}, default 900).}
+\item{actor, time, order, session, time_threshold}{Long-format arguments
+passed to \code{\link{prepare_input}()}: the column identifying whose
+events form a sequence, the timestamp column, an ordering column, a
+session column, and the gap in seconds that starts a new session
+(default 900). Each defaults to \code{NULL}.}
 
-\item{action}{Character. Naming a state/code column switches
-\code{data} to \strong{long-format} mode: it is reshaped to a wide
-sequence frame with \code{\link{prepare_input}()} before fitting.
-Required to use any of \code{actor}/\code{time}/\code{order}/
-\code{session}. Default \code{NULL} (data is already in sequence
-shape).}
+\item{action}{Name of the state column of a long event log. Giving it
+reshapes \code{data} with \code{\link{prepare_input}()} before
+fitting. Default \code{NULL} (\code{data} is already in sequence form).}
 }
 \value{
-For a single fit, a \code{transitiontrees} object (described below).
-  For a grouped fit (\code{group =} supplied, or a grouped family
-  object passed in) a \code{transitiontrees_group}: a named list of
-  \code{transitiontrees}s, one per group, in the group's key order, with its
-  own \code{print} and \code{as.data.frame} methods. A single
-  \code{transitiontrees} is a list with components
-\describe{
-  \item{nodes}{Named list of node descriptors. Names are context
-    strings (e.g. \code{"A -> B"}); the root is keyed by the literal
-    sentinel \code{"<root>"}. Each entry has \code{depth} (integer),
-    \code{counts} (numeric vector indexed by alphabet),
-    \code{prob} (smoothed probability vector), and \code{n} (sum of
-    counts).}
-  \item{edges}{data.frame with columns \code{parent}, \code{child},
-    \code{symbol} for fast tree traversal.}
-  \item{alphabet}{character vector of states.}
-  \item{max_depth}{Integer. The fitted depth (may be less than the
-    requested \code{max_depth} if data are short).}
-  \item{nmin}{the \code{min_count} threshold used for the fit.}
-  \item{smoothing}{resolved smoothing list (\code{method} +
-    hyperparameters).}
-  \item{n_seq, n_obs}{number of sequences and observations.}
-  \item{pruned}{Logical. \code{TRUE} after
-    \code{\link{prune_tree}()} has been applied.}
-  \item{pruning}{When \code{pruned} is \code{TRUE}, a list capturing
-    the criterion / alpha / threshold used; otherwise \code{NULL}.}
-  \item{data}{The cleaned trajectories (a list of character vectors)
-    retained for downstream bootstrap and permutation routines.}
-  \item{weights}{The per-sequence weights aligned to \code{data}, or
-    \code{NULL} for an unweighted fit. Weighted trees are refused by
-    \code{\link{bootstrap_pathways}()}, \code{\link{compare_trees}()}
-    and \code{\link{compare_groups}()}, which rebuild counts from the
-    raw sequences.}
-}
-Read the fitted tree through its accessors rather than these
-components: \code{\link{tree_pathways}()} / \code{as.data.frame()} for
-the node table, \code{\link{model_fit}()} for the fit scalars, and
-\code{\link{n_nodes}()} for the size.
+An object of class \code{transitiontrees}, the fitted tree. Read
+  it through its accessors: \code{as.data.frame()} or
+  \code{\link{tree_pathways}()} for one row per context,
+  \code{\link{state_frequencies}()} for the state counts,
+  \code{\link{model_fit}()} for the log-likelihood, information criteria
+  and perplexity, and \code{\link{n_nodes}()} for the number of
+  contexts. With \code{group}, or a grouped input, an object of class
+  \code{transitiontrees_group}: one \code{transitiontrees} per group, in
+  group order, summarized by \code{summary()} with one row per group and
+  flattened by \code{as.data.frame()} to one row per group and context.
 }
 \description{
-Estimates a variable-depth context tree (prediction suffix tree; Ron, Singer & Tishby
-1996) from a collection of sequences. Each internal node represents
-a context (string of recent states); each leaf carries a smoothed
-conditional distribution over the next state. The tree is grown to
-\code{max_depth}, then optionally pruned via
-\code{\link{prune_tree}()}.
+\code{context_tree()} fits a variable-order transition tree to a set of
+sequences. The tree, known in the literature as a prediction suffix tree
+(Ron, Singer & Tishby, 1996) or a variable-length Markov chain
+(\enc{Bühlmann}{Buhlmann} & Wyner, 1999), describes how the next state of a
+process depends on the states that precede it, while letting the amount of
+history that matters differ from one history to another. Each node of the
+tree is a context, or pathway: the most recent states, read from oldest to
+newest (\code{"A -> B -> C"}). The root holds the marginal distribution of
+states; its children condition on the last state, their children on the last
+two states, and so on. The tree shows how much of the past is needed to
+predict what comes next, and along which pathways a longer history changes
+the prediction.
+
+It counts every context of up to \code{max_depth} states that occurs at least
+\code{min_count} times and estimates, for each, the conditional distribution
+of the next state, smoothed so that unobserved continuations keep a small
+probability. Sequences may be given as a wide table or matrix (one row per
+sequence, one column per time point), a list of character vectors, a long
+event log (one row per event; name the state column in \code{action}), or a
+fitted network object from \pkg{tna} or \pkg{Nestimate} that carries its
+sequences. With \code{group}, or with a grouped network object, one tree is
+fitted per group over a shared set of states. With the default floor
+smoothing, the fitted counts and probabilities match those of the \pkg{PST}
+package (Gabadinho & Ritschard, 2016). It returns a \code{transitiontrees}
+object, or a \code{transitiontrees_group} with one tree per group.
+
+The tree is returned unpruned: every context that clears
+\code{min_count} is kept. Use \code{\link{prune_tree}()} to retain only
+the contexts whose prediction differs from that of their shorter suffix,
+\code{\link{tune_tree}()} to choose \code{max_depth}, \code{min_count}
+and the smoothing scheme by cross-validation, and
+\code{\link{tree_pathways}()} or \code{as.data.frame()} to read the
+fitted contexts as a table. Group differences are tested with
+\code{\link{compare_groups}()}, and the stability of individual pathways
+with \code{\link{bootstrap_pathways}()}.
 }
-\details{
-Construction is bottom-up via k-gram counting. The root holds the
-marginal next-state distribution; depth-k nodes hold the
-next-state distribution conditional on the most recent k states.
-Nodes whose total count falls below \code{min_count} are not created.
-All nodes start "live" and unpruned; \code{\link{prune_tree}()}
-decides which to retain.
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{max_depth} or
+\code{min_count} is not a single valid number, \code{data} has an
+unsupported type or no usable sequence, a named column is absent,
+\code{weights}, \code{group} or \code{block} do not have one entry per
+sequence, a network object carries no sequence data, or the smoothing
+specification is invalid.
 }
+
 \examples{
-# Wide character matrix: one learner per row, one time-step per column
-tree <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
+# Wide sequences: one learner per row, one time point per column
+tree <- context_tree(trajectories, max_depth = 3)
 tree
+as.data.frame(tree)
 
-# A list of character vectors works the same way
-set.seed(1)
-seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-                  simplify = FALSE)
-context_tree(seqs, max_depth = 2L)
-
-# Long event log: name the columns and it is reshaped first
+# A long event log, split into sessions at gaps over 15 minutes
 context_tree(group_regulation_long, actor = "Actor", time = "Time",
-             action = "Action", max_depth = 2L)
+             action = "Action", max_depth = 2)
 
-# One tree per group over a shared alphabet
-context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-             max_depth = 2L)
+# One tree per achievement group over a shared set of states
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+summary(groups)
 
 }
 \references{
-Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia:
-learning probabilistic automata with variable memory length.
-\emph{Machine Learning}, 25, 117-149. \doi{10.1023/A:1026490906255}
+\enc{Bühlmann}{Buhlmann}, P., & Wyner, A. J. (1999). Variable length
+Markov chains. \emph{The Annals of Statistics}, 27(2), 480-513.
+\doi{10.1214/aos/1018031204}
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. \emph{Journal of
+Statistical Software}, 72(3). \doi{10.18637/jss.v072.i03}
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. \emph{Machine
+Learning}, 25(2-3), 117-149. \doi{10.1023/A:1026490906255}
+}
+\seealso{
+\code{\link{prune_tree}()} and \code{\link{smooth_tree}()} to
+  refine a fitted tree; \code{\link{tune_tree}()} to choose its
+  settings; \code{\link{tree_pathways}()} to read it;
+  \code{\link{plot.transitiontrees}()} to draw it;
+  \code{\link{compare_groups}()} to compare groups.
 }

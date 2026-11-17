@@ -2,30 +2,46 @@
 % Please edit documentation in R/likelihood.R
 \name{perplexity}
 \alias{perplexity}
-\title{Perplexity of a context tree}
+\title{Compute the perplexity of a transition tree}
 \usage{
 perplexity(tree, newdata = NULL)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{newdata}{Sequence data; \code{NULL} (default) returns
-in-sample perplexity.}
+\item{newdata}{Sequences to score, in any form accepted by
+\code{\link{context_tree}()}. \code{NULL} (default) gives in-sample
+perplexity.}
 }
 \value{
-Numeric scalar.
+A single number; \code{NA} when no position could be scored.
 }
 \description{
-\code{exp(-mean log-likelihood per observation)}, the standard
-language-modelling evaluation metric. Lower is better. A perplexity
-of \eqn{k} on an alphabet of size \eqn{|S|} means the model is as
-predictive as a uniform distribution over \eqn{k} symbols.
-\eqn{k = |S|} is the uniform baseline; \eqn{k = 1} is perfect
-deterministic prediction.
+\code{perplexity()} computes the perplexity of a fitted tree: the exponential
+of the negative mean log-likelihood per observed position, \eqn{\exp(-\ell /
+n)}. It reads as an effective number of equally likely next states: a
+perplexity of \eqn{k} for \eqn{k} states means the tree predicts no better
+than chance, and a perplexity of 1 means every next state is predicted with
+certainty. Lower values indicate better prediction.
+
+In-sample perplexity (without \code{newdata}) favors deep, lightly smoothed
+trees that reproduce the fitting data; held-out perplexity, computed on
+sequences not used for fitting, measures how well the tree generalizes. It
+returns a single number. \code{\link{tune_tree}()} uses cross-validated
+perplexity to choose a tree's settings.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{newdata} has no usable sequence.
+}
+
 \examples{
-set.seed(1)
-tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
-                     max_depth = 2, min_count = 2)
+tree <- context_tree(trajectories, max_depth = 2)
 perplexity(tree)
+perplexity(tree, newdata = engagement)
+}
+\seealso{
+\code{\link{model_fit}()}, \code{\link{score_sequences}()},
+  \code{\link{tune_tree}()}, \code{\link{plot_predictive}()}.
 }

@@ -2,34 +2,50 @@
 % Please edit documentation in R/compare_groups.R
 \name{as.data.frame.transitiontrees_group_comparison}
 \alias{as.data.frame.transitiontrees_group_comparison}
-\title{Coerce a Group Comparison to a Tidy Data Frame}
+\title{Convert a group comparison to a data frame}
 \usage{
-\method{as.data.frame}{transitiontrees_group_comparison}(x, row.names = NULL, optional = FALSE, ...)
+\method{as.data.frame}{transitiontrees_group_comparison}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  what = c("pathways", "omnibus", "distance"),
+  ...
+)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_group_comparison}.}
+\item{x}{A \code{transitiontrees_group_comparison} object.}
 
 \item{row.names, optional}{Ignored.}
+
+\item{what}{\code{"pathways"} (default), \code{"omnibus"} or
+\code{"distance"}.}
 
 \item{...}{Ignored.}
 }
 \value{
-A data.frame with one row per tested context; see
-  \code{\link{compare_groups}} for the column vocabulary.
+A data frame. For \code{what = "pathways"}, one row per tested
+  context, with the columns described in \code{\link{compare_groups}()}.
+  For \code{what = "omnibus"}, one row per axis with columns
+  \code{axis}, \code{statistic}, \code{value} and \code{p_value}. For
+  \code{what = "distance"}, one row per unordered pair of groups with
+  columns \code{group_a}, \code{group_b} and \code{distance} (the
+  count-weighted symmetric Kullback-Leibler divergence of
+  \code{\link{tree_distance}()}, nats).
 }
 \description{
-Uniform tidy-extract: returns the per-pathway comparison table
-(\code{object$pathways}) so \code{as.data.frame(cmp)} yields the full
-divergence / usage breakdown as a base \code{data.frame}.
+\code{as.data.frame()} returns one of the three tables of a
+\code{\link{compare_groups}()} result: the per-context tests, the omnibus
+tests, or the pairwise distances between groups.
 }
 \examples{
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+cmp <- compare_groups(grp, iter = 20)
 as.data.frame(cmp)
+as.data.frame(cmp, what = "omnibus")
+as.data.frame(cmp, what = "distance")
+}
+\seealso{
+\code{\link{compare_groups}()},
+  \code{\link{summary.transitiontrees_group_comparison}}.
 }

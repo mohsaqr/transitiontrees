@@ -3,7 +3,164 @@ url: https://pak.dynasite.org/transitiontrees
 template:
   bootstrap: 5
 
+authors:
+  Mohammed Saqr:
+    href: https://saqr.me
+  Sonsoles López-Pernas:
+    href: https://sonsoles.me
+
 navbar:
   structure:
-    left:  [intro, reference, articles]
+    left:  [intro, reference, articles, news]
     right: [search, github]
+
+reference:
+- title: Overview
+  contents:
+  - transitiontrees-package
+
+- title: Fitting
+  desc: Fit a variable-order transition tree from wide sequences, event logs
+    or network objects, prepare long logs, and re-smooth or prune a fitted
+    tree.
+  contents:
+  - context_tree
+  - prepare_input
+  - smooth_tree
+  - prune_tree
+  - compare_smoothing
+  - compare_pruning
+
+- title: Pathways
+  desc: Ranked tables of the contexts a tree holds, the state distribution,
+    and lookups of single pathways.
+  contents:
+  - tree_pathways
+  - common_pathways
+  - divergent_pathways
+  - sharp_pathways
+  - tree_dependence
+  - state_frequencies
+  - query_pathway
+  - pathway_exists
+  - subtree
+
+- title: Fit and selection
+  desc: In-sample and held-out fit, information criteria, perplexity and
+    cross-validated selection of depth, minimum count, smoothing and
+    pruning.
+  contents:
+  - model_fit
+  - logLik.transitiontrees
+  - nobs.transitiontrees
+  - perplexity
+  - n_nodes
+  - tune_tree
+
+- title: Prediction and scoring
+  desc: Next-state prediction, scoring of held-out sequences, simulation,
+    imputation of gaps and mining of unusual contexts and sequences.
+  contents:
+  - predict.transitiontrees
+  - score_sequences
+  - score_positions
+  - generate_sequences
+  - simulate.transitiontrees
+  - impute_sequences
+  - mine_contexts
+  - mine_sequences
+
+- title: Reliability and comparison
+  desc: Bootstrap stability of pathways, the distance between two trees, and
+    permutation tests between two or more groups.
+  contents:
+  - bootstrap_pathways
+  - tree_distance
+  - compare_trees
+  - compare_groups
+
+- title: Plots of a tree
+  desc: The fitted tree as a horizontal tree, dendrogram, sunburst or
+    interactive network, and displays of its pathways, distributions,
+    forward trajectories and pruning decisions.
+  contents:
+  - plot.transitiontrees
+  - plot.transitiontrees_group
+  - plot_pathways
+  - plot_divergence
+  - plot_distributions
+  - plot_predictive
+  - plot_trajectories
+  - plot_pruning
+  - plot_difference
+
+- title: Plots of inference results
+  desc: Displays of bootstrap, comparison and tuning results.
+  contents:
+  - plot.transitiontrees_bootstrap
+  - plot_pathway_resamples
+  - plot.transitiontrees_comparison
+  - plot.transitiontrees_group_comparison
+  - plot.transitiontrees_tune
+
+- title: Result accessors
+  desc: Tidy tables and summaries of fitted trees and inference results.
+  contents:
+  - as.data.frame.transitiontrees
+  - as.data.frame.transitiontrees_group
+  - as.data.frame.transitiontrees_bootstrap
+  - as.data.frame.transitiontrees_comparison
+  - as.data.frame.transitiontrees_group_comparison
+  - as.data.frame.transitiontrees_tune
+  - summary.transitiontrees
+  - summary.transitiontrees_group
+  - summary.transitiontrees_bootstrap
+  - summary.transitiontrees_comparison
+  - summary.transitiontrees_group_comparison
+  - summary.transitiontrees_tune
+  - print.transitiontrees
+  - print.transitiontrees_group
+  - print.transitiontrees_bootstrap
+  - print.transitiontrees_comparison
+  - print.transitiontrees_group_comparison
+  - print.transitiontrees_tune
+  - print.summary.transitiontrees
+  - print.summary.transitiontrees_group
+  - print.summary.transitiontrees_comparison
+  - print.summary.transitiontrees_group_comparison
+  - print.summary.transitiontrees_tune
+
+- title: Data
+  desc: Engagement trajectories, collaborative regulation events and
+    human-AI collaboration messages.
+  contents:
+  - trajectories
+  - engagement
+  - group_regulation_long
+  - ai_long
+
+articles:
+- title: Vignettes
+  navbar: Vignettes
+  contents:
+  - transitiontrees
+  - comparing-groups
+
+- title: Guides
+  navbar: Guides
+  contents:
+  - articles/workflow
+  - articles/data-input
+  - articles/smoothing-and-pruning
+  - articles/model-selection
+  - articles/pathway-reliability
+  - articles/prediction-and-scoring
+  - articles/visualization
+  - articles/verification
+
+- title: Case studies
+  navbar: Case studies
+  contents:
+  - articles/case-regulation-achievement
+  - articles/case-engagement
+  - articles/case-ai-collaboration

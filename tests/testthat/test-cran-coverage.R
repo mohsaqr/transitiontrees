@@ -48,7 +48,7 @@ test_that("mine_sequences rejects an unknown 'which'", {
 
 test_that("mine_sequences rejects a non-transitiontrees first argument", {
   expect_error(mine_sequences(list(), list(c("A", "B"))),
-               "inherits")
+               class = "transitiontrees_bad_input")
 })
 
 test_that("mine_sequences on empty newdata returns the empty score schema", {
@@ -68,7 +68,8 @@ test_that("score_sequences errors on input with no usable sequences", {
 })
 
 test_that("score_sequences rejects a non-transitiontrees first argument", {
-  expect_error(score_sequences(list(), list(c("A", "B"))), "inherits")
+  expect_error(score_sequences(list(), list(c("A", "B"))),
+               class = "transitiontrees_bad_input")
 })
 
 test_that("score_positions(worst=) returns the least-probable positions in order", {

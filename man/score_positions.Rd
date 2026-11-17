@@ -2,41 +2,51 @@
 % Please edit documentation in R/likelihood.R
 \name{score_positions}
 \alias{score_positions}
-\title{Per-Position Scoring}
+\title{Score each position of each sequence under a fitted tree}
 \usage{
 score_positions(tree, newdata, worst = NULL)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{newdata}{Sequence data.}
+\item{newdata}{Sequences to score, in any form accepted by
+\code{\link{context_tree}()}.}
 
-\item{worst}{Integer or \code{NULL}. If given, return only the
-\code{worst} positions -- those with the lowest
-\code{predicted_prob} (the moves the model was most surprised by),
-sorted ascending by \code{predicted_prob}. Must be a single positive
-integer. Default \code{NULL} (all positions, in sequence order).}
+\item{worst}{Number of least expected positions to return. \code{NULL}
+(default) returns all positions, in sequence order.}
 }
 \value{
-A data.frame with one row per scored (sequence, position)
-  and columns \code{sequence_id}, \code{position},
-  \code{matched_context} (the longest context in the tree that matched
-  the history), \code{observed} (the state that occurred),
-  \code{predicted_prob} (its predicted probability) and \code{log_lik}
-  (its natural-log contribution).
+A \code{data.frame} with one row per scored position and columns
+  \code{sequence_id}, \code{position}, \code{matched_context} (the
+  context used for the prediction; \code{"(start)"} for the root),
+  \code{observed} (the state that occurred), \code{predicted_prob} (its
+  probability) and \code{log_lik} (its natural logarithm).
 }
 \description{
-Returns one row per held-out (sequence, position) with the matched
-context, predicted probability of the observed next state, and
-log-likelihood contribution. Useful for diagnostic plots showing
-where the model is confident vs. surprised.
+\code{score_positions()} returns, for every position of every sequence, the
+context of the tree that was used to predict it, the state that occurred, the
+probability the tree gave that state, and its log-likelihood contribution.
+Low probabilities mark the moves the tree did not expect, which locates where
+in a sequence it departs from the typical pathways.
+
+With \code{worst}, only the positions with the lowest predicted
+probability are returned, in increasing order of probability. Summed by
+sequence, the log-likelihood contributions give
+\code{\link{score_sequences}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+\code{worst} is not a single positive number, or \code{newdata} has no
+usable sequence.
+}
+
 \examples{
-set.seed(1)
-fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(fit, max_depth = 1L)
-new  <- replicate(5, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-score_positions(tree, new, worst = 5L)
+tree <- context_tree(trajectories, max_depth = 2)
+score_positions(tree, engagement, worst = 5)
+}
+\seealso{
+\code{\link{score_sequences}()},
+  \code{\link{predict.transitiontrees}()},
+  \code{\link{plot_predictive}()}.
 }

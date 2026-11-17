@@ -16,11 +16,12 @@
                               edge_size_range  = c(1, 10),
                               width = NULL, height = NULL, ...) {
   if (!requireNamespace("visNetwork", quietly = TRUE))
-    stop("plot(style = 'interactive') requires the 'visNetwork' ",
+    .tt_abort("plot(style = 'interactive') requires the 'visNetwork' ",
          "package. Install it, or use style = 'dendrogram' / ",
-         "'horizontal' / 'icicle'.", call. = FALSE)
+         "'horizontal' / 'icicle'.",
+              class = "transitiontrees_missing_package")
   if (length(tree$nodes) == 0L)
-    stop("Cannot plot an empty tree.", call. = FALSE)
+    .tt_abort("Cannot plot an empty tree.", class = "transitiontrees_empty_result")
 
   alphabet <- tree$alphabet
   pal      <- .pt_state_palette(alphabet)

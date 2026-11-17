@@ -2,48 +2,60 @@
 % Please edit documentation in R/plot_diagnostics.R
 \name{plot_predictive}
 \alias{plot_predictive}
-\title{Predictive Diagnostics for Held-Out Scoring}
+\title{Plot how well a context tree predicts new sequences}
 \usage{
 plot_predictive(tree, newdata, type = c("position", "ecdf", "logloss"))
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{newdata}{Held-out sequence data in any format accepted by
-\code{context_tree()}.}
+\item{newdata}{Held-out sequences in any format accepted by
+\code{\link{context_tree}()}.}
 
-\item{type}{One of \code{"position"} (default), \code{"ecdf"}, or
+\item{type}{\code{"position"} (default), \code{"ecdf"} or
 \code{"logloss"}.}
 }
 \value{
-A ggplot object.
+A ggplot object of the scored transitions.
 }
 \description{
-Visual diagnostics for how a fitted tree scores held-out sequences,
-built on \code{\link{score_positions}()}:
+\code{plot_predictive()} plots how much probability a context tree gives to
+what happens next in sequences it has not seen, the measure of its value as a
+predictive model. It scores every transition of held-out sequences with
+\code{\link{score_positions}()} and shows where the model is confident and
+where it is surprised.
+
+\code{type = "position"} plots the probability given to each observed
+next state against its position in the sequence. \code{type = "ecdf"}
+plots the empirical cumulative distribution of those probabilities,
+showing how often the model gives high or low probability to what
+actually happened. \code{type = "logloss"} plots the per-transition
+log-loss \eqn{-\log_2 P(\mathrm{observed})}{-log2 P(observed)} in bits against position,
+with the mean at each position and the overall mean; 0 bits is a
+certain and correct prediction.
+
+For one number summarizing held-out prediction use
+\code{\link{perplexity}()}, and to choose the settings that minimize it
+use \code{\link{tune_tree}()}.
+}
+\section{Conditions}{
+
 \describe{
-  \item{\code{type = "position"}}{predicted probability of the
-    observed next state against position in the sequence -- where the
-    model is confident vs. surprised as a sequence unfolds.}
-  \item{\code{type = "ecdf"}}{the empirical cumulative distribution of
-    those predicted probabilities -- a calibration-style view of how
-    often the model assigns high vs. low probability to what actually
-    happened.}
-  \item{\code{type = "logloss"}}{the per-position log-loss
-    \eqn{-\log_2 P(\mathrm{observed})} against position -- a
-    per-position log-loss view. Lower is better
-    (0 = certain and correct); the dashed line is the mean log-loss
-    over all scored positions.}
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object.}
+  \item{\code{transitiontrees_empty_result}}{(error) \code{newdata} has
+    no transitions to score.}
 }
 }
+
 \examples{
-set.seed(1)
-fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(fit, max_depth = 2L)
-new  <- replicate(15, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-plot_predictive(tree, new, type = "position")
-plot_predictive(tree, new, type = "ecdf")
-plot_predictive(tree, new, type = "logloss")
+tree <- context_tree(trajectories, max_depth = 2)
+held_out <- head(engagement, 40)
+plot_predictive(tree, held_out)
+plot_predictive(tree, held_out, type = "ecdf")
+plot_predictive(tree, held_out, type = "logloss")
+}
+\seealso{
+\code{\link{score_positions}()} for the scored transitions as
+  a table; \code{\link{perplexity}()}; \code{\link{tune_tree}()}.
 }

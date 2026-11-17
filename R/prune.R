@@ -1,74 +1,82 @@
 # ---- Pruning ----
 
-#' Prune a Context Tree
+#' Prune a transition tree to the contexts that change the prediction
 #'
 #' @description
-#' Removes nodes that do not earn their depth under the chosen
-#' criterion. Pruning is applied bottom-up: a node is dropped when
-#' extending its parent's prediction at this context produces less
-#' information / likelihood than the depth penalty allows.
+#' \code{prune_tree()} removes the contexts of a fitted tree that predict the
+#' next state no differently from their shorter suffix, so that the long
+#' contexts that remain are those in which the additional history changes the
+#' prediction. This is the principle behind the learning of prediction suffix
+#' trees (Ron, Singer & Tishby, 1996) and the context algorithm for
+#' variable-length Markov chains (\enc{Bühlmann}{Buhlmann} & Wyner, 1999). A
+#' fitted tree holds every context that occurs often enough, and many such
+#' contexts add parameters without adding information about what comes next.
 #'
-#' Renamed from \code{prune()} to avoid collision with other
-#' \code{prune()} generics.
+#' It compares each leaf with its parent, the context one state shorter, and
+#' removes the leaf when the comparison does not pass the chosen criterion;
+#' leaves exposed by a removal are tested in turn until no leaf can be removed.
+#' The root is never removed. With \code{"G2"} a leaf is kept when the
+#' likelihood-ratio statistic of its counts against the parent's distribution
+#' exceeds the chi-square critical value at \code{alpha} with \eqn{k - 1}
+#' degrees of freedom (\eqn{k} states); each leaf is tested separately, without
+#' correction for multiple tests. With \code{"KL"} a leaf is kept when its
+#' Kullback-Leibler divergence from the parent, in nats, exceeds
+#' \code{threshold}. With \code{"AIC"} and \code{"BIC"} a leaf is kept when its
+#' log-likelihood, penalized by \eqn{2(k - 1)} or \eqn{\log(n)(k - 1)} (\eqn{n}
+#' the leaf's count), is better than that of the parent's prediction (Akaike,
+#' 1974; Schwarz, 1978). The probabilities of the contexts that remain are not
+#' changed. It returns a tree of the same class with fewer contexts.
 #'
-#' @param tree A \code{transitiontrees}, or a \code{transitiontrees_group}, in
-#'   which case each member is pruned and the group wrapper is
-#'   preserved.
-#' @param criterion One of \code{"G2"} (likelihood-ratio test against
-#'   parent; default), \code{"KL"} (per-context Kullback-Leibler
-#'   against parent), \code{"AIC"} (Akaike penalty), \code{"BIC"}
-#'   (Bayesian penalty). Case-sensitive.
-#' @param alpha Numeric in (0, 1). Significance level for \code{"G2"};
-#'   ignored otherwise. Default 0.05.
-#' @param threshold Numeric. Minimum information gain in nats for
-#'   \code{"KL"}; ignored otherwise. Default 0.005.
+#' To see how strongly each criterion prunes a tree, use
+#' \code{\link{compare_pruning}()}; to choose between pruned and unpruned
+#' trees on held-out data, use \code{\link{tune_tree}()}; to draw the
+#' \code{"G2"} decision along the suffix chain of one pathway, use
+#' \code{\link{plot_pruning}()}.
+#' The \code{divergence} column of \code{\link{tree_pathways}()} is in bits,
+#' whereas the \code{"KL"} threshold is in nats; divide a threshold in nats
+#' by \code{log(2)} to read it in bits.
 #'
-#' @return A pruned \code{transitiontrees} (same structure as
-#'   \code{\link{context_tree}()} returns, fewer nodes) whose \code{pruned}
-#'   component is \code{TRUE} and whose \code{pruning} component records
-#'   \code{criterion}, \code{alpha} and \code{threshold}; the print banner
-#'   reports both. A \code{transitiontrees_group} input returns a
-#'   \code{transitiontrees_group} of pruned members.
+#' @param tree A \code{transitiontrees} object, or a
+#'   \code{transitiontrees_group}, whose trees are each pruned.
+#' @param criterion \code{"G2"} (default), \code{"KL"}, \code{"AIC"} or
+#'   \code{"BIC"}.
+#' @param alpha Significance level for \code{"G2"}, in (0, 1). Default
+#'   0.05.
+#' @param threshold Minimum divergence in nats for \code{"KL"}. Default
+#'   0.005.
 #'
-#' @details
-#' For each leaf, compute the criterion against its parent. If the
-#' criterion does not exceed its threshold, drop the leaf and revisit
-#' the parent. Repeat until stable. The root is never dropped.
-#' \code{"G2"} keeps a leaf when its likelihood-ratio statistic against
-#' the parent exceeds the chi-square critical value at \code{alpha} with
-#' \eqn{|S| - 1} degrees of freedom (one test per leaf, no multiplicity
-#' correction). \code{"AIC"} and \code{"BIC"} keep a leaf when its
-#' penalised log-likelihood beats the parent's, with penalty
-#' \eqn{2(|S| - 1)} and \eqn{\log(n)(|S| - 1)} respectively (\eqn{n} =
-#' the leaf's count).
-#' Surviving nodes keep their original smoothed \code{prob} vector
-#' (whatever smoothing scheme was applied at fit time).
+#' @return An object of the same class as \code{tree}, with fewer contexts.
+#'   A pruned tree prints \code{[pruned]} and the criterion in its header,
+#'   and \code{\link{n_nodes}()} gives its size.
 #'
-#' Note on units: the \code{"KL"} \code{threshold} is in \strong{nats}
-#' (natural log), whereas the \code{divergence} column reported by
-#' \code{\link{tree_pathways}()} / \code{\link{divergent_pathways}()} is
-#' in \strong{bits} (log base 2). Multiply a nats threshold by
-#' \code{1 / log(2)} (~1.4427) to read it on the pathway-table scale.
-#'
-#' @examples
-#' set.seed(1)
-#' seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                     simplify = FALSE)
-#' tree   <- context_tree(seqs, max_depth = 4)
-#' pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
-#' pruned
-#' prune_tree(tree, criterion = "BIC")
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+#' \code{alpha} is not a single number in (0, 1), or \code{threshold} is
+#' not a single non-negative number.
 #'
 #' @references
-#' Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia.
-#' \emph{Machine Learning}, 25, 117-149.
-#'
 #' Akaike, H. (1974). A new look at the statistical model identification.
 #' \emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
+#' \doi{10.1109/TAC.1974.1100705}
+#'
+#' \enc{Bühlmann}{Buhlmann}, P., & Wyner, A. J. (1999). Variable length
+#' Markov chains. \emph{The Annals of Statistics}, 27(2), 480-513.
+#' \doi{10.1214/aos/1018031204}
+#'
+#' Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+#' probabilistic automata with variable memory length. \emph{Machine
+#' Learning}, 25(2-3), 117-149. \doi{10.1023/A:1026490906255}
 #'
 #' Schwarz, G. (1978). Estimating the dimension of a model. \emph{The
-#' Annals of Statistics}, 6(2), 461-464.
+#' Annals of Statistics}, 6(2), 461-464. \doi{10.1214/aos/1176344136}
 #'
+#' @seealso \code{\link{compare_pruning}()}, \code{\link{plot_pruning}()},
+#'   \code{\link{tune_tree}()}, \code{\link{context_tree}()}.
+#'
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 4)
+#' prune_tree(tree, criterion = "G2", alpha = 0.05)
+#' n_nodes(prune_tree(tree, criterion = "BIC"))
 #' @export
 prune_tree <- function(tree,
                            criterion = c("G2", "KL", "AIC", "BIC"),
@@ -80,14 +88,14 @@ prune_tree <- function(tree,
     return(structure(out, class = class(tree),
                      group = attr(tree, "group")))
   }
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   criterion <- match.arg(criterion)
   if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
       alpha <= 0 || alpha >= 1)
-    stop("'alpha' must be a single number in (0, 1).", call. = FALSE)
+    .tt_abort("'alpha' must be a single number in (0, 1).")
   if (!is.numeric(threshold) || length(threshold) != 1L || is.na(threshold) ||
       threshold < 0)
-    stop("'threshold' must be a single non-negative number.", call. = FALSE)
+    .tt_abort("'threshold' must be a single non-negative number.")
 
   ## Critical value for G2: chi-square at (k-1) df
   k_states <- length(tree$alphabet)
@@ -149,46 +157,49 @@ prune_tree <- function(tree,
   tree
 }
 
-#' Compare Pruning Criteria on One Tree
+#' Compare pruning criteria on one tree
 #'
 #' @description
-#' Prunes a fitted tree under several criteria -- holding \code{alpha}
-#' and \code{threshold} fixed -- and returns a tidy one-row-per-criterion
-#' summary of how aggressively each trims the tree. A convenience
-#' wrapper over repeated \code{\link{prune_tree}} calls that
-#' collapses the usual \code{vapply()} criterion loop into one call.
+#' \code{compare_pruning()} prunes one fitted tree under each of several
+#' criteria and reports how many contexts each keeps. The table shows how
+#' strongly the criteria differ on the data at hand before one of them is
+#' applied with \code{\link{prune_tree}()}; the criteria themselves are
+#' described there. A smaller tree is not by itself a better one: to compare
+#' pruned trees by how well they predict new sequences, use
+#' \code{\link{tune_tree}()}.
 #'
-#' @param tree A \code{transitiontrees} (typically unpruned).
-#' @param criterion Character vector of criteria to compare. Defaults
-#'   to all four: \code{"G2"}, \code{"KL"}, \code{"AIC"}, \code{"BIC"}.
-#' @param alpha Significance level for \code{"G2"}; not used by
-#'   \code{"KL"}, \code{"AIC"} or \code{"BIC"}. Default 0.05.
-#' @param threshold Minimum information gain in nats for \code{"KL"}.
-#'   Default 0.005.
+#' @param tree A \code{transitiontrees} object, usually unpruned.
+#' @param criterion Criteria to compare. Default all four: \code{"G2"},
+#'   \code{"KL"}, \code{"AIC"}, \code{"BIC"}.
+#' @param alpha Significance level for \code{"G2"}. Default 0.05.
+#' @param threshold Minimum divergence in nats for \code{"KL"}. Default
+#'   0.005.
 #'
-#' @return A \code{data.frame} with one row per criterion (in the order
-#'   given by \code{criterion}) and columns \code{criterion},
-#'   \code{n_nodes} (post-prune size) and \code{reduction_pct} (percent
-#'   of the original nodes removed).
+#' @return A \code{data.frame} with one row per criterion, in the order of
+#'   \code{criterion}, and columns \code{criterion}, \code{n_nodes} (contexts
+#'   kept, root included) and \code{reduction_pct} (percentage of the
+#'   original contexts removed).
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+#' \code{criterion} is not a non-empty character vector, or \code{alpha}
+#' or \code{threshold} is invalid.
+#'
+#' @seealso \code{\link{prune_tree}()}, \code{\link{plot_pruning}()},
+#'   \code{\link{tune_tree}()}, \code{\link{compare_smoothing}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 4L, min_count = 3L)
+#' tree <- context_tree(trajectories, max_depth = 4)
 #' compare_pruning(tree)
 #' compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
-#'
-#' @seealso \code{\link{prune_tree}} to apply one criterion,
-#'   \code{\link{tune_tree}} for cross-validated selection.
 #' @export
 compare_pruning <- function(tree,
                             criterion = c("G2", "KL", "AIC", "BIC"),
                             alpha = 0.05, threshold = 0.005) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   if (!is.character(criterion) || length(criterion) < 1L)
-    stop("'criterion' must be a non-empty character vector of ",
-         "criterion names.", call. = FALSE)
+    .tt_abort("'criterion' must be a non-empty character vector of ",
+         "criterion names.")
   n0 <- length(tree$nodes)
   n  <- vapply(criterion, function(cr)
     length(prune_tree(tree, criterion = cr, alpha = alpha,

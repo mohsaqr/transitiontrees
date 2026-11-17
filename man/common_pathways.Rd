@@ -2,34 +2,46 @@
 % Please edit documentation in R/pathways.R
 \name{common_pathways}
 \alias{common_pathways}
-\title{Most Common Pathways in a Fitted Tree}
+\title{List the most frequent pathways of a tree}
 \usage{
 common_pathways(tree, top = 10L, depth = NULL, min_count = 1L)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{top}{Integer. Number of pathways to return. Default 10.}
+\item{top}{Number of pathways to return. Default 10.}
 
-\item{depth}{Integer or NULL. Restrict to pathways of this exact
-depth. \code{NULL} (default) keeps all depths.}
+\item{depth}{Return only pathways of this depth. \code{NULL} (default)
+returns all depths.}
 
-\item{min_count}{Integer. Minimum count cut-off. Default 1.}
+\item{min_count}{Keep pathways that occurred at least this many times.
+Default 1.}
 }
 \value{
-A data.frame, same columns as \code{\link{tree_pathways}},
-  sorted by count descending.
+A \code{data.frame} with the columns of
+  \code{\link{tree_pathways}()}, one row per pathway, sorted by
+  \code{count} in decreasing order, at most \code{top} rows.
 }
 \description{
-Returns the top \code{n} pathways by occurrence count -- the
-trajectories the data actually contains many copies of.
+\code{common_pathways()} returns the pathways that occurred most often,
+optionally at one depth. Frequent pathways are the typical routes through the
+process: the histories most learners or sessions actually pass through, and
+the state each of them most often leads to. Frequency says nothing about
+whether a pathway's prediction differs from that of its shorter suffix; for
+that, see \code{\link{divergent_pathways}()}.
 }
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-common_pathways(tree, top = 8)
-common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
+\section{Conditions}{
 
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+common_pathways(tree, top = 5)
+common_pathways(tree, top = 5, depth = 3)
+}
+\seealso{
+\code{\link{tree_pathways}()},
+  \code{\link{divergent_pathways}()}, \code{\link{sharp_pathways}()},
+  \code{\link{plot_pathways}()}.
 }

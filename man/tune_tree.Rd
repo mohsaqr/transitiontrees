@@ -2,7 +2,7 @@
 % Please edit documentation in R/tune.R
 \name{tune_tree}
 \alias{tune_tree}
-\title{Cross-Validated Hyperparameter Tuning for context trees}
+\title{Select context tree settings by cross-validated perplexity}
 \usage{
 tune_tree(
   data,
@@ -22,65 +22,102 @@ tune_tree(
 )
 }
 \arguments{
-\item{data}{Sequence data; format accepted by \code{context_tree()}.}
+\item{data}{Sequences in any format accepted by
+\code{\link{context_tree}()}.}
 
-\item{max_depth}{Integer vector. Grid values for tree depth.
-Default \code{2:5}.}
+\item{max_depth}{Maximum depths to try. Default \code{2:5}.}
 
-\item{min_count}{Integer vector. Grid for minimum-count threshold.
-Default \code{c(3L, 5L, 10L)}.}
+\item{min_count}{Minimum context counts to try. Default
+\code{c(3, 5, 10)}.}
 
-\item{smoothing}{Smoothing grid. A character vector of method names
-(e.g. \code{c("floor", "kneser_ney")}) -- each method is tried with
-its default hyperparameters -- or a list of explicit specs (e.g.
+\item{smoothing}{Smoothing methods to try: a character vector of method
+names, each used with its default settings (default \code{"floor"}),
+or a list of specifications such as
 \code{list(list("floor", ymin = 0.001), list("floor", ymin = 0.005))}
-for a hyperparameter sweep within one method).}
+to vary the settings of one method.}
 
-\item{prune}{Logical vector. Whether to apply G^2 pruning.
-Default \code{c(FALSE, TRUE)}.}
+\item{prune}{Whether to prune with the \eqn{G^2} criterion; both values
+are tried by default (\code{c(FALSE, TRUE)}).}
 
-\item{alpha}{Numeric. Significance level for G^2 pruning when
-\code{prune = TRUE}. Default \code{0.05}.}
+\item{alpha}{Significance level of the \eqn{G^2} pruning test. Default
+0.05.}
 
-\item{folds}{Integer. Number of CV folds. Default 5.}
+\item{folds}{Number of cross-validation folds. Default 5.}
 
-\item{seed}{Integer. RNG seed for reproducible folds, passed to
-\code{set.seed()}. Default 1.}
+\item{seed}{Seed for the assignment of sequences to folds. Default 1.
+The call sets the session's random-number state.}
 
-\item{actor, time, action, order, session, time_threshold}{Long-format
-reshaping, forwarded to \code{\link{prepare_input}()} when
-\code{action} is named (exactly as in \code{\link{context_tree}()}),
-so a long event log is reshaped before tuning rather than read as
-one row per sequence. Default \code{NULL}/900 (data already in
-sequence shape).}
+\item{actor, time, action, order, session, time_threshold}{Column names and
+session gap for a long event log, as in \code{\link{context_tree}()};
+the log is reshaped with \code{\link{prepare_input}()} before tuning.
+Default \code{NULL} (data already one row per sequence) and 900
+seconds.}
 }
 \value{
-A \code{transitiontrees_tune} object: a data.frame with one row per
-  grid point and columns \code{max_depth}, \code{nmin},
-  \code{smoothing}, \code{prune}, \code{logLik}, \code{n_scored},
-  \code{perplexity}, \code{n_nodes_avg}, and \code{folds_failed} (the
-  number of CV folds that errored for that configuration), sorted by
-  \code{perplexity} ascending. \code{nmin} is the \code{min_count}
-  grid value, \code{logLik} the summed held-out log-likelihood,
-  \code{n_scored} the number of held-out positions scored. The
-  \code{"best"} attribute holds the minimum-perplexity row
-  \strong{among configurations whose every fold scored} (\code{NULL}
-  if none did); the print method shows it under \dQuote{best} and
-  \code{plot()} marks it with a star. A warning is issued when any
-  configuration had a failed fold.
+An object of class \code{transitiontrees_tune}: a data frame
+  with one row per configuration, sorted by held-out perplexity (lowest
+  first), and columns \code{max_depth}, \code{min_count},
+  \code{smoothing}, \code{prune}, \code{logLik} (held-out
+  log-likelihood summed over the folds that scored; \code{NA} when none
+  did), \code{n_scored} (held-out transitions scored),
+  \code{perplexity}, \code{n_nodes_avg} (mean number of contexts of the
+  fitted trees) and \code{folds_failed} (folds that could not be fitted
+  or scored). \code{as.data.frame(x, what = "best")} returns the
+  selected configuration, \code{summary()} a one-row overview, and
+  \code{plot()} the perplexity surface.
 }
 \description{
-Runs k-fold cross-validation over a grid of fitting and pruning
-hyperparameters. Returns a data.frame ranked by held-out perplexity;
-printing it also shows the minimum-perplexity configuration.
+\code{tune_tree()} selects the settings of a variable-order context tree by
+cross-validated perplexity. Four settings decide how much history the tree
+uses and how far it trusts sparse histories: the maximum depth, the minimum
+count a context needs to be kept, the smoothing of the next-state
+distributions, and whether the tree is pruned. A deeper, less smoothed tree
+reproduces the sequences it was fitted to more closely, but it does not
+necessarily predict new sequences better. Held-out perplexity measures the
+second property: it is the exponential of the mean negative log-likelihood
+per scored transition in sequences the model has not seen, and can be read as
+the effective number of next states the model is choosing between.
 
-Folds are at the sequence level (each fold holds out whole
-sequences, not positions within sequences).
+It fits a tree for every combination of the supplied values and scores it by
+k-fold cross-validation. Folds are formed from whole sequences, so a held-out
+sequence contributes no transitions to the fit, and every configuration is
+scored on the same folds. The selected configuration is the one with the
+lowest held-out perplexity among those that scored on every fold; a
+configuration with a failed fold is kept in the grid but is never selected.
+It returns the grid as a \code{transitiontrees_tune} data frame with one row
+per configuration, lowest held-out perplexity first.
+
+The grid compares settings by out-of-sample prediction. To describe
+the fit of one tree to its own data use \code{\link{model_fit}()} or
+\code{\link{perplexity}()}; to compare smoothing methods or pruning
+rules on one data set without cross-validation use
+\code{\link{compare_smoothing}()} and \code{\link{compare_pruning}()}.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) fewer sequences than
+    \code{folds}; \code{smoothing} neither a character vector nor a
+    list; \code{data} not in a sequence format.}
+  \item{\code{transitiontrees_fold_failed}}{(warning) at least one
+    configuration had a fold that could not be fitted or scored; the
+    message gives the first error.}
+  \item{\code{transitiontrees_no_best}}{(warning) no configuration
+    scored on every fold, so none is selected.}
+}
+}
+
 \examples{
-set.seed(1)
-m <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
-tune_tree(m, max_depth = 1:3,
-              smoothing = c("floor", "kneser_ney"),
-              prune = FALSE, folds = 4)
+tuned <- tune_tree(trajectories, max_depth = 1:3, min_count = c(5, 10),
+                   prune = c(FALSE, TRUE), folds = 3)
+tuned
+summary(tuned)
+}
+\seealso{
+\code{\link{summary.transitiontrees_tune}},
+  \code{\link{as.data.frame.transitiontrees_tune}} and
+  \code{\link{plot.transitiontrees_tune}} for the result;
+  \code{\link{context_tree}()} and \code{\link{prune_tree}()} to fit the
+  selected configuration; \code{\link{perplexity}()} and
+  \code{\link{model_fit}()} for the fit of one tree.
 }

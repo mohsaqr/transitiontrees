@@ -2,36 +2,53 @@
 % Please edit documentation in R/plot_diagnostics.R
 \name{plot_distributions}
 \alias{plot_distributions}
-\title{Per-Context Next-State Distributions}
+\title{Plot the next-state distribution of each context}
 \usage{
 plot_distributions(tree, contexts = NULL, top = 12L, min_count = 1L)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{contexts}{Character vector of pathway strings to show, or
-\code{NULL} (default) to take the \code{top} most frequent
-contexts.}
+\item{contexts}{Contexts to show, in arrow notation. Default
+\code{NULL}: the \code{top} most frequent contexts.}
 
-\item{top}{Integer. Number of contexts to show when \code{contexts}
-is \code{NULL}. Default 12.}
+\item{top}{Number of contexts when \code{contexts} is \code{NULL}.
+Default 12.}
 
-\item{min_count}{Integer. Drop contexts below this count. Default 1.}
+\item{min_count}{Contexts with a lower count are dropped. Default 1.}
 }
 \value{
-A ggplot object.
+A ggplot object with one bar-chart panel per context.
 }
 \description{
-Small-multiples bar chart of the full next-state distribution
-\code{P(next | context)}, one panel per context. A per-context
-probability display: where \code{\link{plot_pathways}()} renders the same
-numbers as a heatmap, this shows each context's distribution as its
-own panel, with the modal bar highlighted.
+\code{plot_distributions()} draws the full next-state distribution
+\eqn{P(\mathrm{next} \mid \mathrm{context})}{P(next | context)} of selected
+contexts as small multiples, one bar chart per context with the most likely
+next state in a darker shade. The display shows, for each history, whether
+the next state is close to determined (one tall bar) or open (bars of similar
+height), and which alternatives remain. By default the most frequent contexts
+are shown.
+
+The same probabilities are shown for many contexts at once as a heatmap
+by \code{\link{plot_pathways}()}, and along one history's chain of
+shorter suffixes by \code{\link{plot_pruning}()}.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object.}
+  \item{\code{transitiontrees_empty_result}}{(error) no context is
+    left to plot.}
+}
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 2L)
-plot_distributions(tree, top = 9)
+tree <- context_tree(trajectories, max_depth = 2)
+plot_distributions(tree, top = 6)
+plot_distributions(tree, contexts = c("Active", "Active -> Disengaged"))
+}
+\seealso{
+\code{\link{plot_pathways}()}, \code{\link{plot_pruning}()};
+  \code{\link{tree_pathways}()} for the table of contexts.
 }

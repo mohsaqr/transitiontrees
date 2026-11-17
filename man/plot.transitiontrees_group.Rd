@@ -2,31 +2,36 @@
 % Please edit documentation in R/plot.R
 \name{plot.transitiontrees_group}
 \alias{plot.transitiontrees_group}
-\title{Plot Each Tree in a context tree Group}
+\title{Plot the context tree of each group}
 \usage{
 \method{plot}{transitiontrees_group}(x, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_group}.}
+\item{x}{A \code{transitiontrees_group} object.}
 
-\item{...}{Passed to \code{\link{plot.transitiontrees}} (e.g.
-\code{style}).}
+\item{...}{Passed to \code{\link{plot.transitiontrees}}, such as
+\code{style}.}
 }
 \value{
-Invisibly, a named list (one entry per group, in group order)
-  of the per-member plot objects.
+Invisibly, a named list with one plot per group, in group
+  order: ggplot objects, or htmlwidgets for
+  \code{style = "interactive"}.
 }
 \description{
-Draw every member of a \code{transitiontrees_group} in turn via
-\code{\link{plot.transitiontrees}}. Each member's plot is printed (so the
-call produces one figure per group, e.g. in an R Markdown chunk),
-captioned with its group name; the named list of plot objects is
-returned invisibly for further use.
+\code{plot()} draws every tree of a \code{transitiontrees_group} with
+\code{\link{plot.transitiontrees}}, one figure per group with the group name
+as caption, so that the memory structure of the groups can be compared side
+by side. Each figure is printed as it is made. To test or map the differences
+between groups use \code{\link{compare_groups}()} and
+\code{\link{plot_difference}()}.
 }
 \examples{
-set.seed(1)
-m   <- matrix(sample(c("A","B","C"), 200, replace = TRUE), 40, 5)
-grp <- context_tree(m, group = rep(c("x","y"), each = 20),
-                    max_depth = 2L)
-plot(grp)                         # one tree per group
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+plot(grp, show_prediction = FALSE)
+}
+\seealso{
+\code{\link{plot.transitiontrees}};
+  \code{\link{plot_difference}()} and \code{\link{compare_groups}()}
+  for the differences between groups.
 }

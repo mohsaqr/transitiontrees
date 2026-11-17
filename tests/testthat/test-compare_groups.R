@@ -92,7 +92,8 @@ test_that("compare_groups errors on a single group", {
 test_that("compare_groups S3 methods work", {
   cmp <- compare_groups(mk_diff_group(), iter = 99L)
   expect_output(print(cmp), "transitiontrees_group_comparison")
-  expect_output(summary(cmp), "Group comparison")
+  expect_s3_class(summary(cmp), "summary.transitiontrees_group_comparison")
+  expect_output(print(summary(cmp)), "Group comparison")
   expect_s3_class(as.data.frame(cmp), "data.frame")
   expect_s3_class(plot(cmp), "ggplot")
   expect_s3_class(plot(cmp, style = "matrix"), "ggplot")

@@ -2,56 +2,62 @@
 % Please edit documentation in R/plot_diagnostics.R
 \name{plot_pruning}
 \alias{plot_pruning}
-\title{Illustrate Pruning Along a Pathway's Suffix Chain}
+\title{Plot how much memory one pathway needs}
 \usage{
 plot_pruning(tree, pathway, alpha = 0.05)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees} (typically \emph{unpruned}, so the
-full chain is visible).}
+\item{tree}{A \code{transitiontrees} object, usually unpruned.}
 
-\item{pathway}{A single pathway string in arrow form
-(\code{"A -> B -> C"}, oldest on the left).}
+\item{pathway}{One fitted context in arrow notation
+(\code{"A -> B -> C"}, earliest state on the left).}
 
-\item{alpha}{Significance level for the \code{G2} keep/prune decision.
-Default 0.05.}
+\item{alpha}{Significance level of the \eqn{G^2} test. Default 0.05.}
 }
 \value{
-A ggplot object.
+A ggplot object with one panel per context of the suffix
+  chain.
 }
 \description{
-A suffix-chain pruning view: take one pathway and show, side by
-side, the next-state distribution at every context along its suffix
-chain -- the full context, then the context with its oldest move
-dropped, and so on down to the root -- marking which contexts
-\code{\link{prune_tree}} (criterion \code{"G2"}) keeps versus prunes.
-It answers "how much memory does this pathway actually need?": each
-context is drawn as its own panel (deepest memory on the left, root on
-the right) and classified into three states by opacity. \strong{Solid}
-contexts are \emph{informative} -- their own \eqn{G^2} clears the cutoff,
-so they add predictive information over their one-shorter parent.
-\strong{Mid-opacity} contexts are \emph{retained}: their own \eqn{G^2} is
-below the cutoff, but a deeper context diverges, so \code{prune_tree()}
-keeps them only as a structural bridge -- they do not themselves add
-memory. \strong{Faded} contexts are \emph{pruned} (the redundant tail).
-The panel title carries the full context, the decision, and the
-\eqn{G^2}. The requested pathway must be a fitted context; the function
-errors rather than silently plotting a shorter suffix.
+\code{plot_pruning()} plots how much memory one pathway needs: how many past
+states are needed to predict what follows it. A context tree keeps a longer
+history only when it predicts the next state differently from its shorter
+suffix, and the plot makes that decision visible for one pathway. It follows
+the pathway's suffix chain (the full history, then the history without its
+earliest state, and so on down to the root) and draws the next-state
+distribution at every link as its own panel, deepest history on the left and
+the root on the right.
+
+Each context is classified by the \eqn{G^2} rule of
+\code{\link{prune_tree}()}: the likelihood-ratio statistic of its
+next-state counts against its one-shorter parent is compared with the
+chi-square critical value at \code{alpha}. A context whose own
+\eqn{G^2} exceeds it \emph{adds memory} and is drawn solid; a context
+below it that is kept only because a deeper context exceeds it is drawn
+at medium opacity; a context below it with no deeper context exceeding
+it is \emph{pruned} and drawn faded. Each panel title gives the
+context, the decision and \eqn{G^2}. The distributions are the node
+values reported by \code{\link{tree_pathways}()} and
+\code{\link{query_pathway}()}.
+
+Pass an unpruned tree so that the whole chain is visible. To prune the
+whole tree use \code{\link{prune_tree}()}; to compare pruning rules use
+\code{\link{compare_pruning}()}.
 }
-\details{
-The keep/prune decision is exactly \code{prune_tree}'s G2 rule
-(\eqn{2N \cdot \mathrm{KL} > \chi^2_{1-\alpha, k-1}}); the cumulative
-\code{pruned} flag follows the leaf-up amnesia rule. The distributions
-and counts shown are the same node values reported throughout the
-pathway API (\code{\link{tree_pathways}()}, \code{\link{query_pathway}()}).
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object; \code{alpha} is not in (0, 1);
+    \code{pathway} is not a context of the tree.}
 }
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(80, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3L, min_count = 3L)
-plot_pruning(tree, "A -> B -> C")
+tree <- context_tree(trajectories, max_depth = 3)
+plot_pruning(tree, "Average -> Active -> Active")
 }
 \seealso{
-\code{\link{prune_tree}}, \code{\link{plot_distributions}}.
+\code{\link{prune_tree}()}, \code{\link{compare_pruning}()},
+  \code{\link{plot_distributions}()}.
 }

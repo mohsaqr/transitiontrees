@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_pathways.R
 \name{plot_pathways}
 \alias{plot_pathways}
-\title{Plot Pathways as a Probability Heatmap}
+\title{Plot pathways as a heatmap of next-state probabilities}
 \usage{
 plot_pathways(
   tree,
@@ -15,47 +15,61 @@ plot_pathways(
 )
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{top}{Integer. Maximum number of pathways to show. Default 20.}
+\item{top}{Maximum number of pathways shown. Default 20.}
 
-\item{sort_by}{Character. One of \code{"count"} (default),
-\code{"divergence"}, or \code{"depth"}.}
+\item{sort_by}{Order of the rows: \code{"count"} (default),
+\code{"divergence"} or \code{"depth"} (deepest first).}
 
-\item{min_count}{Integer. Drop pathways with fewer than this many
-occurrences. Default 5.}
+\item{min_count}{Pathways with a lower count are dropped. Default 5.}
 
-\item{show_flips}{Logical. Mark modal-flip pathways with a leading
-caret in the label. Default \code{TRUE}.}
+\item{show_flips}{Mark pathways whose most likely next state differs
+from their parent's. Default \code{TRUE}.}
 
-\item{title}{Character. Plot title; if \code{NULL} (default) a title
-is derived from \code{sort_by}.}
+\item{title}{Plot title. Default \code{NULL}: a title naming the
+ordering.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: a heatmap of pathways by next states.
 }
 \description{
-Heatmap visualisation of the pathway table: rows are pathways
-(sorted), columns are next-state probabilities under the fitted
-tree. The modal next state of each row is annotated in bold; rows
-whose modal next state \emph{flips} relative to their parent
-pathway are flagged in the row labels (with a leading caret
-\code{>}). A side strip on the left encodes the pathway count on a
-log scale.
+\code{plot_pathways()} draws the pathway table of a context tree as a
+heatmap: one row per pathway, one column per next state, and the fitted
+probability \eqn{P(\mathrm{next} \mid \mathrm{pathway})}{P(next | pathway)}
+as fill. The pathway table lists, for every history, how often it occurs and
+what tends to follow it. The most likely next state of each row is printed in
+bold, other probabilities of at least 0.05 in plain text, and pathways whose
+most likely next state differs from that of their shorter suffix are marked
+with a leading \code{>}. One display then shows which pathways are common,
+which lead almost always to one state, which leave the next state open, and
+where a longer history changes the prediction that a first-order model would
+make.
 
-This is the natural pathway-focused visualisation: one glance shows
-which pathways are common, which are sharp (high mass on a single
-next state), which are diffuse (mass spread evenly), and which
-carry trajectory-specific structure that order-1 misses.
+Rows are the \code{top} pathways by count, by divergence from the
+shorter suffix, or by depth (the root is not shown). For the full
+distribution of a few contexts as bar charts use
+\code{\link{plot_distributions}()}; to rank pathways by how much their
+history matters use \code{\link{plot_divergence}()}.
 }
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-plot_pathways(tree)
-plot_pathways(tree, sort_by = "divergence", top = 12)
+\section{Conditions}{
 
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object.}
+  \item{\code{transitiontrees_empty_result}}{(error) no pathway reaches
+    \code{min_count}.}
+}
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+plot_pathways(tree, top = 12)
+plot_pathways(tree, sort_by = "divergence", top = 12)
+}
+\seealso{
+\code{\link{tree_pathways}()} for the table;
+  \code{\link{plot_distributions}()}, \code{\link{plot_divergence}()}.
 }

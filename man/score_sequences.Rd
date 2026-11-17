@@ -2,32 +2,49 @@
 % Please edit documentation in R/likelihood.R
 \name{score_sequences}
 \alias{score_sequences}
-\title{Per-Sequence Scoring}
+\title{Score each sequence under a fitted tree}
 \usage{
 score_sequences(tree, newdata)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{newdata}{Sequence data.}
+\item{newdata}{Sequences to score, in any form accepted by
+\code{\link{context_tree}()}.}
 }
 \value{
-A data.frame with one row per sequence in \code{newdata} and
-  columns \code{sequence_id} (row / element index of \code{newdata}),
-  \code{n_scored} (positions scored), \code{log_lik} (natural-log
-  likelihood) and \code{perplexity}.
+A \code{data.frame} with one row per scored sequence and columns
+  \code{sequence_id} (position of the sequence among the non-empty
+  sequences of \code{newdata}),
+  \code{n_scored} (positions scored), \code{log_lik} (natural logarithm)
+  and \code{perplexity}.
 }
 \description{
-Returns one row per held-out sequence with its log-likelihood,
-number of scored positions, and per-sequence perplexity
-(\code{exp(-log_lik / n_scored)}).
+\code{score_sequences()} scores each sequence by how well the fitted tree
+predicts it: its log-likelihood, the number of positions scored, and its
+perplexity (\eqn{\exp(-\ell / n)}). Sequences with high perplexity follow
+pathways the tree finds unlikely, which makes the score useful for finding
+atypical sequences or for checking how well a tree fitted on one group
+describes another.
+
+Each position is predicted from the longest context of the tree that matches
+the preceding states, as in \code{\link{predict.transitiontrees}()}; states
+not among the tree's states are not scored. It returns one row per scored
+sequence. For the score of each position use \code{\link{score_positions}()};
+for the most or least typical sequences directly, use
+\code{\link{mine_sequences}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{newdata} has an unsupported type or no usable sequence.
+}
+
 \examples{
-set.seed(1)
-fit  <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(fit, max_depth = 1L)
-new  <- replicate(5, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-score_sequences(tree, new)
+tree <- context_tree(trajectories, max_depth = 2)
+head(score_sequences(tree, engagement))
+}
+\seealso{
+\code{\link{score_positions}()}, \code{\link{mine_sequences}()},
+  \code{\link{perplexity}()}.
 }

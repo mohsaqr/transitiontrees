@@ -187,7 +187,7 @@
                               edge_size_range  = c(0.3, 2.5),
                               ...) {
   if (length(x$nodes) == 0L)
-    stop("Cannot plot an empty tree.", call. = FALSE)
+    .tt_abort("Cannot plot an empty tree.", class = "transitiontrees_empty_result")
 
   layout  <- .ct_radial_layout(x)
   e_paths <- .ct_radial_edge_paths(layout, x$edges)
@@ -259,7 +259,7 @@
                               show_prediction  = TRUE,
                               ...) {
   if (length(x$nodes) == 0L)
-    stop("Cannot plot an empty tree.", call. = FALSE)
+    .tt_abort("Cannot plot an empty tree.", class = "transitiontrees_empty_result")
 
   layout  <- .ct_horizontal_layout(x)
   e_paths <- .ct_horizontal_edge_paths(layout, x$edges)
@@ -365,75 +365,89 @@
     )
 }
 
-#' Plot a Context Tree
+#' Plot a context tree
 #'
 #' @description
-#' Renders a fitted transitiontrees in one of four styles:
-#' \itemize{
-#'   \item \code{"horizontal"} (default) -- pure-ggplot2 left-to-right
-#'     phylogram: root on the left, contexts fanned out vertically to
-#'     the right, each labelled beneath with its full arrow-notation
-#'     context and (by default) its modal prediction
-#'     \code{"(state pct\%)"} on a second line. Node fill is the
-#'     \emph{most recent} move (rightmost token), so each branch off a
-#'     depth-1 hub shares a colour. Set \code{show_prediction = FALSE}
-#'     for context-only labels.
-#'   \item \code{"dendrogram"} -- pure-ggplot2 radial tree: root at the
-#'     centre, leaves on the outer ring.
-#'   \item \code{"icicle"} -- pure-ggplot2 circular partition / sunburst;
-#'     inner ring carries full state names, outer rings carry 3-letter
-#'     abbreviations.
-#'   \item \code{"interactive"} -- \code{visNetwork} htmlwidget
-#'     (Suggests). A draggable, zoomable hierarchical tree; node size
-#'     = context count and edge width = child's count (\dQuote{flow}),
-#'     the same encoding as the static styles. Hover for a tooltip
-#'     with the full pathway, count, modal next state, and the
-#'     complete next-state distribution.
+#' \code{plot()} draws a fitted context tree. A context tree organizes the
+#' histories that precede each state: the root holds the overall distribution of
+#' states; each child extends its parent's history by one earlier state; and
+#' every node carries the distribution of the next state given that history. A
+#' drawing of the tree shows which histories occur often enough to be modeled,
+#' how far back the model's memory reaches along each branch, and where branches
+#' stop because a longer history was too rare or, after pruning, added nothing
+#' to the prediction.
+#'
+#' Four drawings are available. \code{"horizontal"} (the default) is a
+#' left-to-right tree with depth on the x-axis; each node is labeled with its
+#' full history and, by default, its most likely next state and that state's
+#' probability, and is filled by the most recent state of the history.
+#' \code{"dendrogram"} is a radial tree with the root at the center, each node
+#' filled by the state its depth adds to the history. \code{"icicle"} is a
+#' sunburst: rings are depths, the angular width of an arc is proportional to
+#' the summed count of the deepest histories beneath it, and the fill is the
+#' state the ring adds to the history. \code{"interactive"} is a
+#' \pkg{visNetwork} widget with draggable nodes and a tooltip that gives each
+#' node's count and full next-state distribution. In the node-link drawings,
+#' node size is the count of the history and edge width the count of the child
+#' history. The first three drawings are ggplot objects; the interactive one is
+#' an htmlwidget.
+#'
+#' The context tree reads backwards in time: every history ends at the
+#' moment of prediction. For the forward view, sequences followed from
+#' their first state, use \code{\link{plot_trajectories}()}. The
+#' next-state probabilities of many pathways are compared more easily in
+#' \code{\link{plot_pathways}()} or \code{\link{plot_distributions}()},
+#' and differences between two groups in \code{\link{plot_difference}()}.
+#'
+#' @param x A \code{transitiontrees} object.
+#' @param style \code{"horizontal"} (default), \code{"dendrogram"},
+#'   \code{"icicle"} or \code{"interactive"}.
+#' @param point_size_range Smallest and largest node size. Default
+#'   \code{NULL}: \code{c(4, 14)} for \code{"horizontal"}, \code{c(5, 16)}
+#'   for \code{"dendrogram"}, \code{c(10, 45)} pixels for
+#'   \code{"interactive"}. Not used by \code{"icicle"}.
+#' @param edge_size_range Thinnest and thickest edge. Default \code{NULL}:
+#'   \code{c(0.3, 2.5)} for the static drawings, \code{c(1, 10)} pixels for
+#'   \code{"interactive"}. Not used by \code{"icicle"}.
+#' @param ... Options of the chosen drawing. \code{"horizontal"}:
+#'   \code{show_prediction} (default \code{TRUE}) adds the most likely next
+#'   state to each label. \code{"icicle"}: \code{label_min_fraction}
+#'   (default 0.03) and \code{label_abbrev_fraction} (default 0.08), the
+#'   arc shares below which a label is omitted or abbreviated;
+#'   \code{abbrev_len} (default 2) or \code{abbrev_fun} (default
+#'   \code{NULL}) for the abbreviation; \code{gap_size} (default 5) and
+#'   \code{gap_size_within} (default 0.3), the widths of the white lines
+#'   between first-level wedges and between arcs; \code{jitter} (default
+#'   0.04) and \code{jitter_seed} (default 1), a small random variation of
+#'   the outer edge (0 for none). \code{"interactive"}: \code{width} and
+#'   \code{height} of the widget.
+#'
+#' @return A ggplot object for \code{"horizontal"}, \code{"dendrogram"}
+#'   and \code{"icicle"}; a \pkg{visNetwork} htmlwidget for
+#'   \code{"interactive"}.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_empty_result}}{(error) the tree has no
+#'     nodes.}
+#'   \item{\code{transitiontrees_missing_package}}{(error)
+#'     \code{"interactive"} without the \pkg{visNetwork} package
+#'     installed.}
 #' }
 #'
-#' Common encoding: node size = context count, edge thickness = child's
-#' count (\dQuote{flow}). Node fill is the most recent move (rightmost
-#' token of the context) in the \code{"horizontal"} style; the
-#' \code{"dendrogram"}, \code{"icicle"}, and \code{"interactive"} styles
-#' colour by the branching (oldest) token.
-#'
-#' @param x A \code{transitiontrees}.
-#' @param style One of \code{"horizontal"} (default),
-#'   \code{"dendrogram"}, \code{"icicle"}, or \code{"interactive"}.
-#' @param point_size_range Numeric length-2 vector controlling the
-#'   minimum and maximum node-point size. Default \code{c(5, 16)} for
-#'   \code{"dendrogram"}, \code{c(4, 14)} for \code{"horizontal"},
-#'   \code{c(10, 45)} (pixels) for \code{"interactive"}. Ignored by
-#'   \code{"icicle"}.
-#' @param edge_size_range Numeric length-2 vector for edge width.
-#'   Default \code{c(0.3, 2.5)} for the static styles, \code{c(1, 10)}
-#'   (pixels) for \code{"interactive"}. Ignored by \code{"icicle"}.
-#' @param ... Passed to the chosen backend. For
-#'   \code{style = "horizontal"}, \code{show_prediction} (logical, default
-#'   \code{TRUE}) toggles each node's modal prediction
-#'   \code{"(state pct\%)"} on a second label line; set \code{FALSE} for
-#'   context-only labels. For \code{style = "interactive"}, \code{width} /
-#'   \code{height} size the htmlwidget.
-#'
-#' @return A ggplot object for the three static styles; an
-#'   \code{htmlwidget} for \code{"interactive"}.
-#'
-#' @details
-#' The three static styles (\code{"horizontal"}, \code{"dendrogram"},
-#' \code{"icicle"}) are drawn in pure \pkg{ggplot2}. \code{"interactive"}
-#' requires \code{visNetwork}; the dispatcher errors informatively if it
-#' is missing.
+#' @seealso \code{\link{plot.transitiontrees_group}} for one plot per
+#'   group; \code{\link{plot_trajectories}()} for the forward tree;
+#'   \code{\link{plot_pathways}()}, \code{\link{plot_distributions}()} and
+#'   \code{\link{plot_pruning}()} for next-state distributions.
 #'
 #' @examples
-#' set.seed(1)
-#' m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-#' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-#' plot(tr)                           # left-to-right phylogram (default)
-#' plot(tr, style = "dendrogram")     # radial dendrogram
-#' plot(tr, style = "icicle")         # sunburst
+#' tree <- context_tree(trajectories, max_depth = 2)
+#' plot(tree)
+#' plot(tree, show_prediction = FALSE)
+#' plot(tree, style = "dendrogram")
+#' plot(tree, style = "icicle")
 #' if (requireNamespace("visNetwork", quietly = TRUE)) {
-#'   widget <- plot(tr, style = "interactive")  # visNetwork htmlwidget
-#'   if (interactive()) print(widget)           # opens in the viewer
+#'   widget <- plot(tree, style = "interactive")
 #' }
 #' @export
 plot.transitiontrees <- function(x,
@@ -445,9 +459,10 @@ plot.transitiontrees <- function(x,
   style <- match.arg(style)
   if (style == "interactive" &&
       !requireNamespace("visNetwork", quietly = TRUE)) {
-    stop("plot(style = 'interactive') requires 'visNetwork'. ",
+    .tt_abort("plot(style = 'interactive') requires 'visNetwork'. ",
          "Install it, or use style = 'dendrogram' / 'horizontal' / ",
-         "'icicle'.", call. = FALSE)
+         "'icicle'.",
+              class = "transitiontrees_missing_package")
   }
   switch(style,
     icicle      = .plot_icicle(x, ...),
@@ -465,28 +480,29 @@ plot.transitiontrees <- function(x,
                    ...))
 }
 
-#' Plot Each Tree in a context tree Group
+#' Plot the context tree of each group
 #'
 #' @description
-#' Draw every member of a \code{transitiontrees_group} in turn via
-#' \code{\link{plot.transitiontrees}}. Each member's plot is printed (so the
-#' call produces one figure per group, e.g. in an R Markdown chunk),
-#' captioned with its group name; the named list of plot objects is
-#' returned invisibly for further use.
+#' \code{plot()} draws every tree of a \code{transitiontrees_group} with
+#' \code{\link{plot.transitiontrees}}, one figure per group with the group name
+#' as caption, so that the memory structure of the groups can be compared side
+#' by side. Each figure is printed as it is made. To test or map the differences
+#' between groups use \code{\link{compare_groups}()} and
+#' \code{\link{plot_difference}()}.
 #'
-#' @param x A \code{transitiontrees_group}.
-#' @param ... Passed to \code{\link{plot.transitiontrees}} (e.g.
-#'   \code{style}).
-#'
-#' @return Invisibly, a named list (one entry per group, in group order)
-#'   of the per-member plot objects.
-#'
+#' @param x A \code{transitiontrees_group} object.
+#' @param ... Passed to \code{\link{plot.transitiontrees}}, such as
+#'   \code{style}.
+#' @return Invisibly, a named list with one plot per group, in group
+#'   order: ggplot objects, or htmlwidgets for
+#'   \code{style = "interactive"}.
+#' @seealso \code{\link{plot.transitiontrees}};
+#'   \code{\link{plot_difference}()} and \code{\link{compare_groups}()}
+#'   for the differences between groups.
 #' @examples
-#' set.seed(1)
-#' m   <- matrix(sample(c("A","B","C"), 200, replace = TRUE), 40, 5)
-#' grp <- context_tree(m, group = rep(c("x","y"), each = 20),
-#'                     max_depth = 2L)
-#' plot(grp)                         # one tree per group
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' plot(grp, show_prediction = FALSE)
 #' @export
 plot.transitiontrees_group <- function(x, ...) {
   plots <- lapply(names(x), function(nm) {

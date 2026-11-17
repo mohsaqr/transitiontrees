@@ -1,0 +1,358 @@
+---
+title: "Smoothing and pruning"
+author: "Written by [Mohammed Saqr](https://saqr.me) and [Sonsoles López-Pernas](https://sonsoles.me)"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Smoothing and pruning}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7.5,
+                      fig.height = 4.6, fig.align = "center", dpi = 96)
+old_options <- options(digits = 3, width = 90)
+```
+
+A prediction suffix tree estimates a next-state distribution for every
+context it keeps, and two decisions shape these estimates. The first is
+how to treat states that never followed a context in the data. The maximum
+likelihood estimate gives them probability zero, and a single such
+transition in new data then makes the likelihood of the whole sequence
+zero. Smoothing moves a small amount of probability to the unobserved
+states, either toward the uniform distribution or toward the distribution
+of the shorter context. The second decision is which contexts to keep.
+A tree grown to a fixed depth holds every history observed often enough,
+including many whose next-state distribution is indistinguishable from that
+of their parent; pruning removes them, so that the tree is as deep as the
+data require and no deeper (Ron, Singer, & Tishby, 1996; Bühlmann & Wyner,
+1999).
+
+This guide states the five smoothers and the four pruning criteria as they
+are implemented, shows their effect on one context and on the whole tree,
+and draws the pruning decision along one pathway. The selection of the
+smoother, depth and pruning by cross-validation is covered in
+[model selection](model-selection.html).
+
+```{r package}
+library(transitiontrees)
+```
+
+## Data
+
+The examples use `trajectories`, the engagement states of 138 learners
+over 15 time steps.
+
+- **Sequence:** each row is one learner, read from left to right; two rows
+  contain no observed state, which leaves 136 sequences.
+- **States:** `Active`, `Average` and `Disengaged`.
+- **Missing cells:** trailing `NA`s mark the end of a learner's record and
+  are dropped.
+
+The tree is grown to depth 4, with a node for every context observed at
+least five times.
+
+```{r fit}
+tree <- context_tree(trajectories, max_depth = 4, min_count = 5)
+n_nodes(tree)
+model_fit(tree)
+```
+
+The unpruned tree holds 82 contexts and is estimated from 1,870
+observations.
+
+## Notation
+
+For a context $c$ and a state $s$ of the alphabet $S$, $N(c, s)$ is the
+number of times $s$ followed $c$, $N(c) = \sum_s N(c, s)$, and
+$\hat p(s \mid c) = N(c, s) / N(c)$ is the maximum likelihood estimate.
+$\pi(c)$ is the parent of $c$, the context with its oldest state removed;
+the parent of a single state is the root, and the root has no parent.
+$\tilde p$ is a smoothed distribution. The back-off smoothers below use the
+smoothed distribution of the parent, $\tilde p(s \mid \pi(c))$, computed
+first because the tree is smoothed from the root down; at the root, the
+uniform distribution $1/|S|$ takes the place of the parent.
+
+## The five smoothers
+
+**Floor** (`"floor"`, the default; `ymin` $= y_{\min}$, default 0.001).
+With `rule = "interpolate"` (default), a distribution in which every state
+was observed is left unchanged; otherwise it is shifted toward the uniform
+distribution,
+
+$$
+\tilde p(s \mid c) = (1 - |S|\, y_{\min})\, \hat p(s \mid c) + y_{\min},
+$$
+
+so that every unobserved state receives exactly $y_{\min}$, which requires
+$y_{\min} < 1/|S|$. With `rule = "cap"`, every probability is raised to at
+least $y_{\min}$ and the vector is renormalized,
+$\tilde p(s \mid c) = \max\{\hat p(s \mid c), y_{\min}\} / \sum_{s'}
+\max\{\hat p(s' \mid c), y_{\min}\}$. The interpolating rule reproduces the
+smoothing of the `PST` package (Gabadinho & Ritschard, 2016).
+
+**Laplace** (`"laplace"`; `alpha` $= \alpha$, default 1). A pseudo-count
+is added to every state:
+
+$$
+\tilde p(s \mid c) = \frac{N(c, s) + \alpha}{N(c) + \alpha |S|}.
+$$
+
+**Kneser-Ney** (`"kneser_ney"`; `discount` $= D$, default 0.75). An
+absolute discount is subtracted from every count, and the mass removed is
+given to the parent's distribution:
+
+$$
+\tilde p(s \mid c) = \frac{\max\{N(c, s) - D, 0\}}{N(c)} +
+\lambda(c)\, \tilde p(s \mid \pi(c)),
+\qquad
+\lambda(c) = 1 - \sum_{s'} \frac{\max\{N(c, s') - D, 0\}}{N(c)}.
+$$
+
+For integer counts $\lambda(c) = D\, n_+(c) / N(c)$, where $n_+(c)$ is the
+number of states observed after $c$. The back-off distribution is the
+parent's smoothed distribution, not the continuation counts of the
+original Kneser-Ney method, which the tree does not store.
+
+**Witten-Bell** (`"witten_bell"`; no parameter). The weight of the parent
+grows with the number of distinct states observed after $c$, relative to
+the number of observations:
+
+$$
+\tilde p(s \mid c) = (1 - \lambda(c))\, \hat p(s \mid c) +
+\lambda(c)\, \tilde p(s \mid \pi(c)),
+\qquad
+\lambda(c) = \frac{n_+(c)}{n_+(c) + N(c)}.
+$$
+
+**Jelinek-Mercer** (`"jelinek_mercer"`; `lambda` $= \lambda$, default
+0.5). The same interpolation with a fixed weight:
+
+$$
+\tilde p(s \mid c) = (1 - \lambda)\, \hat p(s \mid c) +
+\lambda\, \tilde p(s \mid \pi(c)).
+$$
+
+The smoother is chosen with `smoothing =` in `context_tree()`, either by
+name or as a list with parameters, for example
+`smoothing = list("kneser_ney", discount = 0.5)`. `smooth_tree()` replaces
+the smoothing of a fitted tree without counting again.
+
+## One context under the five smoothers
+
+The context `Active -> Disengaged -> Active -> Active` was observed five
+times; its parent, `Disengaged -> Active -> Active`, 15 times.
+
+```{r context-counts}
+history <- "Active -> Disengaged -> Active -> Active"
+parent <- "Disengaged -> Active -> Active"
+subset(as.data.frame(tree), pathway %in% c(history, parent))
+```
+
+The maximum likelihood estimate is obtained with a floor of zero. All five
+observations of the context were followed by `Active`.
+
+```{r mle}
+query_pathway(smooth_tree(tree, list("floor", ymin = 0)), history, exact = TRUE)
+query_pathway(smooth_tree(tree, list("floor", ymin = 0)), parent, exact = TRUE)
+```
+
+After the parent context, `Active` follows in two thirds of the cases and
+`Average` in about a quarter. The distributions that the smoothers assign to
+the longer context:
+
+```{r smoothers}
+rbind(floor = query_pathway(tree, history, exact = TRUE),
+      floor_cap = query_pathway(smooth_tree(tree, list("floor", rule = "cap")),
+                                history, exact = TRUE),
+      laplace = query_pathway(smooth_tree(tree, "laplace"), history, exact = TRUE),
+      kneser_ney = query_pathway(smooth_tree(tree, "kneser_ney"), history,
+                                 exact = TRUE),
+      witten_bell = query_pathway(smooth_tree(tree, "witten_bell"), history,
+                                  exact = TRUE),
+      jelinek_mercer = query_pathway(smooth_tree(tree, "jelinek_mercer"),
+                                     history, exact = TRUE))
+```
+
+The floor gives each unobserved state 0.001 and keeps `Active` at 0.998;
+the capped floor differs only in the sixth decimal. Laplace smoothing adds
+one observation to each state, which with five observations moves a quarter
+of the mass away from `Active` (0.75) and divides it equally between the
+two unobserved states. The three back-off smoothers divide the mass in
+proportion to the parent's distribution, so `Average` receives more than
+`Disengaged`. Kneser-Ney moves $0.75/5 = 0.15$ of the mass to the
+parent, Witten-Bell $1/(1 + 5) \approx 0.17$, and Jelinek-Mercer one half,
+which gives `Average` 0.13. The smoothers differ most where a context has
+few observations; for a context observed hundreds of times they nearly
+agree.
+
+## Smoothing and the fit of the whole tree
+
+`compare_smoothing()` fits the tree under each smoother with the other
+arguments held fixed and reports the size of the tree and its in-sample
+perplexity.
+
+```{r compare-smoothing}
+compare_smoothing(trajectories, max_depth = 4, min_count = 5)
+```
+
+The number of contexts is the same under every smoother: which contexts
+exist is decided by `min_count`, not by the smoother. The in-sample
+perplexity ranges from 2.16 under the floor to 2.20 under Jelinek-Mercer.
+The floor stays closest to the observed frequencies and therefore has the
+lowest in-sample perplexity; this is not evidence that it predicts new
+sequences best. The held-out comparison is made with
+`tune_tree(smoothing = )`, described in [model
+selection](model-selection.html). Given a fitted tree, `compare_smoothing()`
+re-smooths it without counting again, for example after pruning.
+
+```{r compare-smoothing-pruned}
+compare_smoothing(prune_tree(tree))
+```
+
+Smoothing is applied before pruning, and the pruning criteria compare a
+context with its parent through the smoothed distributions. The smoother
+therefore also changes how many contexts survive pruning.
+
+```{r smoothing-pruning}
+smoothers <- c("floor", "laplace", "kneser_ney", "witten_bell", "jelinek_mercer")
+vapply(smoothers, \(method) n_nodes(prune_tree(smooth_tree(tree, method))),
+       integer(1))
+```
+
+With the default criterion, between 25 (floor) and 34 (Jelinek-Mercer)
+of the 82 contexts are kept. The smoothers that pull a parent toward its own
+parent make the parent a poorer predictor of its children, so more children
+pass the test.
+
+## The four pruning criteria
+
+Pruning works on the leaves of the tree. Each leaf $c$ is compared with
+its parent $\pi(c)$ and is removed when it fails the criterion; the parents
+that become leaves are tested in turn, and the procedure stops when every
+leaf passes. The root is never removed. With $k = |S|$:
+
+**G2** (`"G2"`, the default; `alpha`, default 0.05). The likelihood ratio
+statistic of the leaf's counts against the parent's smoothed distribution,
+
+$$
+G^2(c) = 2 \sum_{s:\, N(c, s) > 0} N(c, s)
+\log \frac{N(c, s)}{N(c)\, \tilde p(s \mid \pi(c))},
+$$
+
+is compared with the $1 - \alpha$ quantile of the $\chi^2$ distribution with
+$k - 1$ degrees of freedom; the leaf is kept when it exceeds it. Each leaf
+is tested separately, without a correction for multiple testing.
+
+**KL** (`"KL"`; `threshold`, default 0.005). The leaf is kept when the
+Kullback-Leibler divergence of its smoothed distribution from the parent's,
+
+$$
+D(c) = \sum_s \tilde p(s \mid c) \log \frac{\tilde p(s \mid c)}{\tilde p(s
+\mid \pi(c))},
+$$
+
+exceeds the threshold. The divergence is in nats; the `divergence` column
+of the pathway tables is in bits, larger by a factor $1/\log 2 \approx
+1.44$. The criterion does not depend on $N(c)$.
+
+**AIC** and **BIC** (`"AIC"`, `"BIC"`). Let
+$\ell_c = \sum_s N(c, s) \log \tilde p(s \mid c)$ and
+$\ell_{\pi} = \sum_s N(c, s) \log \tilde p(s \mid \pi(c))$ be the log
+likelihoods of the leaf's observations under its own and under its parent's
+distribution. The leaf, which adds $k - 1$ parameters, is kept when
+
+$$
+2(\ell_c - \ell_{\pi}) > 2(k - 1) \quad \text{(AIC)}, \qquad
+2(\ell_c - \ell_{\pi}) > \log N(c)\, (k - 1) \quad \text{(BIC)}.
+$$
+
+With the floor smoother and every state observed, $2(\ell_c - \ell_{\pi})$
+equals $G^2(c)$, so AIC and BIC are likelihood ratio tests with the fixed
+cut-off $2(k - 1)$ and a cut-off that grows with the count of the
+context. For three states the G2 cut-off at $\alpha = 0.05$ is 5.99, the AIC
+cut-off 4, and the BIC cut-off exceeds 5.99 once a context has been observed
+more than 20 times.
+
+## Comparing the criteria
+
+`compare_pruning()` prunes the tree under each criterion and reports the
+number of contexts kept.
+
+```{r compare-pruning}
+compare_pruning(tree)
+```
+
+`G2` keeps 25 of the 82 contexts, `BIC` 36, `AIC` 42 and `KL` 78. AIC is
+more lenient than the G2 test for every context. BIC is stricter than the
+test for contexts observed more than 20 times and more lenient for rarer
+ones, which in this tree are numerous among the longer contexts:
+
+```{r rare-contexts}
+with(subset(as.data.frame(tree), depth > 0),
+     table(depth, observed_under_20 = count < 20))
+```
+
+Ten of the 25 contexts of depth 3 and 18 of the 44 of depth 4 were observed
+fewer than 20 times. BIC keeps several of them, and a kept leaf also keeps
+its parent, because only leaves are tested; the contexts that BIC keeps and
+G2 removes are of this kind. KL, which ignores the number of observations,
+keeps almost every context at its default threshold. Each criterion
+responds to its own parameter only.
+
+```{r compare-pruning-strict}
+compare_pruning(tree, alpha = 0.01, threshold = 0.05)
+```
+
+At $\alpha = 0.01$ G2 keeps 21 contexts, and a KL threshold of 0.05 nats
+keeps 58; AIC and BIC have no parameter and keep the same numbers as
+before.
+
+## Pruning along one pathway
+
+`plot_pruning()` shows, for one context of the unpruned tree, the
+next-state distribution of the context and of each of its suffixes down to
+the root, with the G2 statistic of each against its parent. Solid panels
+are informative, faded panels are pruned, and panels of intermediate
+opacity are kept only because a longer context below them is informative.
+
+```{r plot-pruning, fig.width = 13, fig.height = 4}
+plot_pruning(tree, "Active -> Average -> Active -> Active")
+```
+
+After `Active -> Active`, the learner stays `Active` with probability
+0.79; adding the earlier `Average` lowers it to 0.53 ($G^2 = 22.6$), and
+the G2 statistic of `Active -> Active` against `Active` is 17.2, both above
+the cut-off of 5.99. Adding a further `Active` at the start changes the
+distribution very little (0.55 against 0.53; $G^2 = 0.0$ to one decimal),
+so the four-step context is pruned
+and its sequences are predicted by `Average -> Active -> Active`. Three
+steps of memory are needed on this pathway, not four.
+
+The pruned tree:
+
+```{r pruned}
+pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
+pruned
+```
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics*, 27(2), 480–513.
+https://doi.org/10.1214/aos/1018031204
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software*, 72(3). https://doi.org/10.18637/jss.v072.i03
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning*,
+25(2–3), 117–149. https://doi.org/10.1023/A:1026490906255
+
+```{r restore-options, include = FALSE}
+options(old_options)
+```

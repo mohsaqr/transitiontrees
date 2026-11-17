@@ -2,38 +2,55 @@
 % Please edit documentation in R/mine.R
 \name{mine_sequences}
 \alias{mine_sequences}
-\title{Mine Sequences by Predictive Surprise}
+\title{Find the least and most typical sequences}
 \usage{
 mine_sequences(tree, newdata, n = 10L, which = c("surprising", "expected"))
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{newdata}{Sequence data in any format accepted by
-\code{context_tree()}.}
+\item{newdata}{Sequences to rank, in any form accepted by
+\code{\link{context_tree}()}.}
 
-\item{n}{Integer. Number of sequences to return. Default 10.}
+\item{n}{Number of sequences to return. Default 10.}
 
-\item{which}{One of \code{"surprising"} (default; highest perplexity
-first) or \code{"expected"} (lowest perplexity first).}
+\item{which}{\code{"surprising"} (default; highest perplexity first) or
+\code{"expected"} (lowest perplexity first).}
 }
 \value{
-A data.frame with the \code{\link{score_sequences}} columns
-  (\code{sequence_id}, \code{n_scored}, \code{log_lik},
-  \code{perplexity}), the top \code{n} by the chosen direction.
+A \code{data.frame} with the columns of
+  \code{\link{score_sequences}()} (\code{sequence_id}, \code{n_scored},
+  \code{log_lik}, \code{perplexity}), one row per sequence, at most
+  \code{n} rows.
 }
 \description{
-Rank held-out sequences by how well the fitted tree predicts them.
-A tidy pattern-mining table: surface the
-subsequences the model finds most \emph{surprising} (poor fit, high
-perplexity) or most \emph{expected} (good fit, low perplexity).
+\code{mine_sequences()} ranks sequences by how well a fitted tree predicts
+them and returns the top \code{n}. With \code{which = "surprising"}, the
+sequences with the highest perplexity come first: those whose transitions the
+tree finds least expected, which are candidates for atypical cases or for
+patterns that the fitting data did not contain. With \code{which =
+"expected"}, the sequences with the lowest perplexity come first: the most
+typical sequences under the tree.
+
+The ranking is by per-sequence perplexity from
+\code{\link{score_sequences}()}, which adjusts for sequence length. When
+\code{newdata} are the fitting sequences themselves, the ranking
+describes typicality within the data; with other sequences it describes
+how well the tree generalizes to them. To find where within a sequence
+the unexpected moves occur, use \code{\link{score_positions}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{newdata} has no usable sequence.
+}
+
 \examples{
-set.seed(1)
-fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(fit, max_depth = 2L)
-new  <- replicate(20, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-mine_sequences(tree, new, n = 5, which = "surprising")
+tree <- context_tree(trajectories, max_depth = 2)
+mine_sequences(tree, engagement, n = 5)
+mine_sequences(tree, engagement, n = 5, which = "expected")
+}
+\seealso{
+\code{\link{score_sequences}()}, \code{\link{score_positions}()},
+  \code{\link{mine_contexts}()}.
 }

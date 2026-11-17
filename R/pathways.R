@@ -14,60 +14,77 @@
   )
 }
 
-#' Pathways from a Fitted Tree
+#' List the pathways of a fitted transition tree
 #'
 #' @description
-#' Returns a tidy data.frame with one row per pathway (= context) in the
-#' tree. The pathway is the sequence of states the tree conditions on;
-#' each row reports the count, depth, modal next state, and how
-#' surprising the next-state distribution is relative to a shorter
-#' history. This is the substantive consumer-facing API of a fitted
-#' tree -- a ranked list of trajectories that the data actually
-#' supports, with a consistent interpretive frame.
+#' \code{tree_pathways()} lists the pathways of a fitted tree. A pathway is a
+#' context of the tree: the run of states that precedes a point at which the
+#' next state is predicted, written from oldest to newest (\code{"A -> B ->
+#' C"}). For each pathway the tree records how often it occurred and the
+#' distribution of the state that followed. The pathway table therefore shows
+#' which histories occur in the data, what tends to follow each of them, and
+#' where a longer history changes what is expected next.
 #'
-#' Renamed from \code{pathways()} to avoid a naming collision with a
-#' sibling package.
+#' It returns one row per pathway with its depth and count, its most likely next
+#' state and that state's probability, the Kullback-Leibler divergence of its
+#' next-state distribution from that of its parent (the pathway without its
+#' oldest state), and whether the most likely next state differs from the
+#' parent's. The divergence, in bits, measures how much information the
+#' additional state of history carries about the next state. The root, written
+#' \code{"(start)"}, conditions on no history and holds the overall distribution
+#' of states.
+#'
+#' The ranked views \code{\link{common_pathways}()},
+#' \code{\link{divergent_pathways}()} and \code{\link{sharp_pathways}()}
+#' return the top rows of this table by count, divergence and next-state
+#' probability. \code{\link{tree_dependence}()} adds the entropy of each
+#' pathway's prediction, \code{\link{query_pathway}()} looks up one pathway,
+#' and \code{\link{bootstrap_pathways}()} assesses how stable each row is
+#' under resampling of sequences.
 #'
 #' @param tree A \code{transitiontrees} object.
-#' @param min_count Integer. Drop pathways with fewer than this many
-#'   occurrences. Default 1.
-#' @param sort_by Character. One of \code{"count"} (default),
-#'   \code{"divergence"}, or \code{"depth"}. Sorts the returned
-#'   data.frame.
-#' @param decreasing Logical. Default \code{TRUE}.
-#' @param ... Ignored.
+#' @param min_count Keep pathways that occurred at least this many times.
+#'   Default 1.
+#' @param sort_by Column to sort by: \code{"count"} (default),
+#'   \code{"divergence"} or \code{"depth"}.
+#' @param decreasing Sort in decreasing order. Default \code{TRUE}.
+#' @param ... Not used.
 #'
-#' @return A data.frame with columns \code{pathway} (arrow notation,
-#'   e.g. \code{"A -> B -> C"}; the root is reported as \code{"(start)"}),
-#'   \code{depth} (history length), \code{count}, \code{likely_next}
-#'   (the most likely next state), \code{next_probability} (its
-#'   probability), \code{divergence} (Kullback-Leibler divergence from
-#'   the parent context's prediction, in bits; \code{NA} for the root
-#'   and when the parent context is absent, and \code{Inf} when the
-#'   pathway places probability on a state the parent predicts with
-#'   probability 0), and \code{changes_prediction} (logical, did the
-#'   most likely next state change vs the parent context?). The empty
-#'   case returns a 0-row data.frame with the same schema.
+#' @return A \code{data.frame} with one row per pathway and columns
+#'   \describe{
+#'     \item{pathway}{The context, oldest state first; \code{"(start)"} for
+#'       the root.}
+#'     \item{depth}{Number of states in the pathway.}
+#'     \item{count}{Number of times the pathway was followed by a state
+#'       (weighted for a weighted fit).}
+#'     \item{likely_next}{Most likely next state.}
+#'     \item{next_probability}{Its smoothed probability.}
+#'     \item{divergence}{Kullback-Leibler divergence, in bits, of the
+#'       pathway's next-state distribution from its parent's; \code{NA} for
+#'       the root, and \code{Inf} when the pathway gives probability to a
+#'       state that the parent gives probability zero.}
+#'     \item{changes_prediction}{Whether \code{likely_next} differs from the
+#'       parent's most likely next state; \code{NA} for the root.}
+#'   }
+#'   A tree with no pathway returns a zero-row table with these columns.
 #'
-#' @details
-#' Each row is a pathway -- a (possibly empty) sequence of states ending
-#' at the point where a prediction is made. The \code{divergence} column
-#' quantifies how much more information the pathway carries than its
-#' (k-1)-suffix in bits. \code{changes_prediction = TRUE} marks pathways
-#' where the longer history changes which next state is most likely.
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+#'
+#' @seealso \code{\link{common_pathways}()},
+#'   \code{\link{divergent_pathways}()}, \code{\link{sharp_pathways}()},
+#'   \code{\link{tree_dependence}()}, \code{\link{plot_pathways}()},
+#'   \code{\link{bootstrap_pathways}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
+#' tree <- context_tree(trajectories, max_depth = 3)
 #' tree_pathways(tree)
-#'
+#' tree_pathways(tree, min_count = 20, sort_by = "divergence")
 #' @export
 tree_pathways <- function(tree, min_count = 1L,
                               sort_by = c("count", "divergence", "depth"),
                               decreasing = TRUE, ...) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   sort_by   <- match.arg(sort_by)
   min_count <- as.integer(min_count)
 
@@ -138,71 +155,91 @@ tree_pathways <- function(tree, min_count = 1L,
 
 # ---- High-level convenience functions -----------------------------------
 
-#' Most Common Pathways in a Fitted Tree
+#' List the most frequent pathways of a tree
 #'
 #' @description
-#' Returns the top \code{n} pathways by occurrence count -- the
-#' trajectories the data actually contains many copies of.
+#' \code{common_pathways()} returns the pathways that occurred most often,
+#' optionally at one depth. Frequent pathways are the typical routes through the
+#' process: the histories most learners or sessions actually pass through, and
+#' the state each of them most often leads to. Frequency says nothing about
+#' whether a pathway's prediction differs from that of its shorter suffix; for
+#' that, see \code{\link{divergent_pathways}()}.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param top Integer. Number of pathways to return. Default 10.
-#' @param depth Integer or NULL. Restrict to pathways of this exact
-#'   depth. \code{NULL} (default) keeps all depths.
-#' @param min_count Integer. Minimum count cut-off. Default 1.
+#' @param tree A \code{transitiontrees} object.
+#' @param top Number of pathways to return. Default 10.
+#' @param depth Return only pathways of this depth. \code{NULL} (default)
+#'   returns all depths.
+#' @param min_count Keep pathways that occurred at least this many times.
+#'   Default 1.
 #'
-#' @return A data.frame, same columns as \code{\link{tree_pathways}},
-#'   sorted by count descending.
+#' @return A \code{data.frame} with the columns of
+#'   \code{\link{tree_pathways}()}, one row per pathway, sorted by
+#'   \code{count} in decreasing order, at most \code{top} rows.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+#'
+#' @seealso \code{\link{tree_pathways}()},
+#'   \code{\link{divergent_pathways}()}, \code{\link{sharp_pathways}()},
+#'   \code{\link{plot_pathways}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
-#' common_pathways(tree, top = 8)
-#' common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
-#'
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' common_pathways(tree, top = 5)
+#' common_pathways(tree, top = 5, depth = 3)
 #' @export
 common_pathways <- function(tree, top = 10L, depth = NULL, min_count = 1L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   out <- tree_pathways(tree, min_count = min_count, sort_by = "count",
                            decreasing = TRUE)
   if (!is.null(depth))
     out <- out[out$depth == as.integer(depth), , drop = FALSE]
-  utils::head(out, n = as.integer(top))
+  out <- utils::head(out, n = as.integer(top))
+  rownames(out) <- NULL
+  out
 }
 
-#' Most Predictively Divergent Pathways
+#' List the pathways whose history most changes the prediction
 #'
 #' @description
-#' Returns the top \code{n} pathways by Kullback-Leibler divergence
-#' from their (k-1)-suffix. These are the pathways whose extended
-#' history adds the most predictive information over the shorter one.
-#' Pathways whose most likely next state actually flips between orders
-#' are marked in the \code{changes_prediction} column.
+#' \code{divergent_pathways()} returns the pathways whose next-state
+#' distribution departs most from that of their parent, the same pathway without
+#' its oldest state, measured by the Kullback-Leibler divergence in bits. These
+#' are the places where remembering one more state of history changes what is
+#' expected next, and therefore where the process depends on more than its most
+#' recent state. With \code{flips_only = TRUE}, only pathways whose most likely
+#' next state differs from the parent's are returned.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param top Integer. Number of pathways to return. Default 10.
-#' @param min_count Integer. Drop pathways with fewer than this many
-#'   occurrences. Default 1.
-#' @param flips_only Logical. If \code{TRUE}, return only pathways
-#'   that flip the most likely next state between orders. Default
-#'   \code{FALSE}.
+#' Divergence is computed from smoothed probabilities and can be large for
+#' rare pathways; set \code{min_count} to exclude them, and use
+#' \code{\link{bootstrap_pathways}()} to check whether a divergence is stable
+#' under resampling. The root, which has no parent, is never returned.
 #'
-#' @return A data.frame, same columns as \code{\link{tree_pathways}},
-#'   sorted by \code{divergence} descending.
+#' @param tree A \code{transitiontrees} object.
+#' @param top Number of pathways to return. Default 10.
+#' @param min_count Keep pathways that occurred at least this many times.
+#'   Default 1.
+#' @param flips_only Return only pathways whose most likely next state
+#'   differs from the parent's. Default \code{FALSE}.
+#'
+#' @return A \code{data.frame} with the columns of
+#'   \code{\link{tree_pathways}()}, one row per pathway, sorted by
+#'   \code{divergence} in decreasing order, at most \code{top} rows.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+#'
+#' @seealso \code{\link{tree_pathways}()}, \code{\link{tree_dependence}()},
+#'   \code{\link{plot_divergence}()}, \code{\link{bootstrap_pathways}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
-#' divergent_pathways(tree, top = 6)
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' divergent_pathways(tree, top = 5, min_count = 20)
 #' divergent_pathways(tree, flips_only = TRUE)
-#'
 #' @export
 divergent_pathways <- function(tree, top = 10L, min_count = 1L,
                                flips_only = FALSE) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   out <- tree_pathways(tree, min_count = min_count,
                            sort_by = "divergence", decreasing = TRUE)
   out <- out[!is.na(out$divergence), , drop = FALSE]
@@ -212,32 +249,37 @@ divergent_pathways <- function(tree, top = 10L, min_count = 1L,
   utils::head(out, n = as.integer(top))
 }
 
-#' Sharpest Pathways
+#' List the pathways with the most certain next state
 #'
 #' @description
-#' Returns the top \code{n} pathways by predictive sharpness -- the
-#' probability mass on their modal next state. High values indicate
-#' strongly deterministic continuations; low values indicate
-#' ambiguous next-state distributions.
+#' \code{sharp_pathways()} returns the pathways whose most likely next state has
+#' the highest probability. A pathway with a next-state probability close to 1
+#' is followed almost always by the same state, a near-deterministic step in the
+#' process; a probability close to \eqn{1/k} (\eqn{k} states) means the next
+#' state is hard to predict from that history. Sharp pathways with small counts
+#' are often artefacts of few observations; set \code{min_count} accordingly.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param top Integer. Number of pathways to return. Default 10.
-#' @param min_count Integer. Drop pathways with fewer than this many
-#'   occurrences. Default 1.
+#' @param tree A \code{transitiontrees} object.
+#' @param top Number of pathways to return. Default 10.
+#' @param min_count Keep pathways that occurred at least this many times.
+#'   Default 1.
 #'
-#' @return A data.frame, same columns as \code{\link{tree_pathways}},
-#'   sorted by \code{next_probability} descending.
+#' @return A \code{data.frame} with the columns of
+#'   \code{\link{tree_pathways}()}, one row per pathway, sorted by
+#'   \code{next_probability} in decreasing order, at most \code{top} rows.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+#'
+#' @seealso \code{\link{tree_pathways}()}, \code{\link{common_pathways}()},
+#'   \code{\link{tree_dependence}()} for the entropy of each prediction.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
-#' sharp_pathways(tree, top = 5)
-#'
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' sharp_pathways(tree, top = 5, min_count = 20)
 #' @export
 sharp_pathways <- function(tree, top = 10L, min_count = 1L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   out <- tree_pathways(tree, min_count = min_count, sort_by = "count")
   out <- out[order(-out$next_probability), , drop = FALSE]
   rownames(out) <- NULL

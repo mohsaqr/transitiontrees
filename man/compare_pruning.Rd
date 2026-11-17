@@ -2,7 +2,7 @@
 % Please edit documentation in R/prune.R
 \name{compare_pruning}
 \alias{compare_pruning}
-\title{Compare Pruning Criteria on One Tree}
+\title{Compare pruning criteria on one tree}
 \usage{
 compare_pruning(
   tree,
@@ -12,40 +12,44 @@ compare_pruning(
 )
 }
 \arguments{
-\item{tree}{A \code{transitiontrees} (typically unpruned).}
+\item{tree}{A \code{transitiontrees} object, usually unpruned.}
 
-\item{criterion}{Character vector of criteria to compare. Defaults
-to all four: \code{"G2"}, \code{"KL"}, \code{"AIC"}, \code{"BIC"}.}
+\item{criterion}{Criteria to compare. Default all four: \code{"G2"},
+\code{"KL"}, \code{"AIC"}, \code{"BIC"}.}
 
-\item{alpha}{Significance level for \code{"G2"}; not used by
-\code{"KL"}, \code{"AIC"} or \code{"BIC"}. Default 0.05.}
+\item{alpha}{Significance level for \code{"G2"}. Default 0.05.}
 
-\item{threshold}{Minimum information gain in nats for \code{"KL"}.
-Default 0.005.}
+\item{threshold}{Minimum divergence in nats for \code{"KL"}. Default
+0.005.}
 }
 \value{
-A \code{data.frame} with one row per criterion (in the order
-  given by \code{criterion}) and columns \code{criterion},
-  \code{n_nodes} (post-prune size) and \code{reduction_pct} (percent
-  of the original nodes removed).
+A \code{data.frame} with one row per criterion, in the order of
+  \code{criterion}, and columns \code{criterion}, \code{n_nodes} (contexts
+  kept, root included) and \code{reduction_pct} (percentage of the
+  original contexts removed).
 }
 \description{
-Prunes a fitted tree under several criteria -- holding \code{alpha}
-and \code{threshold} fixed -- and returns a tidy one-row-per-criterion
-summary of how aggressively each trims the tree. A convenience
-wrapper over repeated \code{\link{prune_tree}} calls that
-collapses the usual \code{vapply()} criterion loop into one call.
+\code{compare_pruning()} prunes one fitted tree under each of several
+criteria and reports how many contexts each keeps. The table shows how
+strongly the criteria differ on the data at hand before one of them is
+applied with \code{\link{prune_tree}()}; the criteria themselves are
+described there. A smaller tree is not by itself a better one: to compare
+pruned trees by how well they predict new sequences, use
+\code{\link{tune_tree}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+\code{criterion} is not a non-empty character vector, or \code{alpha}
+or \code{threshold} is invalid.
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 4L, min_count = 3L)
+tree <- context_tree(trajectories, max_depth = 4)
 compare_pruning(tree)
 compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
-
 }
 \seealso{
-\code{\link{prune_tree}} to apply one criterion,
-  \code{\link{tune_tree}} for cross-validated selection.
+\code{\link{prune_tree}()}, \code{\link{plot_pruning}()},
+  \code{\link{tune_tree}()}, \code{\link{compare_smoothing}()}.
 }

@@ -2,32 +2,48 @@
 % Please edit documentation in R/compare.R
 \name{as.data.frame.transitiontrees_comparison}
 \alias{as.data.frame.transitiontrees_comparison}
-\title{Coerce a context tree Comparison to a Tidy Data Frame}
+\title{Convert a two-tree comparison to a data frame}
 \usage{
-\method{as.data.frame}{transitiontrees_comparison}(x, row.names = NULL, optional = FALSE, ...)
+\method{as.data.frame}{transitiontrees_comparison}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  what = c("pathways", "null"),
+  ...
+)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_comparison}.}
+\item{x}{A \code{transitiontrees_comparison} object.}
 
 \item{row.names, optional}{Ignored.}
+
+\item{what}{\code{"pathways"} (default) for the per-context table, or
+\code{"null"} for the permuted distances.}
 
 \item{...}{Ignored.}
 }
 \value{
-A data.frame with one row per context in either tree, sorted
-  by \code{divergence_sym} descending, and columns \code{pathway},
-  \code{count_a}, \code{count_b} (the context's count in each tree,
-  0 when absent), \code{divergence_ab}, \code{divergence_ba} (the two
-  directed Kullback-Leibler divergences, nats) and
-  \code{divergence_sym} (their mean).
+A data frame. For \code{what = "pathways"}, one row per context
+  present in either tree, sorted by \code{divergence_sym} (largest
+  first), with columns \code{pathway}, \code{count_a} and
+  \code{count_b} (the context's count in each tree, 0 when absent),
+  \code{divergence_ab} and \code{divergence_ba} (the two directed
+  Kullback-Leibler divergences, nats) and \code{divergence_sym} (their
+  mean). For \code{what = "null"}, one row per permutation with columns
+  \code{permutation} and \code{distance}.
 }
 \description{
-Uniform tidy-extract: returns the per-pathway divergence breakdown
-(\code{object$pathways}) -- the consumer-facing detail behind the
-scalar \code{pdist} and the permutation \code{p_value}.
+\code{as.data.frame()} returns the per-context divergence table or the
+permutation null distribution of a \code{\link{compare_trees}()} result.
 }
 \examples{
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-as.data.frame(compare_trees(grp, iter = 50L))
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+cmp <- compare_trees(grp, iter = 20)
+as.data.frame(cmp)
+head(as.data.frame(cmp, what = "null"))
+}
+\seealso{
+\code{\link{compare_trees}()},
+  \code{\link{summary.transitiontrees_comparison}}.
 }

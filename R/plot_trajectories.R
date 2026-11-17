@@ -14,11 +14,11 @@
 #'   \code{depth}, \code{count}, \code{last}, \code{eprob}.
 #' @noRd
 .trajectory_data <- function(tree, min_count = 4L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   states <- tree$alphabet
   seqs   <- .ct_traj(tree$data)
   if (length(seqs) == 0L)
-    stop("Tree carries no sequences to draw.", call. = FALSE)
+    .tt_abort("Tree carries no sequences to draw.")
 
   prefixes <- unlist(lapply(seqs, function(s)
     vapply(seq_along(s), function(k) paste(s[seq_len(k)], collapse = " -> "),
@@ -26,8 +26,9 @@
   pc   <- table(prefixes)
   keep <- names(pc)[pc >= as.integer(min_count)]
   if (length(keep) == 0L)
-    stop(sprintf("No prefix occurs at least %d times; lower min_count.",
-                 as.integer(min_count)), call. = FALSE)
+    .tt_abort(sprintf("No prefix occurs at least %d times; lower min_count.",
+                 as.integer(min_count)),
+              class = "transitiontrees_empty_result")
 
   parent_of <- function(p) {
     m <- strsplit(p, " -> ", fixed = TRUE)[[1L]]
@@ -53,11 +54,12 @@
     p <- par[[n]]
     if (p == .ROOT_LABEL) return(unname(root_prob[[last[[n]]]]))
     hist <- utils::tail(strsplit(p, " -> ", fixed = TRUE)[[1L]], tree$max_depth)
-    pr <- tryCatch(query_pathway(tree, paste(hist, collapse = " -> ")),
-                   error = function(e) NULL)
-    if (is.null(pr)) return(NA_real_)
-    val <- pr[[last[[n]]]]
-    if (is.null(val)) NA_real_ else as.numeric(val)
+    ## query_pathway() falls back to the longest fitted suffix and always
+    ## reaches the root, so it returns a full distribution for any history
+    ## built from the tree's own sequences. A state outside the alphabet
+    ## has no probability and yields NA (named lookup of a missing name).
+    pr <- query_pathway(tree, paste(hist, collapse = " -> "))
+    unname(as.numeric(pr[last[[n]]]))
   }
   eprob <- vapply(node, pred_of, numeric(1))
 
@@ -66,55 +68,61 @@
              stringsAsFactors = FALSE, row.names = NULL)
 }
 
-#' Forward Trajectory Tree (Prefix Tree)
+#' Draw a forward trajectory tree
 #'
 #' @description
-#' Where \code{\link{plot.transitiontrees}} draws the fitted context tree
-#' \emph{backwards} (each node is a suffix, the most-recent move), this
-#' draws the same sequences \emph{forwards}: a prefix tree that starts at a
-#' common root and follows each sequence move by move in time. The one
-#' tree can be coloured two ways:
+#' \code{plot_trajectories()} draws a forward trajectory tree of the sequences a
+#' tree was fitted on: it starts from a common root and follows each sequence
+#' state by state from its beginning, so every node is a prefix (the first
+#' state, the first two states, and so on) and its position on the x-axis is the
+#' move number. A context tree reads sequences backwards, each node a history
+#' that ends at the moment of prediction; the trajectory tree reads them
+#' forwards. It shows how sequences fan out from their first state, which
+#' opening paths are common, and where they diverge.
+#'
+#' The tree is colored in one of two ways. With
+#' \code{measure = "frequency"} the color of a node is the number of
+#' sequences that share the prefix. With \code{measure = "predictability"}
+#' it is the probability the fitted model gives to the node's last state
+#' after the preceding prefix, \eqn{P(\mathrm{state} \mid
+#' \mathrm{history})}{P(state | history)}, with the history truncated to the tree's maximum
+#' depth and read through \code{\link{query_pathway}()}; the root
+#' distribution is used for first states. Edge width is the number of
+#' sequences in both cases, and darker color is a higher value. A pruned
+#' tree shows predictability under the pruned model.
+#'
+#' Only prefixes shared by at least \code{min_count} sequences are drawn.
+#' For the backward context tree use \code{\link{plot.transitiontrees}};
+#' for the memory needed by one pathway use \code{\link{plot_pruning}()}.
+#'
+#' @param tree A \code{transitiontrees} object that carries its sequences.
+#' @param measure \code{"frequency"} (default) or \code{"predictability"}.
+#' @param min_count Smallest number of sequences sharing a prefix for it
+#'   to be drawn. Default 4.
+#'
+#' @return A ggplot object: the prefix tree, move number on the x-axis.
+#'
+#' @section Conditions:
 #' \describe{
-#'   \item{\code{measure = "frequency"}}{node and edge colour and width
-#'     encode how many sequences walk each path.}
-#'   \item{\code{measure = "predictability"}}{colour encodes
-#'     \eqn{P(\text{move} \mid \text{history})} from the model
-#'     (\code{tree}); edge width still encodes flow.}
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object, or carries no sequences.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) no prefix is shared
+#'     by \code{min_count} sequences.}
 #' }
-#' Higher values are drawn darker.
 #'
-#' @param tree A \code{transitiontrees} (pass a pruned tree to read
-#'   predictability off the pruned model).
-#' @param measure One of \code{"frequency"} (default) or
-#'   \code{"predictability"}.
-#' @param min_count Integer. Keep only prefixes occurring at least this
-#'   many times. Default 4.
-#'
-#' @return A ggplot object.
-#'
-#' @details
-#' The predictability of a node's last move is the model's conditional
-#' probability of that move given the preceding history, truncated to the
-#' tree's \code{max_depth} and read via \code{\link{query_pathway}()}
-#' (the empty history for a first move uses the root distribution). This
-#' is the forward-reading complement to the backward context tree. It is
-#' drawn entirely in \pkg{ggplot2}, with no additional plotting dependency.
+#' @seealso \code{\link{plot.transitiontrees}} for the backward context
+#'   tree; \code{\link{plot_pruning}()}; \code{\link{query_pathway}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(120, sample(c("A", "B", "C"), 8, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree   <- context_tree(seqs, max_depth = 3L, min_count = 3L)
-#' pruned <- prune_tree(tree)
-#' plot_trajectories(tree,   measure = "frequency")
-#' plot_trajectories(pruned, measure = "predictability")
-#' @seealso \code{\link{plot.transitiontrees}} for the backward context
-#'   tree, \code{\link{plot_pruning}} for the suffix-chain view.
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' plot_trajectories(tree, min_count = 10)
+#' plot_trajectories(prune_tree(tree), measure = "predictability",
+#'                   min_count = 10)
 #' @export
 plot_trajectories <- function(tree,
                               measure = c("frequency", "predictability"),
                               min_count = 4L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   measure <- match.arg(measure)
 
   states <- tree$alphabet

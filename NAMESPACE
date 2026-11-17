@@ -5,6 +5,7 @@ S3method(as.data.frame,transitiontrees_bootstrap)
 S3method(as.data.frame,transitiontrees_comparison)
 S3method(as.data.frame,transitiontrees_group)
 S3method(as.data.frame,transitiontrees_group_comparison)
+S3method(as.data.frame,transitiontrees_tune)
 S3method(logLik,transitiontrees)
 S3method(nobs,transitiontrees)
 S3method(plot,transitiontrees)
@@ -15,6 +16,10 @@ S3method(plot,transitiontrees_group_comparison)
 S3method(plot,transitiontrees_tune)
 S3method(predict,transitiontrees)
 S3method(print,summary.transitiontrees)
+S3method(print,summary.transitiontrees_comparison)
+S3method(print,summary.transitiontrees_group)
+S3method(print,summary.transitiontrees_group_comparison)
+S3method(print,summary.transitiontrees_tune)
 S3method(print,transitiontrees)
 S3method(print,transitiontrees_bootstrap)
 S3method(print,transitiontrees_comparison)
@@ -24,7 +29,10 @@ S3method(print,transitiontrees_tune)
 S3method(simulate,transitiontrees)
 S3method(summary,transitiontrees)
 S3method(summary,transitiontrees_bootstrap)
+S3method(summary,transitiontrees_comparison)
+S3method(summary,transitiontrees_group)
 S3method(summary,transitiontrees_group_comparison)
+S3method(summary,transitiontrees_tune)
 export(bootstrap_pathways)
 export(common_pathways)
 export(compare_groups)
@@ -56,21 +64,26 @@ export(score_positions)
 export(score_sequences)
 export(sharp_pathways)
 export(smooth_tree)
+export(state_frequencies)
 export(subtree)
 export(tree_dependence)
 export(tree_distance)
 export(tree_pathways)
 export(tune_tree)
 import(ggplot2)
-importFrom(stats,AIC)
-importFrom(stats,BIC)
-importFrom(stats,logLik)
-importFrom(stats,nobs)
-importFrom(stats,predict)
-importFrom(stats,qchisq)
-importFrom(stats,setNames)
-importFrom(stats,simulate)
-importFrom(utils,capture.output)
-importFrom(utils,head)
-importFrom(utils,modifyList)
-importFrom(utils,tail)
+importFrom(stats,
+  AIC,
+  BIC,
+  logLik,
+  nobs,
+  predict,
+  qchisq,
+  setNames,
+  simulate
+)
+importFrom(utils,
+  capture.output,
+  head,
+  modifyList,
+  tail
+)

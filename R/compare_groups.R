@@ -108,105 +108,111 @@
        omni_beh = sum(n_c * jsd), omni_use = sum(use))
 }
 
-#' Compare Groups of Sequences for Structural Differences
+#' Test where groups of sequences differ, context by context
 #'
 #' @description
-#' Test how a set of fitted group trees (a \code{transitiontrees_group} from
-#' \code{context_tree(..., group =)}) differ, on two complementary axes:
+#' \code{compare_groups()} tests where groups of sequences, such as high and low
+#' achievers or two phases of a course, differ, context by context and for the
+#' trees as a whole. Groups can differ in two distinct ways: they can reach the
+#' same history and then continue differently (a behavioral difference), or they
+#' can reach some histories more often than others do (a usage difference). Both
+#' are tested for every context represented in the groups' trees and for the
+#' trees as a whole, so that a difference can be located in specific pathways
+#' rather than reported as one number.
+#'
+#' The behavioral difference at a context is the Jensen-Shannon divergence (Lin,
+#' 1991), in bits, between the groups' next-state distributions, each group
+#' weighted by its count at that context. The usage difference is a \eqn{G^2}
+#' homogeneity statistic on the context's prevalence: its count against the
+#' other windows of the same length in each group. The omnibus statistics are
+#' the count-weighted sum of the divergences and the sum of the \eqn{G^2}
+#' values. All p-values come from one label permutation: sequences are pooled,
+#' group labels are shuffled with group sizes fixed, and every statistic is
+#' recomputed from raw counts. Per-context p-values are adjusted for false
+#' discovery rate with the Benjamini-Hochberg (1995) procedure, separately for
+#' each axis. When one person contributes several sequences, a \code{block}
+#' identifier restricts the shuffle to within persons, so the null distribution
+#' respects that nesting. The result is a
+#' \code{transitiontrees_group_comparison} object whose tables are read with
+#' \code{as.data.frame()}; \code{summary()} gives a one-row overview and
+#' \code{plot()} the largest behavioral differences.
+#'
+#' \code{compare_groups()} handles two or more groups. For one overall distance
+#' between two trees with a permutation test, use \code{\link{compare_trees}()};
+#' it measures the symmetric Kullback-Leibler divergence, not the Jensen-Shannon
+#' divergence used here. \code{\link{plot_difference}()} maps the per-context
+#' differences of two groups next state by next state.
+#'
+#' @param group A \code{transitiontrees_group} of unweighted trees, from
+#'   \code{context_tree(..., group = )}.
+#' @param iter Number of label permutations. Default 999.
+#' @param min_count Contexts with a total count across groups below this
+#'   are dropped from the table. Default 1.
+#' @param seed Seed for the permutations, or \code{NULL} to use the
+#'   current random-number state. Default 1. A non-\code{NULL} seed sets
+#'   the session's random-number state.
+#' @param block Block identifiers for a stratified permutation, one per
+#'   sequence in group-then-row order. Default \code{NULL}: the block
+#'   stored by \code{context_tree(..., block = )} is used when present,
+#'   and labels are shuffled freely otherwise.
+#'
+#' @return An object of class \code{transitiontrees_group_comparison}. Its
+#'   tables are returned by \code{as.data.frame()}:
+#'   \code{what = "pathways"} gives one row per tested context with
+#'   columns \code{pathway}, \code{depth}, \code{count_total}, one
+#'   \code{count_<group>} and one \code{modal_<group>} column per group
+#'   (the most likely next state), \code{flips} (whether the groups' modal
+#'   next states differ), \code{jsd_bits}, \code{jsd_p}, \code{jsd_padj},
+#'   \code{usage_g2}, \code{usage_p} and \code{usage_padj} (\code{NA} for
+#'   the root, which has no usage test), sorted by \code{jsd_bits};
+#'   \code{what = "omnibus"} gives one row per axis; and
+#'   \code{what = "distance"} gives one row per pair of groups with their
+#'   \code{\link{tree_distance}()}. \code{summary()} returns a one-row
+#'   overview and \code{plot()} the largest behavioral differences.
+#'
+#' @section Conditions:
 #' \describe{
-#'   \item{behavioral}{given the \emph{same} context, do the groups
-#'     predict a different next state? Measured per context by the
-#'     count-weighted Jensen-Shannon divergence (bits) across the
-#'     groups' next-state distributions.}
-#'   \item{usage}{do the groups \emph{reach} a context at different
-#'     rates? Measured per context by a \eqn{G^2} homogeneity statistic
-#'     on its prevalence (its share of each group's positions).}
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{group} is not a
+#'     \code{transitiontrees_group}, has fewer than two groups, or
+#'     \code{block} does not have one entry per sequence.}
+#'   \item{\code{transitiontrees_weighted_unsupported}}{(error) a member
+#'     tree was fitted with weights; the permutation recounts the raw
+#'     sequences and would drop them.}
+#'   \item{\code{transitiontrees_degenerate_permutation}}{(warning) no
+#'     block contains more than one group, so the stratified shuffle
+#'     cannot move any label.}
 #' }
-#' Significance is assessed by a label-permutation null throughout
-#' (per-pathway and omnibus), with Benjamini-Hochberg FDR on the
-#' per-pathway p-values.
-#'
-#' @details
-#' The permutation pools every sequence, shuffles the group labels
-#' (preserving group sizes), and recomputes the statistics from raw
-#' counts using the same counting routine as the fit. The tested
-#' context set is the union of the contexts the groups' trees actually
-#' represent. For two groups the behavioral measure is JSD, which is
-#' \strong{not} the symmetric-KL distance used by
-#' \code{\link{compare_trees}()}; the \code{distance_matrix} component
-#' does use \code{\link{tree_distance}()} (symmetric KL) for
-#' consistency with the pairwise function.
-#'
-#' @param group A \code{transitiontrees_group} of unweighted trees (a
-#'   weighted member is refused: the permutation recounts the raw
-#'   sequences).
-#' @param iter Integer. Number of label permutations. Default 999.
-#' @param min_count Integer. Drop contexts whose total count across all
-#'   groups is below this. Default 1.
-#' @param seed Integer or \code{NULL}. RNG seed passed to
-#'   \code{set.seed()}; \code{NULL} uses the current RNG state. Default 1.
-#' @param block Block ids for a \strong{stratified} permutation: group
-#'   labels are shuffled only \emph{within} each block, so the null
-#'   respects nested / repeated-measures structure (e.g. several
-#'   sequences from one subject) and holds any between-block difference
-#'   fixed. Normally you do not pass this --- fit with
-#'   \code{context_tree(..., block = )} and it is carried on the object
-#'   and used automatically. Passing a vector here (one id per sequence,
-#'   in pooled group-then-row order) overrides that. \code{NULL} with no
-#'   stored block shuffles labels freely.
-#'
-#' @return A \code{transitiontrees_group_comparison}: a list with
-#'   \describe{
-#'     \item{pathways}{Per-context data.frame sorted by \code{jsd_bits}
-#'       descending, with columns \code{pathway}, \code{depth},
-#'       \code{count_total}, one \code{count_<group>} and one
-#'       \code{modal_<group>} column per group (most likely next state,
-#'       ties broken by alphabet order), \code{flips} (do the groups'
-#'       modal next states disagree?), \code{jsd_bits}, \code{jsd_p},
-#'       \code{jsd_padj}, \code{usage_g2}, \code{usage_p},
-#'       \code{usage_padj}. \code{usage_*} is \code{NA} for the root,
-#'       which has no prevalence test.}
-#'     \item{omnibus}{Two-row data.frame (one row per axis) with columns
-#'       \code{axis}, \code{statistic}, \code{value} and \code{p_value}
-#'       (permutation p-value: one plus the number of permuted statistics
-#'       at least the observed one, over \code{iter + 1}).}
-#'     \item{distance_matrix}{K x K symmetric-KL distance matrix between
-#'       the groups (from \code{tree_distance()}).}
-#'     \item{groups, iter, seed, n_contexts, stratified}{Configuration;
-#'       \code{stratified} is \code{TRUE} when a \code{block} was used.}
-#'   }
-#' \code{as.data.frame()} returns the \code{pathways} table; the print
-#' method shows the omnibus table and the top pathways; \code{summary()}
-#' prints a compact verdict.
 #'
 #' @references
 #' Lin, J. (1991). Divergence measures based on the Shannon entropy.
 #' \emph{IEEE Transactions on Information Theory}, 37(1), 145-151.
+#' \doi{10.1109/18.61115}
 #'
 #' Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
-#' rate: a practical and powerful approach to multiple testing.
-#' \emph{Journal of the Royal Statistical Society: Series B}, 57(1),
-#' 289-300.
+#' rate: A practical and powerful approach to multiple testing.
+#' \emph{Journal of the Royal Statistical Society: Series B
+#' (Methodological)}, 57(1), 289-300.
+#' \doi{10.1111/j.2517-6161.1995.tb02031.x}
+#'
+#' @seealso \code{\link{summary.transitiontrees_group_comparison}},
+#'   \code{\link{as.data.frame.transitiontrees_group_comparison}} and
+#'   \code{\link{plot.transitiontrees_group_comparison}} for the result;
+#'   \code{\link{compare_trees}()} for the pairwise test;
+#'   \code{\link{plot_difference}()} for the next-state difference map.
 #'
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-#'                     max_depth = 1L)
-#' cmp <- compare_groups(grp, iter = 199L)
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' cmp <- compare_groups(grp, iter = 20)
 #' cmp
-#' as.data.frame(cmp)
-#' @seealso \code{\link{compare_trees}} for the pairwise permutation test.
+#' summary(cmp)
 #' @export
 compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
                            block = NULL) {
-  stopifnot(inherits(group, "transitiontrees_group"))
+  .tt_check_class(group, "transitiontrees_group", "group")
   grp_names <- names(group)
   K <- length(grp_names)
-  if (K < 2L) stop("'group' must contain at least two groups.", call. = FALSE)
+  if (K < 2L) .tt_abort("'group' must contain at least two groups.")
   for (m in group) .pt_assert_unweighted(m, "compare_groups()")
   alphabet <- group[[1L]]$alphabet
   if (!is.null(seed)) set.seed(seed)
@@ -238,9 +244,8 @@ compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
     perm_labels <- function() sample(labels)
   } else {
     if (length(block) != length(labels))
-      stop("'block' must have one entry per sequence (length ",
-           length(labels), "), aligned to the group-then-row order.",
-           call. = FALSE)
+      .tt_abort("'block' must have one entry per sequence (length ",
+           length(labels), "), aligned to the group-then-row order.")
     block <- as.character(block)
     blk_idx <- split(seq_along(labels), block)
     ## A block only contributes to the null if it holds >1 distinct
@@ -249,15 +254,17 @@ compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
     if (!any(vapply(blk_idx,
                     function(idx) length(unique(labels[idx])) > 1L,
                     logical(1))))
-      warning("Stratified permutation is degenerate: no block contains ",
-              "more than one group, so labels never move and p-values ",
-              "collapse to ~1. Is 'block' unique per sequence?",
-              call. = FALSE)
+      .tt_warn("Stratified permutation is degenerate: no block contains ",
+               "more than one group, so labels never move and p-values ",
+               "collapse to ~1. Is 'block' unique per sequence?",
+               class = "transitiontrees_degenerate_permutation")
     perm_labels <- function() {
       out <- labels
       ## permute the label *values* within each block; safe for
       ## single-sequence blocks (sample() of a length-1 character vector
       ## returns it, unlike sample() of a single index).
+      ## Sequential on purpose: one sample() per block in block order keeps the
+      ## RNG draw order fixed (the permutation null is pinned draw by draw).
       for (idx in blk_idx) out[idx] <- sample(labels[idx])
       out
     }
@@ -282,6 +289,9 @@ compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
   ge_jsd  <- integer(length(contexts))
   ge_use  <- integer(length(contexts))
   ge_obeh <- 0L; ge_ouse <- 0L
+  ## Loop kept on purpose: it accumulates exceedance counts in place, so
+  ## memory stays O(contexts) instead of O(iter x contexts), and the
+  ## permutations are drawn in a fixed RNG order.
   for (b in seq_len(iter)) {
     s <- .cg_stats(perm_labels(), pooled, grp_names, contexts, depths,
                    alphabet, .ROOT)
@@ -357,29 +367,25 @@ compare_groups <- function(group, iter = 999L, min_count = 1L, seed = 1L,
     class = "transitiontrees_group_comparison")
 }
 
-#' Print a Group Comparison
+#' Print a group comparison
 #'
 #' @description
-#' Print method for a \code{transitiontrees_group_comparison}: a header with
-#' the groups and permutation setup, the omnibus behavioral / usage
-#' statistics, and the top pathways ranked by behavioral divergence.
+#' \code{print()} prints the groups and permutation design, the omnibus
+#' behavioral and usage tests, and the \code{n} contexts with the largest
+#' behavioral differences.
 #'
 #' @param x A \code{transitiontrees_group_comparison} object.
-#' @param n Integer. Number of top pathways to print. Default 10.
-#' @param digits Integer. Numeric digits for the printed tables.
-#'   Default 3.
+#' @param n Number of contexts to print. Default 10.
+#' @param digits Rounding digits for the printed tables. Default 3.
 #' @param ... Ignored.
-#' @return \code{x} invisibly.
+#' @return \code{x}, invisibly.
+#' @seealso \code{\link{compare_groups}()},
+#'   \code{\link{as.data.frame.transitiontrees_group_comparison}} for every
+#'   context.
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-#'                     max_depth = 1L)
-#' cmp <- compare_groups(grp, iter = 99L)
-#' print(cmp, n = 3L)
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' print(compare_groups(grp, iter = 20), n = 3)
 #' @export
 print.transitiontrees_group_comparison <- function(x, n = 10L, digits = 3L, ...) {
   cat(sprintf("<transitiontrees_group_comparison>  %d groups, %d %spermutations\n",
@@ -407,93 +413,179 @@ print.transitiontrees_group_comparison <- function(x, n = 10L, digits = 3L, ...)
   invisible(x)
 }
 
-#' Summarise a Group Comparison
+#' Summarize a group comparison
 #'
 #' @description
-#' Prints a compact verdict for a \code{transitiontrees_group_comparison}:
-#' the omnibus behavioral and usage permutation p-values, and how many
-#' pathways pass the FDR cutoff on each axis or flip their modal next
-#' state between groups. Returns the per-pathway table invisibly.
+#' \code{summary()} reduces a \code{\link{compare_groups}()} result to one row:
+#' the omnibus behavioral and usage tests, and the number of contexts whose
+#' adjusted p-value is below \code{alpha} on each axis or whose modal next state
+#' differs between groups.
 #'
 #' @param object A \code{transitiontrees_group_comparison} object.
-#' @param alpha Numeric. FDR cutoff used when counting significant
-#'   pathways. Default 0.05.
+#' @param alpha False discovery rate cutoff used to count contexts.
+#'   Default 0.05.
 #' @param ... Ignored.
-#' @return Invisibly, the per-pathway data.frame (\code{object$pathways});
-#'   see \code{\link{compare_groups}} for the column vocabulary.
+#' @return An object of class
+#'   \code{summary.transitiontrees_group_comparison}: a one-row data frame
+#'   with columns \code{groups} (the group names joined by \code{" vs "}),
+#'   \code{n_contexts}, \code{iter}, \code{stratified},
+#'   \code{behavioral_jsd} and \code{behavioral_p} (omnibus count-weighted
+#'   Jensen-Shannon divergence, bits, and its permutation p-value),
+#'   \code{usage_g2} and \code{usage_p} (omnibus usage statistic and its
+#'   p-value), \code{alpha}, \code{n_behavioral} and \code{n_usage}
+#'   (contexts with adjusted p-value below \code{alpha}) and
+#'   \code{n_flips} (contexts whose modal next state differs). It prints as
+#'   a short verdict.
+#' @seealso \code{\link{compare_groups}()},
+#'   \code{\link{as.data.frame.transitiontrees_group_comparison}}.
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-#'                     max_depth = 1L)
-#' cmp <- compare_groups(grp, iter = 99L)
-#' summary(cmp)
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' summary(compare_groups(grp, iter = 20), alpha = 0.1)
 #' @export
 summary.transitiontrees_group_comparison <- function(object, alpha = 0.05, ...) {
-  p <- object$pathways
-  cat(sprintf("Group comparison: %s\n", paste(object$groups, collapse = " vs ")))
-  cat(sprintf("  behavioral omnibus p = %.3f | usage omnibus p = %.3f\n",
-              object$omnibus$p_value[1], object$omnibus$p_value[2]))
-  cat(sprintf("  pathways with behavioral difference (jsd_padj < %.2f): %d\n",
-              alpha, sum(p$jsd_padj < alpha, na.rm = TRUE)))
-  cat(sprintf("  pathways with usage difference      (usage_padj < %.2f): %d\n",
-              alpha, sum(p$usage_padj < alpha, na.rm = TRUE)))
-  cat(sprintf("  pathways whose modal next state flips between groups: %d\n",
-              sum(p$flips)))
-  invisible(object$pathways)
+  .tt_check_class(object, "transitiontrees_group_comparison", "object")
+  stopifnot("`alpha` must be a single number in (0, 1)" =
+              is.numeric(alpha) && length(alpha) == 1L && !is.na(alpha) &&
+              alpha > 0 && alpha < 1)
+  p  <- object$pathways
+  om <- object$omnibus
+  out <- data.frame(
+    groups         = paste(object$groups, collapse = " vs "),
+    n_contexts     = as.integer(object$n_contexts),
+    iter           = as.integer(object$iter),
+    stratified     = isTRUE(object$stratified),
+    behavioral_jsd = om$value[om$axis == "behavioral"],
+    behavioral_p   = om$p_value[om$axis == "behavioral"],
+    usage_g2       = om$value[om$axis == "usage"],
+    usage_p        = om$p_value[om$axis == "usage"],
+    alpha          = alpha,
+    ## A pathway with an undefined adjusted p-value (NA) is not counted
+    ## as significant; the count is of pathways known to pass.
+    n_behavioral   = sum(p$jsd_padj < alpha, na.rm = TRUE),
+    n_usage        = sum(p$usage_padj < alpha, na.rm = TRUE),
+    n_flips        = sum(p$flips),
+    stringsAsFactors = FALSE, row.names = NULL)
+  class(out) <- c("summary.transitiontrees_group_comparison", "data.frame")
+  out
 }
 
-#' Coerce a Group Comparison to a Tidy Data Frame
+#' Print a summary of a group comparison
 #'
 #' @description
-#' Uniform tidy-extract: returns the per-pathway comparison table
-#' (\code{object$pathways}) so \code{as.data.frame(cmp)} yields the full
-#' divergence / usage breakdown as a base \code{data.frame}.
+#' \code{print()} prints the one-row summary of a \code{\link{compare_groups}()}
+#' result as a short verdict: the omnibus tests and the counts of contexts that
+#' differ.
 #'
-#' @param x A \code{transitiontrees_group_comparison}.
-#' @param row.names,optional Ignored.
+#' @param x A \code{summary.transitiontrees_group_comparison} object.
 #' @param ... Ignored.
-#' @return A data.frame with one row per tested context; see
-#'   \code{\link{compare_groups}} for the column vocabulary.
+#' @return \code{x}, invisibly.
+#' @seealso \code{\link{summary.transitiontrees_group_comparison}}.
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-#'                     max_depth = 1L)
-#' cmp <- compare_groups(grp, iter = 99L)
-#' as.data.frame(cmp)
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' print(summary(compare_groups(grp, iter = 20)))
 #' @export
-as.data.frame.transitiontrees_group_comparison <- function(x, row.names = NULL,
-                                                       optional = FALSE, ...) {
-  x$pathways
+print.summary.transitiontrees_group_comparison <- function(x, ...) {
+  cat(sprintf("Group comparison: %s (%d contexts, %d %spermutations)\n",
+              x$groups, x$n_contexts, x$iter,
+              if (isTRUE(x$stratified)) "stratified " else ""))
+  cat(sprintf("  behavioral omnibus: JSD = %.3f bits, p = %.3f\n",
+              x$behavioral_jsd, x$behavioral_p))
+  cat(sprintf("  usage omnibus     : G2 = %.2f, p = %.3f\n",
+              x$usage_g2, x$usage_p))
+  cat(sprintf("  pathways with a behavioral difference (adjusted p < %.2f): %d\n",
+              x$alpha, x$n_behavioral))
+  cat(sprintf("  pathways with a usage difference      (adjusted p < %.2f): %d\n",
+              x$alpha, x$n_usage))
+  cat(sprintf("  pathways whose modal next state differs between groups: %d\n",
+              x$n_flips))
+  invisible(x)
 }
 
-#' Plot a Group Comparison
+#' Convert a group comparison to a data frame
 #'
-#' @param x A \code{transitiontrees_group_comparison}.
-#' @param style One of \code{"divergence"} (default; top pathways ranked
-#'   by behavioral JSD, significant ones highlighted) or \code{"matrix"}
-#'   (heatmap of the between-group symmetric-KL distance matrix).
-#' @param top Integer. Pathways to show in \code{"divergence"}. Default 15.
-#' @param alpha Numeric. FDR cutoff for highlighting. Default 0.05.
+#' @description
+#' \code{as.data.frame()} returns one of the three tables of a
+#' \code{\link{compare_groups}()} result: the per-context tests, the omnibus
+#' tests, or the pairwise distances between groups.
+#'
+#' @param x A \code{transitiontrees_group_comparison} object.
+#' @param row.names,optional Ignored.
+#' @param what \code{"pathways"} (default), \code{"omnibus"} or
+#'   \code{"distance"}.
 #' @param ... Ignored.
-#' @return A ggplot object.
+#' @return A data frame. For \code{what = "pathways"}, one row per tested
+#'   context, with the columns described in \code{\link{compare_groups}()}.
+#'   For \code{what = "omnibus"}, one row per axis with columns
+#'   \code{axis}, \code{statistic}, \code{value} and \code{p_value}. For
+#'   \code{what = "distance"}, one row per unordered pair of groups with
+#'   columns \code{group_a}, \code{group_b} and \code{distance} (the
+#'   count-weighted symmetric Kullback-Leibler divergence of
+#'   \code{\link{tree_distance}()}, nats).
+#' @seealso \code{\link{compare_groups}()},
+#'   \code{\link{summary.transitiontrees_group_comparison}}.
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-#'                     max_depth = 1L)
-#' cmp <- compare_groups(grp, iter = 99L)
-#' plot(cmp)
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' cmp <- compare_groups(grp, iter = 20)
+#' as.data.frame(cmp)
+#' as.data.frame(cmp, what = "omnibus")
+#' as.data.frame(cmp, what = "distance")
+#' @export
+as.data.frame.transitiontrees_group_comparison <- function(x, row.names = NULL,
+                                                       optional = FALSE,
+                                                       what = c("pathways",
+                                                                "omnibus",
+                                                                "distance"),
+                                                       ...) {
+  what <- match.arg(what)
+  switch(what,
+    pathways = x$pathways,
+    omnibus  = x$omnibus,
+    distance = {
+      dm <- x$distance_matrix
+      g  <- rownames(dm)
+      pr <- if (length(g) >= 2L) utils::combn(length(g), 2L) else
+        matrix(integer(0), 2L, 0L)
+      data.frame(group_a  = g[pr[1L, ]], group_b = g[pr[2L, ]],
+                 distance = dm[cbind(pr[1L, ], pr[2L, ])],
+                 stringsAsFactors = FALSE)
+    })
+}
+
+#' Plot the context-level differences between groups
+#'
+#' @description
+#' \code{plot()} draws a \code{\link{compare_groups}()} result in one of two
+#' ways. The default lollipop chart ranks the contexts by the Jensen-Shannon
+#' divergence between the groups' next-state distributions, with point size for
+#' the context's count and color separating contexts whose adjusted p-value is
+#' below \code{alpha}; it shows where, given the same history, the groups
+#' continue differently. \code{style = "matrix"} draws the pairwise distances
+#' between groups as a labeled heatmap.
+#'
+#' @param x A \code{transitiontrees_group_comparison} object.
+#' @param style \code{"divergence"} (default) for the ranked contexts, or
+#'   \code{"matrix"} for the between-group distance heatmap.
+#' @param top Number of contexts shown by \code{"divergence"}. Default 15.
+#' @param alpha False discovery rate cutoff for highlighting. Default 0.05.
+#' @param ... Ignored.
+#' @return A ggplot object: for \code{"divergence"}, one row per context
+#'   with its divergence in bits; for \code{"matrix"}, one tile per pair of
+#'   groups with its symmetric Kullback-Leibler distance printed.
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_empty_result}}{(error) for
+#'     \code{"divergence"}, no context has a positive divergence.}
+#' }
+#' @seealso \code{\link{compare_groups}()}; \code{\link{plot_difference}()}
+#'   for the next-state differences within each context.
+#' @examples
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' cmp <- compare_groups(grp, iter = 20)
+#' plot(cmp, alpha = 0.1)
 #' plot(cmp, style = "matrix")
 #' @export
 plot.transitiontrees_group_comparison <- function(x, style = c("divergence",
@@ -521,8 +613,7 @@ plot.transitiontrees_group_comparison <- function(x, style = c("divergence",
 
   d <- utils::head(x$pathways[x$pathways$jsd_bits > 0, , drop = FALSE], top)
   if (nrow(d) == 0L)
-    stop("No pathways with positive behavioral divergence to plot.",
-         call. = FALSE)
+    .tt_abort("No pathways with positive behavioral divergence to plot.", class = "transitiontrees_empty_result")
   d$pathway <- factor(d$pathway, levels = rev(d$pathway))
   d$sig <- ifelse(d$jsd_padj < alpha, sprintf("FDR < %.2f", alpha), "n.s.")
   ggplot2::ggplot(d, ggplot2::aes(x = .data$jsd_bits, y = .data$pathway,

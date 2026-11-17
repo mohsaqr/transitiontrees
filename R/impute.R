@@ -1,44 +1,61 @@
 # ---- Imputation of missing states ----
 
-#' Impute Missing States in Sequences
+#' Fill in missing states of incomplete sequences
 #'
 #' @description
-#' Fill the gaps in incomplete sequences using a fitted context tree:
-#' each missing state is predicted from the longest matching context of
-#' the states that precede it. Filling proceeds left to right, so a
-#' just-imputed state becomes part of the context for later gaps.
+#' \code{impute_sequences()} fills in the missing states of incomplete sequences
+#' from a fitted tree. Sequences recorded over time often have gaps: positions
+#' at which the state was not observed although the sequence continues
+#' afterwards. The tree gives, for each gap, a distribution of the missing state
+#' conditional on the states observed before it, which is used to fill the gap
+#' with the most likely state or with a random draw.
 #'
-#' @details
-#' Only \strong{internal} gaps are imputed. A run of trailing \code{NA}
-#' / \code{""} cells (end-of-sequence padding in a wide frame) is left
-#' untouched, since there is no observed state after it to mark the
-#' sequence as continuing. A sequence that is entirely missing is
-#' returned unchanged (there is nothing to condition on).
+#' Gaps are filled from left to right. Each gap is predicted from the longest
+#' context of the tree that matches the states before it, and a filled state
+#' becomes part of the history for the gaps that follow. Only gaps followed by
+#' an observed state are filled: missing positions at the end of a sequence mark
+#' where it stops, and a sequence with no observed state is returned unchanged.
+#' The prediction uses past states only; the states observed after a gap do not
+#' inform it.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param newdata Sequences with gaps: a list of character vectors, a
-#'   character matrix / data.frame (one row per sequence, \code{NA} or
-#'   \code{""} marking a gap), or a single character vector.
-#' @param method One of \code{"modal"} (default; fill with the most
-#'   likely state) or \code{"prob"} (sample from the predicted
-#'   distribution).
-#' @param seed Integer or \code{NULL}. Optional RNG seed, used only when
-#'   \code{method = "prob"}.
+#' With \code{method = "modal"} the result is deterministic and the filled
+#' states are the single most likely ones, which understates the variability of
+#' the process; with \code{method = "prob"} the states are drawn from the
+#' predicted distribution, and repeated imputations with different seeds reflect
+#' the uncertainty of the filled values. It returns \code{newdata} in the same
+#' form with its internal gaps filled.
 #'
-#' @return The same container shape as \code{newdata} (list, matrix,
-#'   data.frame, or character vector) with internal gaps filled.
+#' @param tree A \code{transitiontrees} object.
+#' @param newdata Sequences with gaps, marked by \code{NA} or \code{""}: a
+#'   list of character vectors, a character matrix or \code{data.frame} with
+#'   one sequence per row, or a single character vector.
+#' @param method \code{"modal"} (default) fills each gap with the most
+#'   likely state; \code{"prob"} draws it from the predicted distribution.
+#' @param seed Random seed for \code{method = "prob"}, set locally without
+#'   changing the session's random number stream. \code{NULL} (default)
+#'   uses the current stream.
+#'
+#' @return \code{newdata} in the same form (list, matrix, \code{data.frame}
+#'   or vector) with its internal gaps filled.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+#' \code{newdata} is not a list, matrix, \code{data.frame} or character
+#' vector.
+#'
+#' @seealso \code{\link{predict.transitiontrees}()},
+#'   \code{\link{generate_sequences}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(60, sample(c("A", "B", "C"), 8, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 2L)
-#' gappy <- list(c("A", NA, "C"), c("B", "B", NA, "A"))
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' gappy <- list(c("Active", NA, "Active", "Average"),
+#'               c("Disengaged", "Disengaged", NA, NA, "Average", NA))
 #' impute_sequences(tree, gappy)
+#' impute_sequences(tree, gappy, method = "prob", seed = 1)
 #' @export
 impute_sequences <- function(tree, newdata,
                              method = c("modal", "prob"), seed = NULL) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   method <- match.arg(method)
   if (!is.null(seed)) {
     ## seed locally without clobbering the caller's RNG stream
@@ -87,6 +104,5 @@ impute_sequences <- function(tree, newdata,
   if (is.character(newdata) && is.null(dim(newdata))) {
     return(fill_one(newdata))
   }
-  stop("'newdata' must be a list, matrix, data.frame, or character vector.",
-       call. = FALSE)
+  .tt_abort("'newdata' must be a list, matrix, data.frame, or character vector.")
 }

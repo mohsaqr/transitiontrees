@@ -2,7 +2,7 @@
 % Please edit documentation in R/prune.R
 \name{prune_tree}
 \alias{prune_tree}
-\title{Prune a Context Tree}
+\title{Prune a transition tree to the contexts that change the prediction}
 \usage{
 prune_tree(
   tree,
@@ -12,75 +12,86 @@ prune_tree(
 )
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}, or a \code{transitiontrees_group}, in
-which case each member is pruned and the group wrapper is
-preserved.}
+\item{tree}{A \code{transitiontrees} object, or a
+\code{transitiontrees_group}, whose trees are each pruned.}
 
-\item{criterion}{One of \code{"G2"} (likelihood-ratio test against
-parent; default), \code{"KL"} (per-context Kullback-Leibler
-against parent), \code{"AIC"} (Akaike penalty), \code{"BIC"}
-(Bayesian penalty). Case-sensitive.}
+\item{criterion}{\code{"G2"} (default), \code{"KL"}, \code{"AIC"} or
+\code{"BIC"}.}
 
-\item{alpha}{Numeric in (0, 1). Significance level for \code{"G2"};
-ignored otherwise. Default 0.05.}
+\item{alpha}{Significance level for \code{"G2"}, in (0, 1). Default
+0.05.}
 
-\item{threshold}{Numeric. Minimum information gain in nats for
-\code{"KL"}; ignored otherwise. Default 0.005.}
+\item{threshold}{Minimum divergence in nats for \code{"KL"}. Default
+0.005.}
 }
 \value{
-A pruned \code{transitiontrees} (same structure as
-  \code{\link{context_tree}()} returns, fewer nodes) whose \code{pruned}
-  component is \code{TRUE} and whose \code{pruning} component records
-  \code{criterion}, \code{alpha} and \code{threshold}; the print banner
-  reports both. A \code{transitiontrees_group} input returns a
-  \code{transitiontrees_group} of pruned members.
+An object of the same class as \code{tree}, with fewer contexts.
+  A pruned tree prints \code{[pruned]} and the criterion in its header,
+  and \code{\link{n_nodes}()} gives its size.
 }
 \description{
-Removes nodes that do not earn their depth under the chosen
-criterion. Pruning is applied bottom-up: a node is dropped when
-extending its parent's prediction at this context produces less
-information / likelihood than the depth penalty allows.
+\code{prune_tree()} removes the contexts of a fitted tree that predict the
+next state no differently from their shorter suffix, so that the long
+contexts that remain are those in which the additional history changes the
+prediction. This is the principle behind the learning of prediction suffix
+trees (Ron, Singer & Tishby, 1996) and the context algorithm for
+variable-length Markov chains (\enc{Bühlmann}{Buhlmann} & Wyner, 1999). A
+fitted tree holds every context that occurs often enough, and many such
+contexts add parameters without adding information about what comes next.
 
-Renamed from \code{prune()} to avoid collision with other
-\code{prune()} generics.
-}
-\details{
-For each leaf, compute the criterion against its parent. If the
-criterion does not exceed its threshold, drop the leaf and revisit
-the parent. Repeat until stable. The root is never dropped.
-\code{"G2"} keeps a leaf when its likelihood-ratio statistic against
-the parent exceeds the chi-square critical value at \code{alpha} with
-\eqn{|S| - 1} degrees of freedom (one test per leaf, no multiplicity
-correction). \code{"AIC"} and \code{"BIC"} keep a leaf when its
-penalised log-likelihood beats the parent's, with penalty
-\eqn{2(|S| - 1)} and \eqn{\log(n)(|S| - 1)} respectively (\eqn{n} =
-the leaf's count).
-Surviving nodes keep their original smoothed \code{prob} vector
-(whatever smoothing scheme was applied at fit time).
+It compares each leaf with its parent, the context one state shorter, and
+removes the leaf when the comparison does not pass the chosen criterion;
+leaves exposed by a removal are tested in turn until no leaf can be removed.
+The root is never removed. With \code{"G2"} a leaf is kept when the
+likelihood-ratio statistic of its counts against the parent's distribution
+exceeds the chi-square critical value at \code{alpha} with \eqn{k - 1}
+degrees of freedom (\eqn{k} states); each leaf is tested separately, without
+correction for multiple tests. With \code{"KL"} a leaf is kept when its
+Kullback-Leibler divergence from the parent, in nats, exceeds
+\code{threshold}. With \code{"AIC"} and \code{"BIC"} a leaf is kept when its
+log-likelihood, penalized by \eqn{2(k - 1)} or \eqn{\log(n)(k - 1)} (\eqn{n}
+the leaf's count), is better than that of the parent's prediction (Akaike,
+1974; Schwarz, 1978). The probabilities of the contexts that remain are not
+changed. It returns a tree of the same class with fewer contexts.
 
-Note on units: the \code{"KL"} \code{threshold} is in \strong{nats}
-(natural log), whereas the \code{divergence} column reported by
-\code{\link{tree_pathways}()} / \code{\link{divergent_pathways}()} is
-in \strong{bits} (log base 2). Multiply a nats threshold by
-\code{1 / log(2)} (~1.4427) to read it on the pathway-table scale.
+To see how strongly each criterion prunes a tree, use
+\code{\link{compare_pruning}()}; to choose between pruned and unpruned
+trees on held-out data, use \code{\link{tune_tree}()}; to draw the
+\code{"G2"} decision along the suffix chain of one pathway, use
+\code{\link{plot_pruning}()}.
+The \code{divergence} column of \code{\link{tree_pathways}()} is in bits,
+whereas the \code{"KL"} threshold is in nats; divide a threshold in nats
+by \code{log(2)} to read it in bits.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+\code{alpha} is not a single number in (0, 1), or \code{threshold} is
+not a single non-negative number.
+}
+
 \examples{
-set.seed(1)
-seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                    simplify = FALSE)
-tree   <- context_tree(seqs, max_depth = 4)
-pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
-pruned
-prune_tree(tree, criterion = "BIC")
-
+tree <- context_tree(trajectories, max_depth = 4)
+prune_tree(tree, criterion = "G2", alpha = 0.05)
+n_nodes(prune_tree(tree, criterion = "BIC"))
 }
 \references{
-Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia.
-\emph{Machine Learning}, 25, 117-149.
-
 Akaike, H. (1974). A new look at the statistical model identification.
 \emph{IEEE Transactions on Automatic Control}, 19(6), 716-723.
+\doi{10.1109/TAC.1974.1100705}
+
+\enc{Bühlmann}{Buhlmann}, P., & Wyner, A. J. (1999). Variable length
+Markov chains. \emph{The Annals of Statistics}, 27(2), 480-513.
+\doi{10.1214/aos/1018031204}
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. \emph{Machine
+Learning}, 25(2-3), 117-149. \doi{10.1023/A:1026490906255}
 
 Schwarz, G. (1978). Estimating the dimension of a model. \emph{The
-Annals of Statistics}, 6(2), 461-464.
+Annals of Statistics}, 6(2), 461-464. \doi{10.1214/aos/1176344136}
+}
+\seealso{
+\code{\link{compare_pruning}()}, \code{\link{plot_pruning}()},
+  \code{\link{tune_tree}()}, \code{\link{context_tree}()}.
 }

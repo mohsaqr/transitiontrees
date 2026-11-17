@@ -2,46 +2,85 @@
 % Please edit documentation in R/smoothing.R
 \name{smooth_tree}
 \alias{smooth_tree}
-\title{Re-Smooth a Fitted context tree}
+\title{Re-smooth the next-state probabilities of a fitted tree}
 \usage{
 smooth_tree(tree, smoothing = "floor")
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}, or a \code{transitiontrees_group}
-(each member is re-smoothed and the group wrapper is kept).}
+\item{tree}{A \code{transitiontrees} object, or a
+\code{transitiontrees_group}, whose trees are each re-smoothed.}
 
-\item{smoothing}{Smoothing specification: either a method name as a
-string (uses defaults for that method's hyperparameters) or a list
-of the form \code{list(method, ...kwargs)} for explicit
-hyperparameters. Available methods: \code{"floor"} (\code{ymin =
-0.001}), \code{"laplace"} (\code{alpha = 1}), \code{"kneser_ney"}
-(\code{discount = 0.75}), \code{"witten_bell"},
-\code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
-method also takes \code{rule = "interpolate"} (default) or
-\code{"cap"}; see \code{\link{context_tree}()}.}
+\item{smoothing}{A method name, or a list of the method name and its
+hyperparameters, such as \code{list("kneser_ney", discount = 0.5)}.
+Methods and default hyperparameters: \code{"floor"} (default;
+\code{ymin = 0.001}, \code{rule = "interpolate"}), \code{"laplace"}
+(\code{alpha = 1}), \code{"kneser_ney"} (\code{discount = 0.75}),
+\code{"witten_bell"} (none) and \code{"jelinek_mercer"}
+(\code{lambda = 0.5}).}
 }
 \value{
-A new \code{transitiontrees} (or \code{transitiontrees_group})
-  with re-smoothed probabilities. Counts and topology are unchanged.
+An object of the same class as \code{tree} with re-smoothed
+  probabilities; counts and contexts are unchanged.
 }
 \description{
-Replaces every node's probability vector with a new smoothing
-scheme without refitting the tree. Walks nodes top-down by depth so
-each node's parent is re-smoothed before its children read it.
+\code{smooth_tree()} re-estimates the next-state probabilities of every
+context of a fitted tree under a new smoothing scheme, without refitting.
+Smoothing moves part of the probability toward unobserved states or toward
+the distribution of the shorter context, the parent in the tree (Chen &
+Goodman, 1999). The next-state distribution of a context is estimated from
+the continuations observed after it; raw proportions give probability zero to
+every continuation that was not observed, which makes any new sequence
+containing such a continuation impossible under the model, and they are
+unstable in contexts with few occurrences.
+
+Counts and the set of contexts stay as they are, and only the probabilities
+change. Parents are smoothed before their children, so the back-off schemes
+interpolate with an already smoothed parent. The five schemes are given under
+Details. It returns a tree of the same class with re-smoothed probabilities.
+
+Smoothing changes predictions, perplexity and the \code{divergence}
+column of \code{\link{tree_pathways}()}, but never which contexts the
+tree contains; that is set by \code{min_count} and by pruning. To compare
+schemes on one dataset use \code{\link{compare_smoothing}()} (in-sample)
+or \code{\link{tune_tree}()} (cross-validated).
 }
 \details{
-For \code{"kneser_ney"} the canonical continuation-distribution
-formulation requires per-state \emph{type counts}. transitiontrees does
-not track these; the implementation uses the parent's smoothed
-probability as the back-off distribution, an approximation
-discussed in Begleiter, El-Yaniv & Yona (2004), Section 3.
+For a context with counts \eqn{n_s} over \eqn{k} states, total \eqn{n}
+and parent distribution \eqn{q_s} (uniform for the root):
+\describe{
+  \item{\code{"floor"}}{With \code{rule = "interpolate"} (default), a
+    distribution with an unobserved state becomes
+    \eqn{(1 - k\,y_{min}) p_s + y_{min}}, so that each unobserved state
+    has probability exactly \code{ymin}; distributions without zeros are
+    left unchanged. \code{ymin} must be below \eqn{1/k}. With
+    \code{rule = "cap"}, every probability is raised to at least
+    \code{ymin} and the vector is renormalized.}
+  \item{\code{"laplace"}}{Additive smoothing:
+    \eqn{(n_s + \alpha) / (n + k\alpha)}.}
+  \item{\code{"kneser_ney"}}{Absolute discounting with back-off to the
+    parent: \eqn{\max(n_s - d, 0)/n} plus the removed mass times
+    \eqn{q_s}. The parent's smoothed distribution is used for the
+    back-off, not the continuation counts of the original method
+    (Kneser & Ney, 1995).}
+  \item{\code{"witten_bell"}}{Interpolation with the parent,
+    \eqn{(1 - \lambda) n_s / n + \lambda q_s}, with
+    \eqn{\lambda = r / (r + n)} and \eqn{r} the number of distinct
+    states observed after the context (Witten & Bell, 1991).}
+  \item{\code{"jelinek_mercer"}}{Interpolation with the parent at a fixed
+    weight: \eqn{(1 - \lambda) n_s / n + \lambda q_s}.}
 }
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+the method is unknown, a hyperparameter is outside its range, or
+\code{ymin} is not below \eqn{1/k} under \code{rule = "interpolate"}.
+}
+
 \examples{
-set.seed(1)
-m  <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-smooth_tree(tr, "kneser_ney")
-smooth_tree(tr, list("kneser_ney", discount = 0.5))
+tree <- context_tree(trajectories, max_depth = 3)
+smooth_tree(tree, "kneser_ney")
+smooth_tree(tree, list("laplace", alpha = 0.5))
 }
 \references{
 Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
@@ -50,5 +89,20 @@ Research}, 22, 385-421. \doi{10.1613/jair.1491}
 
 Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
 techniques for language modeling. \emph{Computer Speech and Language},
-13(4), 359-394. \doi{10.1006/csla.1999.0128}
+13(4), 359-393. \doi{10.1006/csla.1999.0128}
+
+Kneser, R., & Ney, H. (1995). Improved backing-off for M-gram language
+modeling. In \emph{1995 International Conference on Acoustics, Speech,
+and Signal Processing} (Vol. 1, pp. 181-184).
+\doi{10.1109/ICASSP.1995.479394}
+
+Witten, I. H., & Bell, T. C. (1991). The zero-frequency problem:
+Estimating the probabilities of novel events in adaptive text
+compression. \emph{IEEE Transactions on Information Theory}, 37(4),
+1085-1094. \doi{10.1109/18.87000}
+}
+\seealso{
+\code{\link{compare_smoothing}()} to compare schemes;
+  \code{\link{context_tree}()}, whose \code{smoothing} argument applies a
+  scheme at fit time; \code{\link{tune_tree}()}.
 }

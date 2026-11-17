@@ -2,29 +2,37 @@
 % Please edit documentation in R/context_tree.R
 \name{as.data.frame.transitiontrees}
 \alias{as.data.frame.transitiontrees}
-\title{Coerce a context tree to a Tidy Data Frame}
+\title{Convert a fitted transition tree to a data frame of contexts}
 \usage{
 \method{as.data.frame}{transitiontrees}(x, row.names = NULL, optional = FALSE, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees}.}
+\item{x}{A \code{transitiontrees} object.}
 
-\item{row.names, optional}{Ignored.}
+\item{row.names, optional}{Not used.}
 
-\item{...}{Forwarded to \code{\link{tree_pathways}()}.}
+\item{...}{Passed to \code{\link{tree_pathways}()}: \code{min_count},
+\code{sort_by} and \code{decreasing}.}
 }
 \value{
-A data.frame with columns \code{pathway}, \code{depth},
-  \code{count}, \code{likely_next}, \code{next_probability},
-  \code{divergence}, \code{changes_prediction}; one row per
-  pathway. See \code{\link{tree_pathways}} for the column meanings.
+A \code{data.frame} with one row per context and columns
+  \code{pathway}, \code{depth}, \code{count}, \code{likely_next},
+  \code{next_probability}, \code{divergence} and
+  \code{changes_prediction}, described in \code{\link{tree_pathways}()}.
 }
 \description{
-Returns the canonical tidy node table, identical to
-\code{tree_pathways(tree)}: one row per context (pathway).
+\code{as.data.frame()} returns the contexts of a fitted tree as a table with
+one row per context, the same table that \code{\link{tree_pathways}()}
+returns. Each row gives the context, its depth and count, the most likely
+next state and its probability, and how much the context's prediction departs
+from that of its shorter suffix.
 }
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
+tree <- context_tree(trajectories, max_depth = 2)
 as.data.frame(tree)
 as.data.frame(tree, sort_by = "divergence")
+}
+\seealso{
+\code{\link{tree_pathways}()}, \code{\link{common_pathways}()},
+  \code{\link{divergent_pathways}()}, \code{\link{tree_dependence}()}.
 }

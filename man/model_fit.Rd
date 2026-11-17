@@ -2,42 +2,50 @@
 % Please edit documentation in R/likelihood.R
 \name{model_fit}
 \alias{model_fit}
-\title{Model-Fit Scalars in One Call}
+\title{Summarize the fit of a transition tree}
 \usage{
 model_fit(tree, newdata = NULL)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees} or \code{transitiontrees_group}.}
+\item{tree}{A \code{transitiontrees} or \code{transitiontrees_group}
+object.}
 
-\item{newdata}{Optional sequence data. If supplied, the scalars are
-evaluated on it (held-out); if \code{NULL} (default), in-sample.}
+\item{newdata}{Sequences to evaluate the tree on. \code{NULL} (default)
+evaluates it in-sample.}
 }
 \value{
-A one-row \code{data.frame} (one row per group for a
-  \code{transitiontrees_group}) with columns \code{logLik}, \code{df},
-  \code{nobs}, \code{AIC}, \code{BIC}, \code{perplexity}.
+A \code{data.frame} with columns \code{logLik}, \code{df},
+  \code{nobs}, \code{AIC}, \code{BIC} and \code{perplexity}: one row for
+  a tree, or one row per group, with a leading \code{group} column, for a
+  \code{transitiontrees_group}. When no position can be scored, the
+  statistics are \code{NA}.
 }
 \description{
-Bundles the standard goodness-of-fit scalars for a fitted tree into
-one tidy row: \code{logLik}, the parameter count \code{df}, the
-observation count \code{nobs}, \code{AIC}, \code{BIC}, and
-\code{perplexity}. A one-call replacement for
-\code{logLik(); nobs(); AIC(); BIC(); perplexity()}.
-}
-\details{
-With \code{newdata}, every scalar is computed \strong{out-of-sample}
-(\code{AIC}/\code{BIC} use the held-out deviance with the model's
-training \code{df}). A \code{transitiontrees_group} returns one row per
-group, tagged with a leading \code{group} column.
-}
-\examples{
-set.seed(1)
-seqs <- replicate(60, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 2L, min_count = 3L)
-model_fit(tree)
+\code{model_fit()} returns the fit statistics of a tree as one row:
+log-likelihood, number of parameters, number of scored positions, AIC, BIC
+and perplexity. The row puts trees with different depths, pruning or
+smoothing on a common footing, and for a group of trees gives one row per
+group.
 
+Without \code{newdata} the statistics are in-sample. With
+\code{newdata} every statistic is computed on those sequences, with AIC
+and BIC formed from the held-out log-likelihood and the tree's number of
+parameters. The number of parameters is the number of contexts times
+\eqn{k - 1}, for \eqn{k} states (see
+\code{\link{logLik.transitiontrees}()}).
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+group, or \code{newdata} has no usable sequence.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+model_fit(tree)
+model_fit(prune_tree(tree))
 }
 \seealso{
-\code{\link{perplexity}}, \code{\link{logLik.transitiontrees}}.
+\code{\link{logLik.transitiontrees}()}, \code{\link{perplexity}()},
+  \code{\link{summary.transitiontrees_group}()}, \code{\link{tune_tree}()}.
 }

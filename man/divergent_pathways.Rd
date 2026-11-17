@@ -2,39 +2,51 @@
 % Please edit documentation in R/pathways.R
 \name{divergent_pathways}
 \alias{divergent_pathways}
-\title{Most Predictively Divergent Pathways}
+\title{List the pathways whose history most changes the prediction}
 \usage{
 divergent_pathways(tree, top = 10L, min_count = 1L, flips_only = FALSE)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{top}{Integer. Number of pathways to return. Default 10.}
+\item{top}{Number of pathways to return. Default 10.}
 
-\item{min_count}{Integer. Drop pathways with fewer than this many
-occurrences. Default 1.}
+\item{min_count}{Keep pathways that occurred at least this many times.
+Default 1.}
 
-\item{flips_only}{Logical. If \code{TRUE}, return only pathways
-that flip the most likely next state between orders. Default
-\code{FALSE}.}
+\item{flips_only}{Return only pathways whose most likely next state
+differs from the parent's. Default \code{FALSE}.}
 }
 \value{
-A data.frame, same columns as \code{\link{tree_pathways}},
-  sorted by \code{divergence} descending.
+A \code{data.frame} with the columns of
+  \code{\link{tree_pathways}()}, one row per pathway, sorted by
+  \code{divergence} in decreasing order, at most \code{top} rows.
 }
 \description{
-Returns the top \code{n} pathways by Kullback-Leibler divergence
-from their (k-1)-suffix. These are the pathways whose extended
-history adds the most predictive information over the shorter one.
-Pathways whose most likely next state actually flips between orders
-are marked in the \code{changes_prediction} column.
-}
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-divergent_pathways(tree, top = 6)
-divergent_pathways(tree, flips_only = TRUE)
+\code{divergent_pathways()} returns the pathways whose next-state
+distribution departs most from that of their parent, the same pathway without
+its oldest state, measured by the Kullback-Leibler divergence in bits. These
+are the places where remembering one more state of history changes what is
+expected next, and therefore where the process depends on more than its most
+recent state. With \code{flips_only = TRUE}, only pathways whose most likely
+next state differs from the parent's are returned.
 
+Divergence is computed from smoothed probabilities and can be large for
+rare pathways; set \code{min_count} to exclude them, and use
+\code{\link{bootstrap_pathways}()} to check whether a divergence is stable
+under resampling. The root, which has no parent, is never returned.
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+divergent_pathways(tree, top = 5, min_count = 20)
+divergent_pathways(tree, flips_only = TRUE)
+}
+\seealso{
+\code{\link{tree_pathways}()}, \code{\link{tree_dependence}()},
+  \code{\link{plot_divergence}()}, \code{\link{bootstrap_pathways}()}.
 }

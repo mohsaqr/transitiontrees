@@ -42,3 +42,4 @@ tests/testthat/testthat-problems.rds
 tests/testthat/_problems/
 .playwright-mcp/
 *.tar.gz
+AGENT-NOTE-*.md

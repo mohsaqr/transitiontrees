@@ -2,37 +2,58 @@
 % Please edit documentation in R/plot_pathways.R
 \name{plot_divergence}
 \alias{plot_divergence}
-\title{Lollipop Chart of Pathway Divergence}
+\title{Plot the pathways whose history changes the prediction most}
 \usage{
 plot_divergence(tree, top = 15L, min_count = 5L, title = NULL, ...)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{top}{Integer. Number of pathways to show. Default 15.}
+\item{top}{Number of pathways shown. Default 15.}
 
-\item{min_count}{Integer. Drop pathways below this count. Default 5.}
+\item{min_count}{Pathways with a lower count are dropped. Default 5.}
 
-\item{title}{Character. Plot title; if \code{NULL} (default) a
-default title is used.}
+\item{title}{Plot title. Default \code{NULL}: a title giving the number
+of pathways.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: one lollipop per pathway, divergence (bits) on
+  the x-axis.
 }
 \description{
-Lollipop chart of per-pathway Kullback-Leibler divergence from the
-(k-1)-suffix. Point size is proportional to pathway count; orange
-points mark pathways whose modal next state flips between orders.
-Annotates each flip with the prediction change, e.g. "Disengaged
--> Active".
-}
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3L)
-plot_divergence(tree)
+\code{plot_divergence()} ranks pathways by the Kullback-Leibler divergence,
+in bits, between their next-state distribution and that of their shorter
+suffix, the context without the earliest state. In a variable-order model a
+longer history matters only where it changes what is expected next. Each
+pathway is a lollipop whose point size is its count; points are colored by
+whether the most likely next state differs from the suffix's, and those
+pathways are annotated with the new most likely state and its probability.
+The chart identifies the histories that carry information a shorter memory
+would lose.
 
+The pathways are those returned by \code{\link{divergent_pathways}()}.
+A large divergence on a small count can be a sampling accident; check
+reproducibility with \code{\link{bootstrap_pathways}()}, and the
+pruning decision for one pathway with \code{\link{plot_pruning}()}.
+}
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object.}
+  \item{\code{transitiontrees_empty_result}}{(error) no pathway reaches
+    \code{min_count}.}
+}
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+plot_divergence(tree, top = 10)
+}
+\seealso{
+\code{\link{divergent_pathways}()} for the table;
+  \code{\link{plot_pathways}()}, \code{\link{plot_pruning}()},
+  \code{\link{bootstrap_pathways}()}.
 }

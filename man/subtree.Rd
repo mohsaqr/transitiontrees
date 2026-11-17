@@ -2,32 +2,46 @@
 % Please edit documentation in R/query.R
 \name{subtree}
 \alias{subtree}
-\title{Extract the Subtree Rooted at a Pathway}
+\title{Extract the branch of a tree below one context}
 \usage{
 subtree(tree, pathway)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{pathway}{Character. The root pathway (arrow-notation or
-character vector). Must exist in the tree.}
+\item{pathway}{The context at which to cut, oldest state first: a string
+in arrow notation or a character vector. It must be a context of the
+tree.}
 }
 \value{
-A new \code{transitiontrees} whose nodes and edges are restricted
-  to descendants of \code{pathway}. The alphabet, smoothing, and
-  other hyperparameters are copied unchanged. Printing the subtree
-  reports the context it was cut at (also stored in
-  \code{attr(., "local_root")} for programmatic use).
+A \code{transitiontrees} object holding \code{pathway} and its
+  descendants.
 }
 \description{
-Returns a new \code{transitiontrees} containing only the queried node and
-its descendants. Node names are kept absolute (so the original
-pathway is preserved as a key), but the returned object has a
-\code{local_root} attribute pointing at the queried pathway.
+\code{subtree()} returns the part of a fitted tree that lies below a given
+context: the context itself and every longer context that ends with it, that
+is, every history that extends it further into the past. The branch shows how
+the prediction after a given recent history is refined by what happened
+before it, and can be summarized, converted to a data frame and plotted like
+a full tree.
+
+Contexts keep their full names, and the states, smoothing and other
+settings are those of the original tree. The printed header names the
+context at which the branch was cut.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{pathway} is not one of its contexts.
+}
+
 \examples{
-set.seed(1)
-m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-subtree(tr, "A")   # prints "subtree of: A" in the banner
+tree <- context_tree(trajectories, max_depth = 3)
+branch <- subtree(tree, "Disengaged")
+summary(branch)
+as.data.frame(branch, sort_by = "depth")
+}
+\seealso{
+\code{\link{pathway_exists}()}, \code{\link{query_pathway}()},
+  \code{\link{plot.transitiontrees}()}.
 }

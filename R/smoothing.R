@@ -40,9 +40,9 @@
   ## The coefficient (1 - k*ymin) must stay positive, else probabilities
   ## go negative; require ymin < 1/k.
   if (k * ymin >= 1)
-    stop("floor smoothing with rule = \"interpolate\" needs ymin < 1/k ",
+    .tt_abort("floor smoothing with rule = \"interpolate\" needs ymin < 1/k ",
          "(k = alphabet size = ", k, "); got ymin = ", ymin,
-         ". Lower ymin, or use rule = \"cap\".", call. = FALSE)
+         ". Lower ymin, or use rule = \"cap\".")
   if (any(p == 0)) p <- (1 - k * ymin) * p + ymin
   p
 }
@@ -107,8 +107,7 @@
     witten_bell    = .smooth_witten_bell(counts, parent_prob),
     jelinek_mercer = .smooth_jelinek_mercer(counts, parent_prob,
                                             lambda = smoothing$lambda),
-    stop("Unknown smoothing method: '", smoothing$method, "'.",
-         call. = FALSE))
+    .tt_abort("Unknown smoothing method: '", smoothing$method, "'."))
 }
 
 #' @noRd
@@ -128,26 +127,24 @@
   ## override the method's defaults.
   if (is.character(spec) && length(spec) == 1L) {
     if (!spec %in% names(.pt_smoothing_defaults))
-      stop("Unknown smoothing method: '", spec, "'. Choose one of: ",
-           paste(names(.pt_smoothing_defaults), collapse = ", "),
-           call. = FALSE)
+      .tt_abort("Unknown smoothing method: '", spec, "'. Choose one of: ",
+           paste(names(.pt_smoothing_defaults), collapse = ", "))
     return(.pt_validate_smoothing(.pt_smoothing_defaults[[spec]]))
   }
   if (is.list(spec)) {
     method <- if (!is.null(spec$method)) spec$method else spec[[1L]]
     if (!is.character(method) ||
         !method %in% names(.pt_smoothing_defaults))
-      stop("Smoothing method must be one of: ",
-           paste(names(.pt_smoothing_defaults), collapse = ", "),
-           call. = FALSE)
+      .tt_abort("Smoothing method must be one of: ",
+           paste(names(.pt_smoothing_defaults), collapse = ", "))
     nm <- names(spec)
     overrides <- if (is.null(nm)) list() else
       spec[nzchar(nm) & nm != "method"]
     return(.pt_validate_smoothing(
       modifyList(.pt_smoothing_defaults[[method]], overrides)))
   }
-  stop("'smoothing' must be a method name (character) or a list ",
-       "(method, ...kwargs).", call. = FALSE)
+  .tt_abort("'smoothing' must be a method name (character) or a list ",
+       "(method, ...kwargs).")
 }
 
 #' @noRd
@@ -155,8 +152,8 @@
   scalar_num <- function(x) is.numeric(x) && length(x) == 1L &&
     !is.na(x) && is.finite(x)
   bad <- function(arg, rule) {
-    stop("Invalid smoothing parameter '", arg, "': expected ",
-         rule, ".", call. = FALSE)
+    .tt_abort("Invalid smoothing parameter '", arg, "': expected ",
+         rule, ".")
   }
   switch(sm$method,
     floor = {
@@ -179,7 +176,7 @@
       if (!scalar_num(sm$lambda) || sm$lambda < 0 || sm$lambda > 1)
         bad("lambda", "a finite number in [0, 1]")
     },
-    stop("Unknown smoothing method: '", sm$method, "'.", call. = FALSE))
+    .tt_abort("Unknown smoothing method: '", sm$method, "'."))
   sm
 }
 
@@ -217,34 +214,73 @@
   }
 }
 
-#' Re-Smooth a Fitted context tree
+#' Re-smooth the next-state probabilities of a fitted tree
 #'
 #' @description
-#' Replaces every node's probability vector with a new smoothing
-#' scheme without refitting the tree. Walks nodes top-down by depth so
-#' each node's parent is re-smoothed before its children read it.
+#' \code{smooth_tree()} re-estimates the next-state probabilities of every
+#' context of a fitted tree under a new smoothing scheme, without refitting.
+#' Smoothing moves part of the probability toward unobserved states or toward
+#' the distribution of the shorter context, the parent in the tree (Chen &
+#' Goodman, 1999). The next-state distribution of a context is estimated from
+#' the continuations observed after it; raw proportions give probability zero to
+#' every continuation that was not observed, which makes any new sequence
+#' containing such a continuation impossible under the model, and they are
+#' unstable in contexts with few occurrences.
 #'
-#' @param tree A \code{transitiontrees}, or a \code{transitiontrees_group}
-#'   (each member is re-smoothed and the group wrapper is kept).
-#' @param smoothing Smoothing specification: either a method name as a
-#'   string (uses defaults for that method's hyperparameters) or a list
-#'   of the form \code{list(method, ...kwargs)} for explicit
-#'   hyperparameters. Available methods: \code{"floor"} (\code{ymin =
-#'   0.001}), \code{"laplace"} (\code{alpha = 1}), \code{"kneser_ney"}
-#'   (\code{discount = 0.75}), \code{"witten_bell"},
-#'   \code{"jelinek_mercer"} (\code{lambda = 0.5}). The \code{"floor"}
-#'   method also takes \code{rule = "interpolate"} (default) or
-#'   \code{"cap"}; see \code{\link{context_tree}()}.
+#' Counts and the set of contexts stay as they are, and only the probabilities
+#' change. Parents are smoothed before their children, so the back-off schemes
+#' interpolate with an already smoothed parent. The five schemes are given under
+#' Details. It returns a tree of the same class with re-smoothed probabilities.
 #'
-#' @return A new \code{transitiontrees} (or \code{transitiontrees_group})
-#'   with re-smoothed probabilities. Counts and topology are unchanged.
+#' Smoothing changes predictions, perplexity and the \code{divergence}
+#' column of \code{\link{tree_pathways}()}, but never which contexts the
+#' tree contains; that is set by \code{min_count} and by pruning. To compare
+#' schemes on one dataset use \code{\link{compare_smoothing}()} (in-sample)
+#' or \code{\link{tune_tree}()} (cross-validated).
 #'
 #' @details
-#' For \code{"kneser_ney"} the canonical continuation-distribution
-#' formulation requires per-state \emph{type counts}. transitiontrees does
-#' not track these; the implementation uses the parent's smoothed
-#' probability as the back-off distribution, an approximation
-#' discussed in Begleiter, El-Yaniv & Yona (2004), Section 3.
+#' For a context with counts \eqn{n_s} over \eqn{k} states, total \eqn{n}
+#' and parent distribution \eqn{q_s} (uniform for the root):
+#' \describe{
+#'   \item{\code{"floor"}}{With \code{rule = "interpolate"} (default), a
+#'     distribution with an unobserved state becomes
+#'     \eqn{(1 - k\,y_{min}) p_s + y_{min}}, so that each unobserved state
+#'     has probability exactly \code{ymin}; distributions without zeros are
+#'     left unchanged. \code{ymin} must be below \eqn{1/k}. With
+#'     \code{rule = "cap"}, every probability is raised to at least
+#'     \code{ymin} and the vector is renormalized.}
+#'   \item{\code{"laplace"}}{Additive smoothing:
+#'     \eqn{(n_s + \alpha) / (n + k\alpha)}.}
+#'   \item{\code{"kneser_ney"}}{Absolute discounting with back-off to the
+#'     parent: \eqn{\max(n_s - d, 0)/n} plus the removed mass times
+#'     \eqn{q_s}. The parent's smoothed distribution is used for the
+#'     back-off, not the continuation counts of the original method
+#'     (Kneser & Ney, 1995).}
+#'   \item{\code{"witten_bell"}}{Interpolation with the parent,
+#'     \eqn{(1 - \lambda) n_s / n + \lambda q_s}, with
+#'     \eqn{\lambda = r / (r + n)} and \eqn{r} the number of distinct
+#'     states observed after the context (Witten & Bell, 1991).}
+#'   \item{\code{"jelinek_mercer"}}{Interpolation with the parent at a fixed
+#'     weight: \eqn{(1 - \lambda) n_s / n + \lambda q_s}.}
+#' }
+#'
+#' @param tree A \code{transitiontrees} object, or a
+#'   \code{transitiontrees_group}, whose trees are each re-smoothed.
+#' @param smoothing A method name, or a list of the method name and its
+#'   hyperparameters, such as \code{list("kneser_ney", discount = 0.5)}.
+#'   Methods and default hyperparameters: \code{"floor"} (default;
+#'   \code{ymin = 0.001}, \code{rule = "interpolate"}), \code{"laplace"}
+#'   (\code{alpha = 1}), \code{"kneser_ney"} (\code{discount = 0.75}),
+#'   \code{"witten_bell"} (none) and \code{"jelinek_mercer"}
+#'   (\code{lambda = 0.5}).
+#'
+#' @return An object of the same class as \code{tree} with re-smoothed
+#'   probabilities; counts and contexts are unchanged.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+#' the method is unknown, a hyperparameter is outside its range, or
+#' \code{ymin} is not below \eqn{1/k} under \code{rule = "interpolate"}.
 #'
 #' @references
 #' Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
@@ -253,14 +289,26 @@
 #'
 #' Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
 #' techniques for language modeling. \emph{Computer Speech and Language},
-#' 13(4), 359-394. \doi{10.1006/csla.1999.0128}
+#' 13(4), 359-393. \doi{10.1006/csla.1999.0128}
+#'
+#' Kneser, R., & Ney, H. (1995). Improved backing-off for M-gram language
+#' modeling. In \emph{1995 International Conference on Acoustics, Speech,
+#' and Signal Processing} (Vol. 1, pp. 181-184).
+#' \doi{10.1109/ICASSP.1995.479394}
+#'
+#' Witten, I. H., & Bell, T. C. (1991). The zero-frequency problem:
+#' Estimating the probabilities of novel events in adaptive text
+#' compression. \emph{IEEE Transactions on Information Theory}, 37(4),
+#' 1085-1094. \doi{10.1109/18.87000}
+#'
+#' @seealso \code{\link{compare_smoothing}()} to compare schemes;
+#'   \code{\link{context_tree}()}, whose \code{smoothing} argument applies a
+#'   scheme at fit time; \code{\link{tune_tree}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' m  <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-#' tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-#' smooth_tree(tr, "kneser_ney")
-#' smooth_tree(tr, list("kneser_ney", discount = 0.5))
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' smooth_tree(tree, "kneser_ney")
+#' smooth_tree(tree, list("laplace", alpha = 0.5))
 #' @export
 smooth_tree <- function(tree, smoothing = "floor") {
   ## A transitiontrees_group re-smooths each member, preserving the wrapper.
@@ -269,7 +317,7 @@ smooth_tree <- function(tree, smoothing = "floor") {
     return(structure(out, class = class(tree),
                      group = attr(tree, "group")))
   }
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   sm <- .pt_resolve_smoothing(smoothing)
 
   ## Re-smooth shallow-to-deep: this loop carries a true sequential
@@ -290,71 +338,63 @@ smooth_tree <- function(tree, smoothing = "floor") {
   tree
 }
 
-#' Compare Smoothing Schemes on One Dataset
+#' Compare smoothing schemes on one dataset
 #'
 #' @description
-#' Fits a context tree under several smoothing schemes -- holding
-#' \code{max_depth}, \code{min_count} and every other argument fixed -- and
-#' returns a tidy one-row-per-scheme comparison of tree size and
-#' in-sample perplexity. A convenience wrapper over repeated
-#' \code{\link{context_tree}} calls that collapses the usual five-line
-#' \code{lapply()} loop into a single call.
+#' \code{compare_smoothing()} fits a tree under each of several smoothing
+#' schemes, with every other setting held fixed, and reports one row per scheme
+#' with the size of the tree and its in-sample perplexity. Given an already
+#' fitted tree, it re-smooths that tree under each scheme instead, which keeps
+#' its contexts, for example after pruning.
 #'
-#' @details
-#' The perplexity reported is \strong{in-sample} (computed on the
-#' fitting data), so it rewards memorisation and must \emph{not} be used
-#' to pick a smoother -- use \code{\link{tune_tree}()} for
-#' out-of-sample selection. The point of this table is the side-by-side
-#' view and the invariance of \code{n_nodes} across schemes: smoothing
-#' changes the \emph{probabilities} inside the tree, never \emph{which}
-#' contexts exist (topology is set by \code{min_count}, not by the smoother).
+#' The number of contexts is the same for every scheme, because smoothing
+#' changes probabilities, not which contexts exist. In-sample perplexity
+#' favors schemes that stay close to the observed proportions and therefore
+#' is not a criterion for choosing one; \code{\link{tune_tree}()} compares
+#' schemes on held-out data. See \code{\link{smooth_tree}()} for the
+#' definitions of the schemes.
 #'
-#' @param data Either sequence data in any form accepted by
-#'   \code{\link{context_tree}} (wide matrix / data.frame, list of
-#'   character vectors, or a transition/network
-#'   object) -- fitted afresh under each
-#'   scheme -- \strong{or} an already-fitted \code{transitiontrees}, which is
-#'   \emph{re-smoothed} under each scheme (topology frozen, no
-#'   re-count; e.g. to sweep smoothers on a pruned tree).
-#' @param smoothing Character vector of smoothing-method names to
-#'   compare. Defaults to all five: \code{"floor"}, \code{"laplace"},
-#'   \code{"kneser_ney"}, \code{"witten_bell"}, \code{"jelinek_mercer"}.
-#' @param ... Further arguments passed to \code{\link{context_tree}}
-#'   (e.g. \code{max_depth}, \code{min_count}, \code{alphabet}), held fixed
-#'   across every scheme. Ignored when \code{data} is a fitted tree.
+#' @param data Sequences in any form accepted by \code{\link{context_tree}()},
+#'   fitted afresh under each scheme, or a fitted \code{transitiontrees},
+#'   re-smoothed under each scheme.
+#' @param smoothing Names of the schemes to compare. Default all five:
+#'   \code{"floor"}, \code{"laplace"}, \code{"kneser_ney"},
+#'   \code{"witten_bell"}, \code{"jelinek_mercer"}, each with its default
+#'   hyperparameters.
+#' @param ... Further arguments to \code{\link{context_tree}()}, such as
+#'   \code{max_depth} and \code{min_count}, held fixed across schemes. Not
+#'   used when \code{data} is a fitted tree.
 #'
-#' @return A \code{data.frame} with one row per scheme (in the order
-#'   given by \code{smoothing}) and columns \code{smoothing} (method
-#'   name), \code{n_nodes} (tree size) and \code{perplexity} (in-sample).
+#' @return A \code{data.frame} with one row per scheme, in the order of
+#'   \code{smoothing}, and columns \code{smoothing}, \code{n_nodes} (number
+#'   of contexts) and \code{perplexity} (in-sample).
 #'
-#' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' compare_smoothing(seqs, max_depth = 3L, min_count = 5L)
-#' compare_smoothing(seqs, smoothing = c("floor", "kneser_ney"),
-#'                   max_depth = 2L)
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{smoothing} is not a non-empty
+#' character vector of known methods, or when \code{data} cannot be fitted
+#' (see \code{\link{context_tree}()}).
 #'
 #' @references
-#' Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
-#' variable order Markov models. \emph{Journal of Artificial Intelligence
-#' Research}, 22, 385-421. \doi{10.1613/jair.1491}
-#'
 #' Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
 #' techniques for language modeling. \emph{Computer Speech and Language},
-#' 13(4), 359-394. \doi{10.1006/csla.1999.0128}
+#' 13(4), 359-393. \doi{10.1006/csla.1999.0128}
 #'
-#' @seealso \code{\link{smooth_tree}} to re-smooth a fitted tree
-#'   without re-counting; \code{\link{tune_tree}} for
-#'   cross-validated selection.
+#' @seealso \code{\link{smooth_tree}()} for the schemes;
+#'   \code{\link{tune_tree}()} for cross-validated selection;
+#'   \code{\link{compare_pruning}()} for the analogous comparison of pruning
+#'   criteria.
+#'
+#' @examples
+#' compare_smoothing(trajectories, max_depth = 3)
+#' compare_smoothing(trajectories, smoothing = c("floor", "kneser_ney"),
+#'                   max_depth = 2, min_count = 10)
 #' @export
 compare_smoothing <- function(data,
                               smoothing = c("floor", "laplace", "kneser_ney",
                                             "witten_bell", "jelinek_mercer"),
                               ...) {
   if (!is.character(smoothing) || length(smoothing) < 1L)
-    stop("'smoothing' must be a non-empty character vector of method names.",
-         call. = FALSE)
+    .tt_abort("'smoothing' must be a non-empty character vector of method names.")
   ## A fitted tree is re-smoothed (topology frozen, no re-count); raw
   ## data is fitted afresh under each scheme.
   fits <- if (inherits(data, "transitiontrees"))

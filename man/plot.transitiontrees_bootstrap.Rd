@@ -2,37 +2,47 @@
 % Please edit documentation in R/bootstrap.R
 \name{plot.transitiontrees_bootstrap}
 \alias{plot.transitiontrees_bootstrap}
-\title{Plot a context tree Bootstrap}
+\title{Plot bootstrap intervals of pathway informativeness}
 \usage{
 \method{plot}{transitiontrees_bootstrap}(x, top = 25L, min_stability = NULL, ...)
 }
 \arguments{
 \item{x}{A \code{transitiontrees_bootstrap} object.}
 
-\item{top}{Integer. Maximum pathways to show. Default 25.}
+\item{top}{Maximum number of pathways shown. Default 25.}
 
-\item{min_stability}{Numeric. Minimum \code{stability_rate} to
-display. Default \code{NULL} (use the \code{stability_threshold}
-the bootstrap was run with).}
+\item{min_stability}{Smallest \code{stability_rate} shown. Default
+\code{NULL}: the \code{stability_threshold} of the bootstrap.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: one row per pathway with the mean \eqn{G^2}
+  and its interval.
 }
 \description{
-Forest plot of per-pathway \eqn{G^2} (likelihood-ratio against
-parent) with bootstrap 95\% CI bars. Pathways are ordered with
-\emph{stable & informative} ones first, then by stability rate.
-The chi-square critical value at the bootstrap's \code{alpha} is shown as a
-dashed reference line: pathways whose CI lies entirely above it
-are reproducibly informative.
+\code{plot()} draws a forest plot of each pathway's likelihood-ratio
+statistic \eqn{G^2} against its parent context: the bootstrap mean with its
+percentile interval, one row per pathway, colored and ordered by whether the
+pathway is stable, informative, both or neither. A dashed line marks the
+chi-square critical value used by the bootstrap; a pathway whose interval
+lies wholly to its right departs reproducibly from its shorter history.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_empty_result}}{(error) no pathway with a
+    \eqn{G^2} reaches \code{min_stability}.}
+}
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
-                           iter = 50L)
-plot(boot)
+boot <- bootstrap_pathways(context_tree(trajectories, max_depth = 2),
+                           iter = 50)
+plot(boot, min_stability = 0.5)
+}
+\seealso{
+\code{\link{bootstrap_pathways}()},
+  \code{\link{plot_pathway_resamples}()} for the resample
+  distributions.
 }

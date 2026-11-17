@@ -1,0 +1,409 @@
+---
+title: "Verification against the PST package"
+author: "Written by [Mohammed Saqr](https://saqr.me) and [Sonsoles López-Pernas](https://sonsoles.me)"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Verification against the PST package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.align = "center",
+                      dpi = 96)
+old_options <- options(digits = 4, width = 100)
+```
+
+Two questions can be asked of statistical software. Verification asks whether
+the program computes what its method defines: the counts, the estimates, the
+likelihood. Validation asks whether the method, as computed, describes the
+process it is applied to. This article is about the first question for
+transitiontrees. The package is an independent implementation of the
+variable-order prediction suffix tree (Ron, Singer and Tishby, 1996), also
+known as the variable length Markov chain (Bühlmann and Wyner, 1999). Its code
+shares nothing with the reference implementation of the model in R, the PST
+package (Gabadinho and Ritschard, 2016), which was archived on CRAN after
+version 0.94.1.
+
+The verification has two parts. The first runs in this article: on a small
+bundled dataset, every quantity the tree estimates is computed again by hand
+with a few lines of base R and compared with the package's output. The second
+is an external equivalence suite that fits the same models with PST 0.94.1,
+the markovchain package and the tna package and compares the results
+quantity by quantity. The suite lives outside the package, in the source
+repository, so that neither `R CMD check` nor a user needs the archived PST
+package.
+
+## What the tree estimates
+
+For a context $s$, a sequence of up to `max_depth` states read oldest to
+newest, let $N(s, a)$ be the number of times state $a$ follows $s$ in the
+data and $N(s) = \sum_a N(s, a)$. Every position of every sequence is counted
+once for the root and once for each preceding run of states up to
+`max_depth`, so the first state of a sequence is counted only at the root and
+the second at the root and at depth one. A context enters the tree when
+$N(s) \ge$ `min_count`. Its maximum-likelihood next-state distribution is
+
+$$\hat P(a \mid s) = N(s, a) / N(s).$$
+
+The default `floor` smoother changes only a distribution in which some state
+has a zero count. With $k$ states and floor $y$ (`ymin`), it becomes
+
+$$\tilde P(a \mid s) = (1 - k\,y)\,\hat P(a \mid s) + y,$$
+
+which is the rule used by PST. To predict a position, the tree uses the
+longest context it holds among the states that precede it, and the
+log-likelihood of a set of sequences is the sum, over all positions, of the
+log-probability the tree gives to the observed state.
+
+## Data
+
+The hand computation uses the first ten learners of `trajectories`.
+
+- **Sequence:** one row per learner.
+- **Time:** columns `1` to `15`; trailing `NA`s mark the end of a shorter
+  trajectory.
+- **State:** `Active`, `Average` or `Disengaged`.
+
+```{r data}
+library(transitiontrees)
+learners <- head(trajectories, 10)
+learners
+```
+
+## Counting by hand
+
+The hand computation needs two small functions written in base R, which use
+nothing from the package. `count_by_hand()` lists, for every position of every
+sequence, the root and each preceding run of up to `max_depth` states, and
+tabulates the state that follows. It returns one row per context with its
+total count and its count of each next state. `contexts_of()` turns the
+pathway names of that table into histories that can be passed to `predict()`.
+
+```{r helpers}
+count_by_hand <- function(sequences, max_depth) {
+  events <- lapply(seq_len(nrow(sequences)), function(i) {
+    states <- unname(sequences[i, ])
+    states <- states[!is.na(states)]
+    per_depth <- lapply(seq.int(0L, max_depth), function(d) {
+      positions <- seq_along(states)
+      positions <- positions[positions > d]
+      pathway <- vapply(positions, function(t) {
+        if (d == 0L) "(start)" else
+          paste(states[seq.int(t - d, t - 1L)], collapse = " -> ")
+      }, character(1))
+      data.frame(pathway = pathway, next_state = states[positions])
+    })
+    do.call(rbind, per_depth)
+  })
+  events <- do.call(rbind, events)
+  counts <- table(events$pathway, events$next_state)
+  data.frame(pathway = rownames(counts),
+             count = as.integer(rowSums(counts)),
+             as.data.frame.matrix(counts), row.names = NULL)
+}
+
+contexts_of <- function(hand) {
+  lapply(hand$pathway, function(p) {
+    if (identical(p, "(start)")) character(0) else
+      strsplit(p, " -> ", fixed = TRUE)[[1L]]
+  })
+}
+```
+
+To count the contexts up to depth two, we call `count_by_hand()`.
+
+```{r hand-counts}
+hand <- count_by_hand(learners, max_depth = 2L)
+hand
+```
+
+The ten learners contribute 147 observed states, all counted at the root. All
+nine pairs of states occur as contexts of depth two, so the hand count has 13
+contexts.
+
+## Counts
+
+To fit the tree that keeps every observed context, we call `context_tree()`
+with `min_count = 1L`; `smoothing = list("floor", ymin = 0)` switches the
+smoother off so that the probabilities are the raw maximum-likelihood
+estimates.
+
+```{r fit}
+tree <- context_tree(learners, max_depth = 2L, min_count = 1L,
+                     smoothing = list("floor", ymin = 0))
+tree
+```
+
+To compare the counts, we merge the hand table with the tree's table from
+`as.data.frame()` by pathway.
+
+```{r compare-counts}
+counts <- merge(subset(hand, select = c(pathway, count)),
+                subset(as.data.frame(tree), select = c(pathway, count)),
+                by = "pathway", suffixes = c("_hand", "_tree"))
+counts
+c(by_hand = nrow(hand), in_tree = n_nodes(tree), matched = nrow(counts))
+with(counts, identical(count_hand, count_tree))
+```
+
+The tree holds the same 13 contexts as the hand count, and every count is
+identical. The number of observations the tree reports, `nobs()`, equals the
+root count.
+
+```{r nobs}
+nobs(tree)
+```
+
+## Maximum-likelihood probabilities
+
+To compute the maximum-likelihood distributions by hand, we divide each next
+state's count by the context's count. To obtain the tree's distributions, we
+call `predict()` with each context as a history and `tidy = TRUE`.
+
+```{r compare-mle}
+mle_by_hand <- function(hand) {
+  states <- setdiff(names(hand), c("pathway", "count"))
+  data.frame(pathway = hand$pathway, hand[states] / hand$count)
+}
+by_hand <- mle_by_hand(hand)
+fitted <- predict(tree, newdata = contexts_of(hand), tidy = TRUE)
+subset(fitted, select = c(history, context, Active, Average, Disengaged))
+identical(with(fitted, context), with(by_hand, pathway))
+all.equal(subset(fitted, select = c(Active, Average, Disengaged)),
+          subset(by_hand, select = c(Active, Average, Disengaged)),
+          tolerance = 1e-12)
+```
+
+Every history is predicted from its own context, without back-off, and the
+probabilities agree with the hand computation to within $10^{-12}$.
+
+## Floor smoothing
+
+Six of the hand-counted distributions contain a zero, for example
+`Active -> Disengaged` (one `Active`, one `Disengaged`, no `Average`). To
+check the default smoother, we apply the floor rule by hand with `ymin =
+0.001` and compare it with a tree fitted with the default smoothing.
+
+```{r compare-floor}
+floor_by_hand <- function(probabilities, ymin) {
+  states <- setdiff(names(probabilities), "pathway")
+  p <- as.matrix(probabilities[states])
+  k <- length(states)
+  has_zero <- rowSums(p == 0) > 0
+  p[has_zero, ] <- (1 - k * ymin) * p[has_zero, ] + ymin
+  data.frame(pathway = probabilities$pathway, p)
+}
+smoothed_tree <- context_tree(learners, max_depth = 2L, min_count = 1L)
+smoothed <- predict(smoothed_tree, newdata = contexts_of(hand), tidy = TRUE)
+all.equal(subset(smoothed, select = c(Active, Average, Disengaged)),
+          subset(floor_by_hand(by_hand, ymin = 0.001),
+                 select = c(Active, Average, Disengaged)),
+          tolerance = 1e-12)
+```
+
+## The log-likelihood
+
+To compute the log-likelihood by hand, we score every position with the
+hand-computed distribution of its longest preceding context and sum the
+logarithms.
+
+```{r compare-loglik}
+loglik_by_hand <- function(sequences, max_depth, probabilities) {
+  states_all <- setdiff(names(probabilities), "pathway")
+  p <- as.matrix(probabilities[states_all])
+  rownames(p) <- probabilities$pathway
+  per_sequence <- vapply(seq_len(nrow(sequences)), function(i) {
+    states <- unname(sequences[i, ])
+    states <- states[!is.na(states)]
+    sum(vapply(seq_along(states), function(t) {
+      d <- min(t - 1L, max_depth)
+      context <- if (d == 0L) "(start)" else
+        paste(states[seq.int(t - d, t - 1L)], collapse = " -> ")
+      log(p[context, states[t]])
+    }, numeric(1)))
+  }, numeric(1))
+  sum(per_sequence)
+}
+loglik_by_hand(learners, max_depth = 2L, probabilities = by_hand)
+logLik(tree)
+all.equal(loglik_by_hand(learners, max_depth = 2L, probabilities = by_hand),
+          as.numeric(logLik(tree)), tolerance = 1e-12)
+```
+
+## The same check on the full data
+
+The same comparison can be run on all the bundled sequences at several
+depths. `verify_by_hand()` combines the steps above and returns one row per
+dataset and depth: the number of contexts found by hand and in the tree, and
+the largest absolute differences in counts, probabilities and log-likelihood.
+
+```{r verify-all}
+verify_by_hand <- function(sequences, max_depth, label) {
+  hand <- count_by_hand(sequences, max_depth)
+  tree <- context_tree(sequences, max_depth = max_depth, min_count = 1L,
+                       smoothing = list("floor", ymin = 0))
+  tree_counts <- as.data.frame(tree)
+  matched <- merge(hand, tree_counts, by = "pathway",
+                   suffixes = c("_hand", "_tree"))
+  by_hand <- mle_by_hand(hand)
+  states <- setdiff(names(by_hand), "pathway")
+  fitted <- predict(tree, newdata = contexts_of(hand), tidy = TRUE)
+  data.frame(
+    data = label, max_depth = max_depth,
+    contexts_hand = nrow(hand), contexts_tree = n_nodes(tree),
+    max_count_error = max(abs(matched$count_hand - matched$count_tree)),
+    max_prob_error = max(abs(as.matrix(fitted[states]) -
+                               as.matrix(by_hand[states]))),
+    loglik_error = abs(loglik_by_hand(sequences, max_depth, by_hand) -
+                         as.numeric(logLik(tree))))
+}
+checks <- Map(verify_by_hand,
+              sequences = list(trajectories, trajectories, trajectories,
+                               as.matrix(engagement), as.matrix(engagement)),
+              max_depth = c(1L, 2L, 3L, 1L, 2L),
+              label = c("trajectories", "trajectories", "trajectories",
+                        "engagement", "engagement"))
+do.call(rbind, checks)
+```
+
+On the 136 non-empty trajectories and the 1,000 engagement sequences, at
+every depth, the tree holds exactly the contexts found by hand, the counts
+and the probabilities are identical, and the log-likelihoods differ by at
+most $2 \times 10^{-11}$, the rounding error of summing thousands of
+logarithms in a different order. (`as.matrix()` gives the engagement data
+frame the same matrix form as `trajectories`, which the hand-count function
+expects.)
+
+## The external equivalence suite
+
+The hand computation verifies the estimator against its definition. The
+external suite verifies it against implementations written by other authors.
+It is kept in `local_testing_and_equivalence/` in the source repository,
+outside the built package, and runs only when the environment variable
+`TRANSITREES_EQUIV_TESTS` is `true`. Its runner installs PST 0.94.1 from the
+CRAN archive, installs the current source of transitiontrees, and runs three
+test files.
+
+**PST.** Thirty configurations are drawn at random with a fixed seed. Each
+simulates first-order Markov sequences from a random transition matrix with
+2 to 4 states, 50, 80 or 120 sequences of length 15, 20 or 25, and fits both
+packages with `max_depth` from 2 to 4, `min_count` (`nmin` in PST) of 3, 5
+or 8, and `ymin` of 0, 0.001 or 0.005. TraMineR builds the sequence object
+that PST requires. Every configuration is compared on:
+
+| transitiontrees | PST 0.94.1 | Criterion |
+|---|---|---|
+| node counts, all depths (`context_tree()`) | `pstree()` node counts | identical integers |
+| node probabilities, all depths | `pstree()` node probabilities | absolute difference < $10^{-10}$ |
+| set of contexts | `nodenames()` | identical sets |
+| `nobs()` | `nobs()` | identical |
+| `query_pathway()` | `query()` | absolute difference < $10^{-10}$ |
+| per-position probabilities (`score_positions()`) | `predict(decomp = TRUE)` | absolute difference < $10^{-9}$ |
+| `logLik()` | `logLik()` | relative difference < $10^{-10}$ |
+| `plot_pruning()` distributions and counts | `query()` and node counts | < $10^{-10}$; identical |
+| `plot_predictive(type = "logloss")` | $-\log_2$ of `predict(decomp = TRUE)` | absolute difference < $10^{-9}$ |
+| `prune_tree(criterion = "G2")` | `prune(gain = "G2")` | measured agreement (below) |
+
+**markovchain.** A tree of depth one without smoothing is a first-order
+Markov chain. Its transition probabilities are compared with the
+maximum-likelihood estimate of `markovchain::markovchainFit()` on three
+simulated datasets with 2, 3 and 4 states (absolute difference
+< $10^{-12}$).
+
+**tna.** `prepare_input()`, which turns a long event log into sequences, is
+compared with `tna::prepare_data()` over every combination of its arguments
+(actor, time, order, action and the session time threshold) on three
+long-format datasets from the Nestimate package, and an explicit session
+column is checked to split sequences by actor and session.
+
+### Results
+
+The suites were last run on 2026-11-17 against transitiontrees 0.1.5 on
+R 4.5.2 (Linux), with PST 0.94.1 installed from the CRAN archive,
+markovchain from CRAN and tna 1.5.8.
+
+| Suite | Tests (expectations) | Failures | Max abs count error | Max abs probability error |
+|---|---|---|---|---|
+| PST 0.94.1 | 10 (296) | 0 | 0 | 0 (log-loss: 4.4e-16) |
+| markovchain | 1 (1) | 0 | not applicable | 0 |
+| tna | 2 (422) | 0 | not applicable | not applicable |
+
+The PST suite fits 30 random configurations (2 to 4 states, depth 2 to 4,
+`min_count` of 3, 5 or 8 and `ymin` of 0, 0.001 or 0.005). Every shared context has the same
+counts and probabilities, and the per-position predictive probabilities
+agree exactly; the only non-zero difference is a log-loss difference of
+4.4e-16, at the level of floating-point rounding. For the tna comparison
+the contract is that both functions produce the same set of sequences for
+each of the 420 argument combinations. Since tna 1.3.1, sessions built from
+a time column are ordered numerically by actor, while `prepare_input()`
+orders them as text, so the rows agree in order for 153 of the 420
+combinations and as a set for all of them. Row order does not change a
+fitted tree.
+
+### What is not at parity
+
+Some functions implement the package's own design and have no counterpart
+in PST, so they are verified by the package's unit tests only.
+
+- **Pruning.** `prune_tree(criterion = "G2")` and PST's `prune(gain = "G2")`
+  use the same likelihood-ratio statistic but differ in two documented ways.
+  transitiontrees compares $G^2$ with the chi-square critical value on
+  $k - 1$ degrees of freedom; PST's worked example uses a cutoff equivalent to
+  one degree of freedom. transitiontrees computes $G^2$ from the empirical
+  child distribution, PST from the smoothed one, a difference of the order of
+  `ymin` that can change a decision exactly at the cutoff. The suite measures
+  the consequence: with PST's one-degree-of-freedom cutoff, the contexts
+  transitiontrees keeps are always a subset of those PST keeps, and the two
+  sets are identical when there are two states; with the cutoff matched to
+  $k - 1$ degrees of freedom, the kept sets are identical in at least 85% of
+  configurations, the remainder being decisions at the cutoff.
+- **Distances, tuning and generation.** `tree_distance()` is a count-weighted
+  symmetric Kullback-Leibler divergence, a different quantity from PST's
+  distance. `tune_tree()` uses sequence-level k-fold cross-validation with
+  its own fold assignment. `generate_sequences()` and `simulate()` consume
+  random numbers differently from PST, so they can be compared in
+  distribution only.
+- **Smoothers.** The `laplace`, `kneser_ney`, `witten_bell` and
+  `jelinek_mercer` smoothers have no PST counterpart. The `floor` smoother
+  matches PST by default; `smoothing = list("floor", ymin = 0.001,
+  rule = "cap")` selects the package's earlier clamp-and-renormalise rule,
+  which differs from PST only at contexts with a zero count, by an amount of
+  the order of `ymin`.
+- **Reshaping.** `prepare_input()` produces the same set of sequences as
+  `tna::prepare_data()`; their order can differ because the two functions
+  sort session identifiers differently. Row order does not affect the fit.
+
+## Running the suite
+
+From the root of the source repository, with PST and the other reference
+packages available, the suite runs with
+
+```sh
+TRANSITREES_EQUIV_TESTS=true Rscript local_testing_and_equivalence/run-equiv.R
+```
+
+which installs the reference packages that are missing (PST from the CRAN
+archive), installs the package from source and prints one row per test with
+its number of expectations, failures and errors.
+
+```{r restore, include = FALSE}
+options(old_options)
+```
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics, 27*(2), 480-513.
+<https://doi.org/10.1214/aos/1018031204>
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software, 72*(3). <https://doi.org/10.18637/jss.v072.i03>
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning,
+25*(2-3), 117-149. <https://doi.org/10.1023/A:1026490906255>

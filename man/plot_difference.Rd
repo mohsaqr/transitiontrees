@@ -2,7 +2,7 @@
 % Please edit documentation in R/plot_diagnostics.R
 \name{plot_difference}
 \alias{plot_difference}
-\title{Difference (Subtraction) Map Between Two Groups}
+\title{Map the next-state differences between two groups}
 \usage{
 plot_difference(
   group,
@@ -17,67 +17,85 @@ plot_difference(
 )
 }
 \arguments{
-\item{group}{A \code{transitiontrees_group}.}
+\item{group}{A \code{transitiontrees_group} object.}
 
-\item{groups}{Optional length-2 character vector naming the two groups
-to subtract (\code{group1 - group2}). Defaults to the first two; it
-is required when the object has more than two groups.}
+\item{groups}{The two groups to compare, first minus second. Default
+\code{NULL}: the two groups of a two-group object; required for more
+groups.}
 
-\item{depth}{Integer or \code{NULL}. Restrict to contexts of this
-depth (\code{depth = 1} gives the order-1 transition-matrix
-difference). \code{NULL} (default) uses all shared contexts.}
+\item{depth}{Only contexts of this depth. Default \code{NULL}: all
+shared contexts.}
 
-\item{min_count}{Integer. Drop contexts whose count in \emph{either}
-group is below this. Default 1.}
+\item{min_count}{Contexts with a count below this in either group are
+dropped. Default 1.}
 
-\item{comparison}{Optional \code{transitiontrees_group_comparison} (from
-\code{\link{compare_groups}()}). When supplied, contexts whose
-behavioral difference is significant (\code{jsd_padj < alpha}) are
-starred, so the map shows which differences survived the
-permutation test.}
+\item{comparison}{A \code{transitiontrees_group_comparison} from
+\code{\link{compare_groups}()}, used to star contexts with
+\code{jsd_padj < alpha}. Default \code{NULL}.}
 
-\item{alpha}{Numeric. FDR threshold for the significance stars when
-\code{comparison} is given. Default 0.05.}
+\item{alpha}{False discovery rate cutoff for the stars. Default 0.05.}
 
-\item{annotate}{Logical. Print the signed difference in each cell
-(\code{layout = "tile"} only). Default \code{TRUE}.}
+\item{annotate}{Print the value in each cell (\code{"tile"} only).
+Default \code{TRUE}.}
 
-\item{layout}{One of \code{"tile"} (default; per-context heatmap over
-all shared contexts) or \code{"tree"} (the horizontal context-tree
-phylogram drawn on a pooled backbone, with each node and branch
-coloured by which group reaches that context more -- red for the first
-group, blue for the second; node size = pooled count).}
+\item{layout}{\code{"tile"} (default) for the heatmap, or \code{"tree"}
+for the pooled tree colored by prevalence difference.}
 
-\item{measure}{For \code{layout = "tile"}, what each cell encodes:
-\code{"residual"} (default) is the Pearson standardized residual of
-the first group against the no-group null (observed vs expected from
-the context's margins) -- support-aware and decomposing the per-context
-\eqn{G^2}; \code{"probability"} is the raw next-state probability
-difference \code{P(group1) - P(group2)}. Ignored by \code{"tree"}.}
+\item{measure}{For \code{"tile"}: \code{"residual"} (default) or
+\code{"probability"}.}
 }
 \value{
-A ggplot object.
+A ggplot object: a heatmap of contexts by next states, or a
+  tree colored by prevalence difference.
 }
 \description{
-A per-context map of how two groups differ in their next-state
-predictions: one row per shared context, one column per next state.
-By default each cell is the Pearson standardized residual of the first
-group against the no-difference null (red = more than expected, blue =
-less; \code{|r| > 2} notable), which is support-aware and decomposes
-the per-context \eqn{G^2}; \code{measure = "probability"} shows the raw
-\code{P(group1) - P(group2)} instead.
+\code{plot_difference()} maps the next-state differences between two groups
+of a \code{transitiontrees_group}: where the groups share a history and still
+continue from it differently. The map has one row per context the groups
+share and one column per next state. With \code{depth = 1} the map is the
+difference between the two first-order transition matrices; deeper contexts
+show whether the difference depends on a longer history.
+
+By default each cell is the Pearson residual of the first group's count
+of that next state against the count expected if both groups continued
+alike from that context, \eqn{(O - E) / \sqrt{E}}{(O - E) / sqrt(E)}, with \eqn{E} from
+the margins of the context's two-group table. Residuals take the
+context's count into account, and an absolute value above about 2 is
+notable. \code{measure = "probability"} shows the plain difference of
+next-state probabilities instead. Rows are ordered by their total
+absolute difference, largest at the top. With a
+\code{\link{compare_groups}()} result as \code{comparison}, contexts
+with a significant behavioral difference are starred.
+
+\code{layout = "tree"} draws a different quantity: the context tree of
+the pooled sequences, each node and branch colored by which group
+reaches that context more often, as a share of the group's
+observations. The map describes differences; the permutation tests are
+in \code{\link{compare_groups}()}.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) \code{group} is not a
+    \code{transitiontrees_group}; \code{groups} is missing for more than
+    two groups or does not name two of them; no context is shared at
+    \code{depth} and \code{min_count}; \code{comparison} is not a
+    \code{transitiontrees_group_comparison}.}
+  \item{\code{transitiontrees_empty_result}}{(error) for
+    \code{layout = "tree"}, the pooled tree is empty.}
+}
+}
+
 \examples{
-set.seed(1)
-gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 60),
-                    max_depth = 2L)
-plot_difference(grp)                       # residual heatmap
-plot_difference(grp, layout = "tree")      # difference on the tree map
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+plot_difference(grp)
+plot_difference(grp, measure = "probability")
+plot_difference(grp, comparison = compare_groups(grp, iter = 20),
+                alpha = 0.1)
+plot_difference(grp, layout = "tree")
 }
 \seealso{
-\code{\link{compare_groups}} for the significance test.
+\code{\link{compare_groups}()} for the tests;
+  \code{\link{plot.transitiontrees_group}} for each group's tree.
 }

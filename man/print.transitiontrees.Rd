@@ -2,26 +2,37 @@
 % Please edit documentation in R/context_tree.R
 \name{print.transitiontrees}
 \alias{print.transitiontrees}
-\title{Print a Context Tree}
+\title{Print a fitted transition tree}
 \usage{
 \method{print}{transitiontrees}(x, max_lines = 25L, digits = 2L, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees}.}
+\item{x}{A \code{transitiontrees} object.}
 
-\item{max_lines}{Integer. Maximum tree-rendering lines. Default 25.}
+\item{max_lines}{Maximum number of tree lines to print. Default 25.}
 
-\item{digits}{Integer. Probability digits. Default 2.}
+\item{digits}{Decimal places for probabilities. Default 2.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print a Context Tree
+\code{print()} prints a header (numbers of contexts, depth and states, the
+data the tree was fitted on, the smoothing scheme and \code{min_count}, and
+the pruning criterion when the tree is pruned), followed by the tree drawn as
+text. Each line of the drawing is one context: the state it adds to its
+parent's history (the older state), its count \code{n}, and the most likely
+next state with its probability. Long trees are cut after \code{max_lines}
+lines; \code{as.data.frame()} gives every context.
 }
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
-print(tree, max_lines = 10L)
+tree <- context_tree(trajectories, max_depth = 2)
+print(tree, max_lines = 10)
+}
+\seealso{
+\code{\link{summary.transitiontrees}()},
+  \code{\link{as.data.frame.transitiontrees}()},
+  \code{\link{plot.transitiontrees}()}.
 }

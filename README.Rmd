@@ -1,0 +1,167 @@
+<!-- README.md is generated from README.Rmd. Please edit that file and rebuild
+     from the repository root with:
+     Rscript -e 'pkgload::load_all(".", quiet = TRUE); knitr::knit("README.Rmd", "README.md")' -->
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE, comment = "#>", message = FALSE,
+  fig.path = "man/figures/README-", fig.width = 9, fig.height = 5,
+  out.width = "100%", dpi = 110,
+  error = FALSE
+)
+old_options <- options(width = 90, digits = 3)
+```
+
+# transitiontrees
+
+<!-- badges: start -->
+[![CRAN status](https://www.r-pkg.org/badges/version/transitiontrees)](https://CRAN.R-project.org/package=transitiontrees)
+[![CRAN downloads](https://cranlogs.r-pkg.org/badges/grand-total/transitiontrees)](https://cran.r-project.org/package=transitiontrees)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<!-- badges: end -->
+
+## Vignettes and guides
+
+**Vignettes**
+
+- [Variable-order transition trees](https://pak.dynasite.org/transitiontrees/articles/transitiontrees.html)
+- [Comparing groups](https://pak.dynasite.org/transitiontrees/articles/comparing-groups.html)
+
+**Guides**
+
+- [A complete workflow](https://pak.dynasite.org/transitiontrees/articles/workflow.html)
+- [Data input: wide sequences, event logs and network objects](https://pak.dynasite.org/transitiontrees/articles/data-input.html)
+- [Smoothing and pruning](https://pak.dynasite.org/transitiontrees/articles/smoothing-and-pruning.html)
+- [Model selection: tuning, fit and perplexity](https://pak.dynasite.org/transitiontrees/articles/model-selection.html)
+- [Pathway reliability with the bootstrap](https://pak.dynasite.org/transitiontrees/articles/pathway-reliability.html)
+- [Prediction, scoring, imputation and mining](https://pak.dynasite.org/transitiontrees/articles/prediction-and-scoring.html)
+- [Visualizing transition trees](https://pak.dynasite.org/transitiontrees/articles/visualization.html)
+- [Verification against the PST package](https://pak.dynasite.org/transitiontrees/articles/verification.html)
+
+**Case studies**
+
+- [Collaborative regulation by achievement](https://pak.dynasite.org/transitiontrees/articles/case-regulation-achievement.html)
+- [Engagement trajectories](https://pak.dynasite.org/transitiontrees/articles/case-engagement.html)
+- [Human-AI collaboration](https://pak.dynasite.org/transitiontrees/articles/case-ai-collaboration.html)
+
+## Overview
+
+`transitiontrees` models how categorical processes unfold: how one state
+follows another in weekly engagement, collaborative regulation or the turns
+of a human-AI conversation. It fits variable-order transition trees, also
+known as prediction suffix trees (Ron, Singer, & Tishby, 1996) or
+variable-length Markov chains (Bühlmann & Wyner, 1999), in which the length
+of history used to predict the next state differs from one history to
+another: the tree is deep where earlier states change the prediction and
+shallow where they do not. Each branch is a pathway, a run of recent states
+with the distribution of the state that followed it. The package reports
+which pathways occur, which change the prediction relative to a shorter
+history, how stable they are under the bootstrap, and whether they differ
+between groups, separating differences in what follows a history from
+differences in how often the history occurs.
+
+Trees are fitted from wide sequence data, long event logs and
+sequence-bearing network objects; pruned by likelihood-ratio tests or
+information criteria; evaluated by log likelihood, information criteria and
+perplexity; and used to predict, score, simulate and impute sequences.
+Results are tidy data frames, and plots are ggplot2 objects.
+
+## Variable-order transition trees
+
+For a sequence $x_1, \dots, x_T$ over a set of states $S$, a context is a
+run of recent states $c = (x_{t-k}, \dots, x_{t-1})$, and each context in
+the tree carries a next-state distribution $P(x_t = s \mid c)$. A new state
+is predicted from the longest suffix of its history that is a context in
+the tree, $c^*(t)$, so that
+$\hat P(x_t \mid x_1, \dots, x_{t-1}) = \hat P(x_t \mid c^*(t))$. A
+context receives a node when it is no longer than `max_depth` and occurs
+at least `min_count` times; its distribution is estimated from the counts
+$N(c, s)$ and smoothed so that unobserved next states keep a small
+probability. A leaf $c$ is pruned when its counts are consistent with the
+prediction of its parent $\pi(c)$, the context with the oldest state
+removed, under the likelihood-ratio test
+
+$$
+G^2(c) = 2 \sum_{s} N(c, s) \log \frac{N(c, s)}{N(c)\, \tilde p(s \mid \pi(c))}
+\;\le\; \chi^2_{|S| - 1,\, 1 - \alpha},
+$$
+
+or under an AIC or BIC penalty (Ron, Singer, & Tishby, 1996; Bühlmann &
+Wyner, 1999; Gabadinho & Ritschard, 2016). Pathways are written oldest
+state first (`Average -> Disengaged`), and the empty context is shown as
+`(start)`.
+
+## Installation
+
+```{r installation, eval = FALSE}
+install.packages("transitiontrees")
+
+# development version
+install.packages("remotes")
+remotes::install_github("mohsaqr/transitiontrees")
+```
+
+## Example
+
+`engagement` holds the weekly engagement states (`Active`, `Average`,
+`Disengaged`) of 1,000 students. The tree below allows histories of up to
+three weeks, and pruning keeps the contexts that pass the $G^2$ test.
+
+```{r fit}
+library(transitiontrees)
+
+tree <- context_tree(engagement, max_depth = 3, min_count = 10)
+pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
+model_fit(pruned)
+```
+
+Pathways that change the prediction made from the shorter history are
+ranked by `divergent_pathways()`.
+
+```{r divergent}
+divergent_pathways(pruned, top = 5)
+```
+
+`plot()` draws the tree from the root on the left, with node size
+proportional to the context count and the modal next state under each
+node.
+
+```{r plot-tree, fig.alt = "The pruned context tree of the engagement data"}
+plot(pruned)
+```
+
+`predict()` applies the longest-suffix rule to new histories; with
+`tidy = TRUE` it returns one row per history with the context used and the
+next-state distribution.
+
+```{r predict}
+predict(pruned, newdata = list(c("Active", "Average"),
+                               c("Average", "Disengaged")),
+        tidy = TRUE)
+```
+
+## Authors and citation
+
+`transitiontrees` is written by [Mohammed Saqr](https://saqr.me) and
+[Sonsoles López-Pernas](https://sonsoles.me). Mohammed Saqr maintains the
+package. Questions and bug reports can be submitted through the
+[repository issue tracker](https://github.com/mohsaqr/transitiontrees/issues).
+The package citation is available through `citation("transitiontrees")`.
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains.
+*The Annals of Statistics*, *27*(2), 480–513.
+<https://doi.org/10.1214/aos/1018031204>
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software*, *72*(3). <https://doi.org/10.18637/jss.v072.i03>
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning*,
+*25*(2–3), 117–149. <https://doi.org/10.1023/A:1026490906255>
+
+```{r restore-options, include = FALSE}
+options(old_options)
+```

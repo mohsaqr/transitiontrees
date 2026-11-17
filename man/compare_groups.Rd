@@ -2,106 +2,113 @@
 % Please edit documentation in R/compare_groups.R
 \name{compare_groups}
 \alias{compare_groups}
-\title{Compare Groups of Sequences for Structural Differences}
+\title{Test where groups of sequences differ, context by context}
 \usage{
 compare_groups(group, iter = 999L, min_count = 1L, seed = 1L, block = NULL)
 }
 \arguments{
-\item{group}{A \code{transitiontrees_group} of unweighted trees (a
-weighted member is refused: the permutation recounts the raw
-sequences).}
+\item{group}{A \code{transitiontrees_group} of unweighted trees, from
+\code{context_tree(..., group = )}.}
 
-\item{iter}{Integer. Number of label permutations. Default 999.}
+\item{iter}{Number of label permutations. Default 999.}
 
-\item{min_count}{Integer. Drop contexts whose total count across all
-groups is below this. Default 1.}
+\item{min_count}{Contexts with a total count across groups below this
+are dropped from the table. Default 1.}
 
-\item{seed}{Integer or \code{NULL}. RNG seed passed to
-\code{set.seed()}; \code{NULL} uses the current RNG state. Default 1.}
+\item{seed}{Seed for the permutations, or \code{NULL} to use the
+current random-number state. Default 1. A non-\code{NULL} seed sets
+the session's random-number state.}
 
-\item{block}{Block ids for a \strong{stratified} permutation: group
-labels are shuffled only \emph{within} each block, so the null
-respects nested / repeated-measures structure (e.g. several
-sequences from one subject) and holds any between-block difference
-fixed. Normally you do not pass this --- fit with
-\code{context_tree(..., block = )} and it is carried on the object
-and used automatically. Passing a vector here (one id per sequence,
-in pooled group-then-row order) overrides that. \code{NULL} with no
-stored block shuffles labels freely.}
+\item{block}{Block identifiers for a stratified permutation, one per
+sequence in group-then-row order. Default \code{NULL}: the block
+stored by \code{context_tree(..., block = )} is used when present,
+and labels are shuffled freely otherwise.}
 }
 \value{
-A \code{transitiontrees_group_comparison}: a list with
-  \describe{
-    \item{pathways}{Per-context data.frame sorted by \code{jsd_bits}
-      descending, with columns \code{pathway}, \code{depth},
-      \code{count_total}, one \code{count_<group>} and one
-      \code{modal_<group>} column per group (most likely next state,
-      ties broken by alphabet order), \code{flips} (do the groups'
-      modal next states disagree?), \code{jsd_bits}, \code{jsd_p},
-      \code{jsd_padj}, \code{usage_g2}, \code{usage_p},
-      \code{usage_padj}. \code{usage_*} is \code{NA} for the root,
-      which has no prevalence test.}
-    \item{omnibus}{Two-row data.frame (one row per axis) with columns
-      \code{axis}, \code{statistic}, \code{value} and \code{p_value}
-      (permutation p-value: one plus the number of permuted statistics
-      at least the observed one, over \code{iter + 1}).}
-    \item{distance_matrix}{K x K symmetric-KL distance matrix between
-      the groups (from \code{tree_distance()}).}
-    \item{groups, iter, seed, n_contexts, stratified}{Configuration;
-      \code{stratified} is \code{TRUE} when a \code{block} was used.}
-  }
-\code{as.data.frame()} returns the \code{pathways} table; the print
-method shows the omnibus table and the top pathways; \code{summary()}
-prints a compact verdict.
+An object of class \code{transitiontrees_group_comparison}. Its
+  tables are returned by \code{as.data.frame()}:
+  \code{what = "pathways"} gives one row per tested context with
+  columns \code{pathway}, \code{depth}, \code{count_total}, one
+  \code{count_<group>} and one \code{modal_<group>} column per group
+  (the most likely next state), \code{flips} (whether the groups' modal
+  next states differ), \code{jsd_bits}, \code{jsd_p}, \code{jsd_padj},
+  \code{usage_g2}, \code{usage_p} and \code{usage_padj} (\code{NA} for
+  the root, which has no usage test), sorted by \code{jsd_bits};
+  \code{what = "omnibus"} gives one row per axis; and
+  \code{what = "distance"} gives one row per pair of groups with their
+  \code{\link{tree_distance}()}. \code{summary()} returns a one-row
+  overview and \code{plot()} the largest behavioral differences.
 }
 \description{
-Test how a set of fitted group trees (a \code{transitiontrees_group} from
-\code{context_tree(..., group =)}) differ, on two complementary axes:
+\code{compare_groups()} tests where groups of sequences, such as high and low
+achievers or two phases of a course, differ, context by context and for the
+trees as a whole. Groups can differ in two distinct ways: they can reach the
+same history and then continue differently (a behavioral difference), or they
+can reach some histories more often than others do (a usage difference). Both
+are tested for every context represented in the groups' trees and for the
+trees as a whole, so that a difference can be located in specific pathways
+rather than reported as one number.
+
+The behavioral difference at a context is the Jensen-Shannon divergence (Lin,
+1991), in bits, between the groups' next-state distributions, each group
+weighted by its count at that context. The usage difference is a \eqn{G^2}
+homogeneity statistic on the context's prevalence: its count against the
+other windows of the same length in each group. The omnibus statistics are
+the count-weighted sum of the divergences and the sum of the \eqn{G^2}
+values. All p-values come from one label permutation: sequences are pooled,
+group labels are shuffled with group sizes fixed, and every statistic is
+recomputed from raw counts. Per-context p-values are adjusted for false
+discovery rate with the Benjamini-Hochberg (1995) procedure, separately for
+each axis. When one person contributes several sequences, a \code{block}
+identifier restricts the shuffle to within persons, so the null distribution
+respects that nesting. The result is a
+\code{transitiontrees_group_comparison} object whose tables are read with
+\code{as.data.frame()}; \code{summary()} gives a one-row overview and
+\code{plot()} the largest behavioral differences.
+
+\code{compare_groups()} handles two or more groups. For one overall distance
+between two trees with a permutation test, use \code{\link{compare_trees}()};
+it measures the symmetric Kullback-Leibler divergence, not the Jensen-Shannon
+divergence used here. \code{\link{plot_difference}()} maps the per-context
+differences of two groups next state by next state.
+}
+\section{Conditions}{
+
 \describe{
-  \item{behavioral}{given the \emph{same} context, do the groups
-    predict a different next state? Measured per context by the
-    count-weighted Jensen-Shannon divergence (bits) across the
-    groups' next-state distributions.}
-  \item{usage}{do the groups \emph{reach} a context at different
-    rates? Measured per context by a \eqn{G^2} homogeneity statistic
-    on its prevalence (its share of each group's positions).}
+  \item{\code{transitiontrees_bad_input}}{(error) \code{group} is not a
+    \code{transitiontrees_group}, has fewer than two groups, or
+    \code{block} does not have one entry per sequence.}
+  \item{\code{transitiontrees_weighted_unsupported}}{(error) a member
+    tree was fitted with weights; the permutation recounts the raw
+    sequences and would drop them.}
+  \item{\code{transitiontrees_degenerate_permutation}}{(warning) no
+    block contains more than one group, so the stratified shuffle
+    cannot move any label.}
 }
-Significance is assessed by a label-permutation null throughout
-(per-pathway and omnibus), with Benjamini-Hochberg FDR on the
-per-pathway p-values.
 }
-\details{
-The permutation pools every sequence, shuffles the group labels
-(preserving group sizes), and recomputes the statistics from raw
-counts using the same counting routine as the fit. The tested
-context set is the union of the contexts the groups' trees actually
-represent. For two groups the behavioral measure is JSD, which is
-\strong{not} the symmetric-KL distance used by
-\code{\link{compare_trees}()}; the \code{distance_matrix} component
-does use \code{\link{tree_distance}()} (symmetric KL) for
-consistency with the pairwise function.
-}
+
 \examples{
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 199L)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+cmp <- compare_groups(grp, iter = 20)
 cmp
-as.data.frame(cmp)
+summary(cmp)
 }
 \references{
 Lin, J. (1991). Divergence measures based on the Shannon entropy.
 \emph{IEEE Transactions on Information Theory}, 37(1), 145-151.
+\doi{10.1109/18.61115}
 
 Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery
-rate: a practical and powerful approach to multiple testing.
-\emph{Journal of the Royal Statistical Society: Series B}, 57(1),
-289-300.
+rate: A practical and powerful approach to multiple testing.
+\emph{Journal of the Royal Statistical Society: Series B
+(Methodological)}, 57(1), 289-300.
+\doi{10.1111/j.2517-6161.1995.tb02031.x}
 }
 \seealso{
-\code{\link{compare_trees}} for the pairwise permutation test.
+\code{\link{summary.transitiontrees_group_comparison}},
+  \code{\link{as.data.frame.transitiontrees_group_comparison}} and
+  \code{\link{plot.transitiontrees_group_comparison}} for the result;
+  \code{\link{compare_trees}()} for the pairwise test;
+  \code{\link{plot_difference}()} for the next-state difference map.
 }

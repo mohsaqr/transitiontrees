@@ -2,28 +2,36 @@
 % Please edit documentation in R/compare.R
 \name{plot.transitiontrees_comparison}
 \alias{plot.transitiontrees_comparison}
-\title{Plot a context tree Comparison}
+\title{Plot the permutation distribution of a two-tree comparison}
 \usage{
 \method{plot}{transitiontrees_comparison}(x, bins = 30L, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_comparison} object.}
+\item{x}{A \code{transitiontrees_comparison} object from
+\code{\link{compare_trees}()}.}
 
-\item{bins}{Integer. Histogram bins. Default 30.}
+\item{bins}{Number of histogram bins. Default 30.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: a histogram of the permuted distances with the
+  observed distance marked.
 }
 \description{
-Visualises the permutation-test result. Histogram of the null
-distribution of transitiontrees distances under shuffled group labels;
-a vertical line marks the observed distance; the panel header
-carries the p-value.
+\code{plot()} draws the permutation null distribution of the distance between
+two context trees as a histogram, with the observed distance as a vertical
+line and the permutation p-value in the subtitle. An observed line far in the
+right tail indicates that the two groups predict differently beyond what
+random reassignment of sequences produces.
 }
 \examples{
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-plot(compare_trees(grp, iter = 50L))
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+plot(compare_trees(grp, iter = 20), bins = 10)
+}
+\seealso{
+\code{\link{compare_trees}()},
+  \code{\link{as.data.frame.transitiontrees_comparison}} for the
+  permuted values.
 }

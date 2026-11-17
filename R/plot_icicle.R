@@ -32,13 +32,20 @@
   if (is.null(label_abbrev_fraction))
     label_abbrev_fraction <- label_min_fraction
   stopifnot(
-    is.numeric(label_min_fraction),    label_min_fraction    >= 0,
-    is.numeric(label_abbrev_fraction), label_abbrev_fraction >= 0,
-    is.numeric(gap_size),              gap_size        >= 0,
-    is.numeric(gap_size_within),       gap_size_within >= 0,
-    is.numeric(abbrev_len),            abbrev_len >= 1L,
-    is.null(abbrev_fun) || is.function(abbrev_fun),
-    is.numeric(jitter),                jitter >= 0
+    "`label_min_fraction` must be a non-negative number" =
+      is.numeric(label_min_fraction) && all(label_min_fraction >= 0),
+    "`label_abbrev_fraction` must be a non-negative number" =
+      is.numeric(label_abbrev_fraction) && all(label_abbrev_fraction >= 0),
+    "`gap_size` must be a non-negative number" =
+      is.numeric(gap_size) && all(gap_size >= 0),
+    "`gap_size_within` must be a non-negative number" =
+      is.numeric(gap_size_within) && all(gap_size_within >= 0),
+    "`abbrev_len` must be a number >= 1" =
+      is.numeric(abbrev_len) && all(abbrev_len >= 1L),
+    "`abbrev_fun` must be NULL or a function" =
+      is.null(abbrev_fun) || is.function(abbrev_fun),
+    "`jitter` must be a non-negative number" =
+      is.numeric(jitter) && all(jitter >= 0)
   )
   ## Abbreviation function: by default a simple substr to abbrev_len
   ## characters. Pass abbrev_fun = base::abbreviate (vowel-dropping

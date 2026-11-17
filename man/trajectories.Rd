@@ -5,29 +5,35 @@
 \alias{trajectories}
 \title{Student engagement trajectories}
 \format{
-A character matrix with 138 rows (learners) and 15 columns
-  (time-steps). Three states: \code{"Active"}, \code{"Average"},
-  \code{"Disengaged"}.
+A character matrix with 138 rows (students) and 15 columns
+  (time points, named \code{"1"} to \code{"15"}), holding
+  \code{"Active"}, \code{"Average"}, \code{"Disengaged"} or \code{NA}.
+  118 rows are complete; 1870 states are observed in all.
 }
 \source{
-Bundled example dataset.
+Bundled example dataset. The same matrix is distributed with the
+  \pkg{Nestimate} package as \code{trajectories}.
 }
 \usage{
 trajectories
 }
 \description{
-An example set of categorical learning-engagement trajectories used in
-the \pkg{transitiontrees} examples and in the \dQuote{Getting started},
-\dQuote{Advanced analysis} and \dQuote{Visualization} vignettes.
-Each row is one learner, each column a time-step, and each cell the
-engagement state at that step. Trailing \code{NA}s mark the end of a
-trajectory. This wide character matrix is exactly the shape
-\code{\link{context_tree}()} consumes.
+\code{trajectories} is a coded dataset of the engagement states of 138
+students at 15 successive time points, one row per student and one column per
+time point. Each state is \code{"Active"}, \code{"Average"} or
+\code{"Disengaged"}. Missing values occur only as a run at the end of a row
+and mark that the student's trajectory ended (drop-out); two rows are missing
+throughout and are ignored when a tree is fitted. The matrix has the wide
+layout that \code{\link{context_tree}()} fits directly, and is small enough
+for fast examples.
 }
 \examples{
-data(trajectories)
-dim(trajectories)
-tree <- context_tree(trajectories)
+tree <- context_tree(trajectories, max_depth = 3)
 tree
+state_frequencies(tree)
+}
+\seealso{
+\code{\link{engagement}} for a larger engagement dataset;
+  \code{\link{context_tree}()}.
 }
 \keyword{datasets}

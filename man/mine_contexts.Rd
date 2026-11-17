@@ -2,42 +2,58 @@
 % Please edit documentation in R/mine.R
 \name{mine_contexts}
 \alias{mine_contexts}
-\title{Mine Contexts by Next-State Probability}
+\title{Find the contexts that make a given next state likely or unlikely}
 \usage{
 mine_contexts(tree, state, min_prob = NULL, max_prob = NULL, min_count = 1L)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{state}{Character. The next state to score, one of the tree's
-alphabet.}
+\item{state}{The next state of interest, one of the tree's states.}
 
-\item{min_prob, max_prob}{Numeric in \eqn{[0, 1]} or \code{NULL}.
-Keep contexts whose \code{P(state | context)} is at least
-\code{min_prob} and/or at most \code{max_prob}. \code{NULL}
-(default) leaves that side unbounded.}
+\item{min_prob, max_prob}{Keep contexts whose probability of \code{state}
+is at least \code{min_prob} and at most \code{max_prob}. \code{NULL}
+(default) leaves that bound open.}
 
-\item{min_count}{Integer. Drop contexts with fewer than this many
-occurrences. Default 1.}
+\item{min_count}{Keep contexts that occurred at least this many times.
+Default 1.}
 }
 \value{
-A data.frame with columns \code{pathway}, \code{depth},
-  \code{count}, \code{state}, \code{prob} (\code{P(state | context)}),
-  and \code{is_modal} (whether \code{state} is the context's most
-  likely next state; ties broken by alphabet order), sorted by
-  \code{prob} descending. The empty case returns a 0-row data.frame
-  with the same schema.
+A \code{data.frame} with one row per context and columns
+  \code{pathway}, \code{depth}, \code{count}, \code{state}, \code{prob}
+  (probability of \code{state} after the context) and \code{is_modal}
+  (whether \code{state} is the most likely next state), sorted by
+  \code{prob} and then \code{count}, both decreasing. No matching context
+  gives a zero-row table with these columns.
 }
 \description{
-Scan every context in a fitted tree for a chosen next state and
-return those whose predicted probability for that state falls in a
-requested range. A tidy context-mining table:
-"in which histories is the next move \code{state} unusually likely or unlikely?"
+\code{mine_contexts()} finds the contexts that make a given next state likely
+or unlikely. It scans every context of a fitted tree for the probability it
+gives one chosen next state and returns the contexts whose probability lies
+in a requested range, from the highest probability down. This serves
+questions about one outcome state, such as after which histories
+disengagement is most likely, or after which histories a learner almost never
+returns to planning.
+
+Each row reports the context, its depth and count, the probability of
+the chosen state after it, and whether that state is the context's most
+likely next state. Probabilities in rare contexts are imprecise; set
+\code{min_count} to keep only contexts with enough occurrences. To
+compare the state's probability across groups, fit a grouped tree and
+use \code{\link{compare_groups}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{state} is not a single one of its states.
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 2L)
-mine_contexts(tree, state = "A", min_prob = 0.4)
+tree <- context_tree(trajectories, max_depth = 3)
+mine_contexts(tree, state = "Disengaged", min_prob = 0.4, min_count = 10)
+mine_contexts(tree, state = "Active", max_prob = 0.05)
+}
+\seealso{
+\code{\link{query_pathway}()}, \code{\link{sharp_pathways}()},
+  \code{\link{mine_sequences}()}.
 }

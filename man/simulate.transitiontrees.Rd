@@ -2,35 +2,56 @@
 % Please edit documentation in R/predict.R
 \name{simulate.transitiontrees}
 \alias{simulate.transitiontrees}
-\title{Simulate Sequences from a Fitted context tree}
+\title{Simulate sequences from a fitted transition tree}
 \usage{
-\method{simulate}{transitiontrees}(object, nsim = 5L, seed = NULL, length = 10L, start = NULL, ...)
+\method{simulate}{transitiontrees}(
+  object,
+  nsim = 5L,
+  seed = NULL,
+  length = 10L,
+  start = NULL,
+  tidy = FALSE,
+  ...
+)
 }
 \arguments{
-\item{object}{A \code{transitiontrees}.}
+\item{object}{A \code{transitiontrees} object.}
 
-\item{nsim}{Integer. Number of sequences to simulate. Default 5.}
+\item{nsim}{Number of sequences. Default 5.}
 
-\item{seed}{Integer or \code{NULL}. Optional RNG seed.}
+\item{seed}{Random seed passed to \code{\link{set.seed}()}, or
+\code{NULL} (default) to use the current state of the generator.}
 
-\item{length}{Integer. Length of each simulated sequence.}
+\item{length}{Number of states in each sequence. Default 10.}
 
-\item{start}{NULL or character vector. Optional first state for each
-sequence; see \code{\link{generate_sequences}}.}
+\item{start}{First state of each sequence; see
+\code{\link{generate_sequences}()}. Default \code{NULL}.}
 
-\item{...}{Ignored.}
+\item{tidy}{Return a \code{data.frame} rather than a matrix. Default
+\code{FALSE}.}
+
+\item{...}{Not used.}
 }
 \value{
-A character matrix with \code{nsim} rows (one simulated
-  sequence each) and \code{length} columns (time-steps).
+As \code{\link{generate_sequences}()}: with \code{tidy = TRUE}, a
+  \code{data.frame} with one row per sequence and columns \code{T1} to
+  \code{T<length>}; otherwise a character matrix with the same layout.
 }
 \description{
-S3 \code{simulate()} method for \code{transitiontrees} objects. Wraps
-\code{\link{generate_sequences}} with the standard \code{nsim}
-argument name and an optional \code{seed} (set via
-\code{set.seed()} when supplied).
+\code{simulate()} draws \code{nsim} sequences from a fitted tree as
+\code{\link{generate_sequences}()} does, and sets the random seed first when
+\code{seed} is given. It is the \code{\link[stats]{simulate}()} method for
+fitted trees.
 }
+\section{Conditions}{
+
+As \code{\link{generate_sequences}()}.
+}
+
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
-simulate(tree, nsim = 3L, seed = 42L, length = 8L)
+tree <- context_tree(trajectories, max_depth = 2)
+simulate(tree, nsim = 3, seed = 42, length = 8, tidy = TRUE)
+}
+\seealso{
+\code{\link{generate_sequences}()}.
 }

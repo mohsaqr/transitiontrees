@@ -2,7 +2,7 @@
 % Please edit documentation in R/bootstrap.R
 \name{summary.transitiontrees_bootstrap}
 \alias{summary.transitiontrees_bootstrap}
-\title{Summarise a context tree Bootstrap}
+\title{Summarize a pathway bootstrap}
 \usage{
 \method{summary}{transitiontrees_bootstrap}(object, ...)
 }
@@ -12,18 +12,20 @@
 \item{...}{Ignored.}
 }
 \value{
-The per-pathway summary \code{data.frame}
-  (\code{object$summary}); see \code{\link{bootstrap_pathways}}
-  for the full column vocabulary.
+A data frame with one row per pathway of the original tree; see
+  \code{\link{bootstrap_pathways}()} for the columns.
 }
 \description{
-Summarise a context tree Bootstrap
+\code{summary()} returns the per-pathway table of a
+\code{\link{bootstrap_pathways}()} result; identical to
+\code{as.data.frame(object)}.
 }
 \examples{
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
-                           iter = 50L)
+boot <- bootstrap_pathways(context_tree(trajectories, max_depth = 1),
+                           iter = 50)
 summary(boot)
+}
+\seealso{
+\code{\link{bootstrap_pathways}()},
+  \code{\link{as.data.frame.transitiontrees_bootstrap}}.
 }

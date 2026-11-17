@@ -2,31 +2,34 @@
 % Please edit documentation in R/bootstrap.R
 \name{print.transitiontrees_bootstrap}
 \alias{print.transitiontrees_bootstrap}
-\title{Print a context tree Bootstrap}
+\title{Print a pathway bootstrap}
 \usage{
 \method{print}{transitiontrees_bootstrap}(x, n = 10L, digits = 3L, ...)
 }
 \arguments{
 \item{x}{A \code{transitiontrees_bootstrap} object.}
 
-\item{n}{Integer. Number of top pathways to print. Default 10.}
+\item{n}{Number of pathways to print. Default 10.}
 
-\item{digits}{Integer. Numeric digits for the printed table.
-Default 3.}
+\item{digits}{Rounding digits for the printed table. Default 3.}
 
 \item{...}{Ignored.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print a context tree Bootstrap
+\code{print()} prints the number of resamples, the stability and
+informativeness criteria, the number of stable and informative pathways, and
+the first \code{n} pathways (stable and informative first).
 }
 \examples{
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
-                           iter = 50L)
-print(boot, n = 5L)
+boot <- bootstrap_pathways(context_tree(trajectories, max_depth = 2),
+                           iter = 50)
+print(boot, n = 5)
+}
+\seealso{
+\code{\link{bootstrap_pathways}()},
+  \code{\link{as.data.frame.transitiontrees_bootstrap}} for every
+  pathway.
 }

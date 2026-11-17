@@ -1,41 +1,55 @@
 # ---- Distribution and predictive-diagnostic plots ----
 
-#' Per-Context Next-State Distributions
+#' Plot the next-state distribution of each context
 #'
 #' @description
-#' Small-multiples bar chart of the full next-state distribution
-#' \code{P(next | context)}, one panel per context. A per-context
-#' probability display: where \code{\link{plot_pathways}()} renders the same
-#' numbers as a heatmap, this shows each context's distribution as its
-#' own panel, with the modal bar highlighted.
+#' \code{plot_distributions()} draws the full next-state distribution
+#' \eqn{P(\mathrm{next} \mid \mathrm{context})}{P(next | context)} of selected
+#' contexts as small multiples, one bar chart per context with the most likely
+#' next state in a darker shade. The display shows, for each history, whether
+#' the next state is close to determined (one tall bar) or open (bars of similar
+#' height), and which alternatives remain. By default the most frequent contexts
+#' are shown.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param contexts Character vector of pathway strings to show, or
-#'   \code{NULL} (default) to take the \code{top} most frequent
-#'   contexts.
-#' @param top Integer. Number of contexts to show when \code{contexts}
-#'   is \code{NULL}. Default 12.
-#' @param min_count Integer. Drop contexts below this count. Default 1.
+#' The same probabilities are shown for many contexts at once as a heatmap
+#' by \code{\link{plot_pathways}()}, and along one history's chain of
+#' shorter suffixes by \code{\link{plot_pruning}()}.
 #'
-#' @return A ggplot object.
+#' @param tree A \code{transitiontrees} object.
+#' @param contexts Contexts to show, in arrow notation. Default
+#'   \code{NULL}: the \code{top} most frequent contexts.
+#' @param top Number of contexts when \code{contexts} is \code{NULL}.
+#'   Default 12.
+#' @param min_count Contexts with a lower count are dropped. Default 1.
+#'
+#' @return A ggplot object with one bar-chart panel per context.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) no context is
+#'     left to plot.}
+#' }
+#'
+#' @seealso \code{\link{plot_pathways}()}, \code{\link{plot_pruning}()};
+#'   \code{\link{tree_pathways}()} for the table of contexts.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 2L)
-#' plot_distributions(tree, top = 9)
+#' tree <- context_tree(trajectories, max_depth = 2)
+#' plot_distributions(tree, top = 6)
+#' plot_distributions(tree, contexts = c("Active", "Active -> Disengaged"))
 #' @export
 plot_distributions <- function(tree, contexts = NULL, top = 12L,
                                min_count = 1L) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   alpha <- tree$alphabet
   pw <- tree_pathways(tree, min_count = min_count, sort_by = "count")
   pw <- if (is.null(contexts))
     utils::head(pw, as.integer(top)) else
     pw[pw$pathway %in% as.character(contexts), , drop = FALSE]
   if (nrow(pw) == 0L)
-    stop("No contexts to plot.", call. = FALSE)
+    .tt_abort("No contexts to plot.", class = "transitiontrees_empty_result")
 
   long <- do.call(rbind, lapply(pw$pathway, function(p) {
     ctx  <- if (identical(p, .ROOT_LABEL)) .ROOT else p
@@ -70,52 +84,61 @@ plot_distributions <- function(tree, contexts = NULL, top = 12L,
       panel.grid.minor = ggplot2::element_blank())
 }
 
-#' Predictive Diagnostics for Held-Out Scoring
+#' Plot how well a context tree predicts new sequences
 #'
 #' @description
-#' Visual diagnostics for how a fitted tree scores held-out sequences,
-#' built on \code{\link{score_positions}()}:
-#' \describe{
-#'   \item{\code{type = "position"}}{predicted probability of the
-#'     observed next state against position in the sequence -- where the
-#'     model is confident vs. surprised as a sequence unfolds.}
-#'   \item{\code{type = "ecdf"}}{the empirical cumulative distribution of
-#'     those predicted probabilities -- a calibration-style view of how
-#'     often the model assigns high vs. low probability to what actually
-#'     happened.}
-#'   \item{\code{type = "logloss"}}{the per-position log-loss
-#'     \eqn{-\log_2 P(\mathrm{observed})} against position -- a
-#'     per-position log-loss view. Lower is better
-#'     (0 = certain and correct); the dashed line is the mean log-loss
-#'     over all scored positions.}
-#' }
+#' \code{plot_predictive()} plots how much probability a context tree gives to
+#' what happens next in sequences it has not seen, the measure of its value as a
+#' predictive model. It scores every transition of held-out sequences with
+#' \code{\link{score_positions}()} and shows where the model is confident and
+#' where it is surprised.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param newdata Held-out sequence data in any format accepted by
-#'   \code{context_tree()}.
-#' @param type One of \code{"position"} (default), \code{"ecdf"}, or
+#' \code{type = "position"} plots the probability given to each observed
+#' next state against its position in the sequence. \code{type = "ecdf"}
+#' plots the empirical cumulative distribution of those probabilities,
+#' showing how often the model gives high or low probability to what
+#' actually happened. \code{type = "logloss"} plots the per-transition
+#' log-loss \eqn{-\log_2 P(\mathrm{observed})}{-log2 P(observed)} in bits against position,
+#' with the mean at each position and the overall mean; 0 bits is a
+#' certain and correct prediction.
+#'
+#' For one number summarizing held-out prediction use
+#' \code{\link{perplexity}()}, and to choose the settings that minimize it
+#' use \code{\link{tune_tree}()}.
+#'
+#' @param tree A \code{transitiontrees} object.
+#' @param newdata Held-out sequences in any format accepted by
+#'   \code{\link{context_tree}()}.
+#' @param type \code{"position"} (default), \code{"ecdf"} or
 #'   \code{"logloss"}.
 #'
-#' @return A ggplot object.
+#' @return A ggplot object of the scored transitions.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) \code{newdata} has
+#'     no transitions to score.}
+#' }
+#'
+#' @seealso \code{\link{score_positions}()} for the scored transitions as
+#'   a table; \code{\link{perplexity}()}; \code{\link{tune_tree}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(fit, max_depth = 2L)
-#' new  <- replicate(15, sample(c("A", "B", "C"), 10, replace = TRUE),
-#'                   simplify = FALSE)
-#' plot_predictive(tree, new, type = "position")
-#' plot_predictive(tree, new, type = "ecdf")
-#' plot_predictive(tree, new, type = "logloss")
+#' tree <- context_tree(trajectories, max_depth = 2)
+#' held_out <- head(engagement, 40)
+#' plot_predictive(tree, held_out)
+#' plot_predictive(tree, held_out, type = "ecdf")
+#' plot_predictive(tree, held_out, type = "logloss")
 #' @export
 plot_predictive <- function(tree, newdata,
                             type = c("position", "ecdf", "logloss")) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   type <- match.arg(type)
   sp <- score_positions(tree, newdata)
   if (nrow(sp) == 0L)
-    stop("No held-out positions to score.", call. = FALSE)
+    .tt_abort("No held-out positions to score.", class = "transitiontrees_empty_result")
 
   base_theme <- ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
@@ -219,11 +242,12 @@ plot_predictive <- function(tree, newdata,
 #'   \code{"pruned"} / \code{"root"}).
 #' @noRd
 .suffix_chain <- function(tree, pathway, alpha = 0.05) {
-  stopifnot(inherits(tree, "transitiontrees"),
-            is.character(pathway), length(pathway) == 1L)
+  .tt_check_class(tree, "transitiontrees", "tree")
+  stopifnot("`pathway` must be a single character string" =
+              is.character(pathway) && length(pathway) == 1L)
   if (!is.numeric(alpha) || length(alpha) != 1L || is.na(alpha) ||
       alpha <= 0 || alpha >= 1)
-    stop("'alpha' must be a single number in (0, 1).", call. = FALSE)
+    .tt_abort("'alpha' must be a single number in (0, 1).")
   states <- tree$alphabet
   k      <- length(states)
   g2_cv  <- stats::qchisq(1 - alpha, df = k - 1L)
@@ -246,21 +270,19 @@ plot_predictive <- function(tree, newdata,
   ## so refuse rather than quietly shorten.
   if (n_tok >= 1L && !present[1L]) {
     deepest <- if (any(present)) keys[which(present)[1L]] else .ROOT_LABEL
-    stop(sprintf(
+    .tt_abort(sprintf(
       "Context \"%s\" is not in the tree (max_depth = %d%s). The deepest fitted suffix is \"%s\"; call plot_pruning() with a pathway whose full context exists.",
       pathway, tree$max_depth,
-      if (isTRUE(tree$pruned)) ", pruned" else "", deepest),
-      call. = FALSE)
+      if (isTRUE(tree$pruned)) ", pruned" else "", deepest))
   }
   ## Suffix property: if the deepest context exists, so do all its suffixes.
   ## Guard against any gap regardless, so the chain is always contiguous from
   ## the requested pathway down to the root.
   if (n_tok >= 1L && !all(present)) {
     missing <- keys[!present]
-    stop(sprintf(
+    .tt_abort(sprintf(
       "Suffix chain of \"%s\" is not contiguous: context(s) %s are missing from the tree.",
-      pathway, paste(sprintf('"%s"', missing), collapse = ", ")),
-      call. = FALSE)
+      pathway, paste(sprintf('"%s"', missing), collapse = ", ")))
   }
   keys <- c(keys, .ROOT)
   Ls   <- c(Ls, 0L)
@@ -309,53 +331,58 @@ plot_predictive <- function(tree, newdata,
   do.call(rbind, rows)
 }
 
-#' Illustrate Pruning Along a Pathway's Suffix Chain
+#' Plot how much memory one pathway needs
 #'
 #' @description
-#' A suffix-chain pruning view: take one pathway and show, side by
-#' side, the next-state distribution at every context along its suffix
-#' chain -- the full context, then the context with its oldest move
-#' dropped, and so on down to the root -- marking which contexts
-#' \code{\link{prune_tree}} (criterion \code{"G2"}) keeps versus prunes.
-#' It answers "how much memory does this pathway actually need?": each
-#' context is drawn as its own panel (deepest memory on the left, root on
-#' the right) and classified into three states by opacity. \strong{Solid}
-#' contexts are \emph{informative} -- their own \eqn{G^2} clears the cutoff,
-#' so they add predictive information over their one-shorter parent.
-#' \strong{Mid-opacity} contexts are \emph{retained}: their own \eqn{G^2} is
-#' below the cutoff, but a deeper context diverges, so \code{prune_tree()}
-#' keeps them only as a structural bridge -- they do not themselves add
-#' memory. \strong{Faded} contexts are \emph{pruned} (the redundant tail).
-#' The panel title carries the full context, the decision, and the
-#' \eqn{G^2}. The requested pathway must be a fitted context; the function
-#' errors rather than silently plotting a shorter suffix.
+#' \code{plot_pruning()} plots how much memory one pathway needs: how many past
+#' states are needed to predict what follows it. A context tree keeps a longer
+#' history only when it predicts the next state differently from its shorter
+#' suffix, and the plot makes that decision visible for one pathway. It follows
+#' the pathway's suffix chain (the full history, then the history without its
+#' earliest state, and so on down to the root) and draws the next-state
+#' distribution at every link as its own panel, deepest history on the left and
+#' the root on the right.
 #'
-#' @param tree A \code{transitiontrees} (typically \emph{unpruned}, so the
-#'   full chain is visible).
-#' @param pathway A single pathway string in arrow form
-#'   (\code{"A -> B -> C"}, oldest on the left).
-#' @param alpha Significance level for the \code{G2} keep/prune decision.
-#'   Default 0.05.
+#' Each context is classified by the \eqn{G^2} rule of
+#' \code{\link{prune_tree}()}: the likelihood-ratio statistic of its
+#' next-state counts against its one-shorter parent is compared with the
+#' chi-square critical value at \code{alpha}. A context whose own
+#' \eqn{G^2} exceeds it \emph{adds memory} and is drawn solid; a context
+#' below it that is kept only because a deeper context exceeds it is drawn
+#' at medium opacity; a context below it with no deeper context exceeding
+#' it is \emph{pruned} and drawn faded. Each panel title gives the
+#' context, the decision and \eqn{G^2}. The distributions are the node
+#' values reported by \code{\link{tree_pathways}()} and
+#' \code{\link{query_pathway}()}.
 #'
-#' @return A ggplot object.
+#' Pass an unpruned tree so that the whole chain is visible. To prune the
+#' whole tree use \code{\link{prune_tree}()}; to compare pruning rules use
+#' \code{\link{compare_pruning}()}.
 #'
-#' @details
-#' The keep/prune decision is exactly \code{prune_tree}'s G2 rule
-#' (\eqn{2N \cdot \mathrm{KL} > \chi^2_{1-\alpha, k-1}}); the cumulative
-#' \code{pruned} flag follows the leaf-up amnesia rule. The distributions
-#' and counts shown are the same node values reported throughout the
-#' pathway API (\code{\link{tree_pathways}()}, \code{\link{query_pathway}()}).
+#' @param tree A \code{transitiontrees} object, usually unpruned.
+#' @param pathway One fitted context in arrow notation
+#'   (\code{"A -> B -> C"}, earliest state on the left).
+#' @param alpha Significance level of the \eqn{G^2} test. Default 0.05.
+#'
+#' @return A ggplot object with one panel per context of the suffix
+#'   chain.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object; \code{alpha} is not in (0, 1);
+#'     \code{pathway} is not a context of the tree.}
+#' }
+#'
+#' @seealso \code{\link{prune_tree}()}, \code{\link{compare_pruning}()},
+#'   \code{\link{plot_distributions}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(80, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3L, min_count = 3L)
-#' plot_pruning(tree, "A -> B -> C")
-#' @seealso \code{\link{prune_tree}}, \code{\link{plot_distributions}}.
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' plot_pruning(tree, "Average -> Active -> Active")
 #' @export
 plot_pruning <- function(tree, pathway, alpha = 0.05) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   long <- .suffix_chain(tree, pathway, alpha = alpha)
   states <- tree$alphabet
   pal <- .okabe_ito(length(states))
@@ -376,7 +403,7 @@ plot_pruning <- function(tree, pathway, alpha = 0.05) {
     if (status == "root")
       sprintf("L=%d   %s\n(root  -  no parent)", L, ctx)
     else
-      sprintf("L=%d   %s\n%s   -   G\u00b2 = %.1f", L, ctx, tag[[status]], g2)
+      sprintf("L=%d   %s\n%s   -   G2 = %.1f", L, ctx, tag[[status]], g2)
   labmap <- stats::setNames(
     mapply(mk_lab, node$context, node$L, node$status, node$g2), node$context)
   long$panel <- factor(labmap[long$context], levels = labmap[ord])
@@ -404,9 +431,9 @@ plot_pruning <- function(tree, pathway, alpha = 0.05) {
                                 breaks = seq(0, 1, 0.25)) +
     ggplot2::labs(
       x = NULL, y = "P(next move | context)",
-      title = sprintf("How much memory does \u201c%s\u201d need?", pathway),
+      title = sprintf("How much memory does \"%s\" need?", pathway),
       subtitle = paste0("each panel = one context along the suffix chain ",
-                        "(deepest left \u2192 root right); solid = adds memory, ",
+                        "(deepest on the left, root on the right); solid = adds memory, ",
                         "mid = kept for a deeper context, faded = pruned")) +
     ggplot2::theme_minimal(base_size = 11) +
     ggplot2::theme(
@@ -427,78 +454,95 @@ plot_pruning <- function(tree, pathway, alpha = 0.05) {
     grDevices::hcl.colors(n, "Dark 3")
 }
 
-#' Difference (Subtraction) Map Between Two Groups
+#' Map the next-state differences between two groups
 #'
 #' @description
-#' A per-context map of how two groups differ in their next-state
-#' predictions: one row per shared context, one column per next state.
-#' By default each cell is the Pearson standardized residual of the first
-#' group against the no-difference null (red = more than expected, blue =
-#' less; \code{|r| > 2} notable), which is support-aware and decomposes
-#' the per-context \eqn{G^2}; \code{measure = "probability"} shows the raw
-#' \code{P(group1) - P(group2)} instead.
+#' \code{plot_difference()} maps the next-state differences between two groups
+#' of a \code{transitiontrees_group}: where the groups share a history and still
+#' continue from it differently. The map has one row per context the groups
+#' share and one column per next state. With \code{depth = 1} the map is the
+#' difference between the two first-order transition matrices; deeper contexts
+#' show whether the difference depends on a longer history.
 #'
-#' @param group A \code{transitiontrees_group}.
-#' @param groups Optional length-2 character vector naming the two groups
-#'   to subtract (\code{group1 - group2}). Defaults to the first two; it
-#'   is required when the object has more than two groups.
-#' @param depth Integer or \code{NULL}. Restrict to contexts of this
-#'   depth (\code{depth = 1} gives the order-1 transition-matrix
-#'   difference). \code{NULL} (default) uses all shared contexts.
-#' @param min_count Integer. Drop contexts whose count in \emph{either}
-#'   group is below this. Default 1.
-#' @param comparison Optional \code{transitiontrees_group_comparison} (from
-#'   \code{\link{compare_groups}()}). When supplied, contexts whose
-#'   behavioral difference is significant (\code{jsd_padj < alpha}) are
-#'   starred, so the map shows which differences survived the
-#'   permutation test.
-#' @param alpha Numeric. FDR threshold for the significance stars when
-#'   \code{comparison} is given. Default 0.05.
-#' @param annotate Logical. Print the signed difference in each cell
-#'   (\code{layout = "tile"} only). Default \code{TRUE}.
-#' @param layout One of \code{"tile"} (default; per-context heatmap over
-#'   all shared contexts) or \code{"tree"} (the horizontal context-tree
-#'   phylogram drawn on a pooled backbone, with each node and branch
-#'   coloured by which group reaches that context more -- red for the first
-#'   group, blue for the second; node size = pooled count).
-#' @param measure For \code{layout = "tile"}, what each cell encodes:
-#'   \code{"residual"} (default) is the Pearson standardized residual of
-#'   the first group against the no-group null (observed vs expected from
-#'   the context's margins) -- support-aware and decomposing the per-context
-#'   \eqn{G^2}; \code{"probability"} is the raw next-state probability
-#'   difference \code{P(group1) - P(group2)}. Ignored by \code{"tree"}.
+#' By default each cell is the Pearson residual of the first group's count
+#' of that next state against the count expected if both groups continued
+#' alike from that context, \eqn{(O - E) / \sqrt{E}}{(O - E) / sqrt(E)}, with \eqn{E} from
+#' the margins of the context's two-group table. Residuals take the
+#' context's count into account, and an absolute value above about 2 is
+#' notable. \code{measure = "probability"} shows the plain difference of
+#' next-state probabilities instead. Rows are ordered by their total
+#' absolute difference, largest at the top. With a
+#' \code{\link{compare_groups}()} result as \code{comparison}, contexts
+#' with a significant behavioral difference are starred.
 #'
-#' @return A ggplot object.
+#' \code{layout = "tree"} draws a different quantity: the context tree of
+#' the pooled sequences, each node and branch colored by which group
+#' reaches that context more often, as a share of the group's
+#' observations. The map describes differences; the permutation tests are
+#' in \code{\link{compare_groups}()}.
+#'
+#' @param group A \code{transitiontrees_group} object.
+#' @param groups The two groups to compare, first minus second. Default
+#'   \code{NULL}: the two groups of a two-group object; required for more
+#'   groups.
+#' @param depth Only contexts of this depth. Default \code{NULL}: all
+#'   shared contexts.
+#' @param min_count Contexts with a count below this in either group are
+#'   dropped. Default 1.
+#' @param comparison A \code{transitiontrees_group_comparison} from
+#'   \code{\link{compare_groups}()}, used to star contexts with
+#'   \code{jsd_padj < alpha}. Default \code{NULL}.
+#' @param alpha False discovery rate cutoff for the stars. Default 0.05.
+#' @param annotate Print the value in each cell (\code{"tile"} only).
+#'   Default \code{TRUE}.
+#' @param layout \code{"tile"} (default) for the heatmap, or \code{"tree"}
+#'   for the pooled tree colored by prevalence difference.
+#' @param measure For \code{"tile"}: \code{"residual"} (default) or
+#'   \code{"probability"}.
+#'
+#' @return A ggplot object: a heatmap of contexts by next states, or a
+#'   tree colored by prevalence difference.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{group} is not a
+#'     \code{transitiontrees_group}; \code{groups} is missing for more than
+#'     two groups or does not name two of them; no context is shared at
+#'     \code{depth} and \code{min_count}; \code{comparison} is not a
+#'     \code{transitiontrees_group_comparison}.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) for
+#'     \code{layout = "tree"}, the pooled tree is empty.}
+#' }
+#'
+#' @seealso \code{\link{compare_groups}()} for the tests;
+#'   \code{\link{plot.transitiontrees_group}} for each group's tree.
 #'
 #' @examples
-#' set.seed(1)
-#' gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.6,.2)), simplify = FALSE)
-#' gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-#'                            prob = c(.2,.2,.6)), simplify = FALSE)
-#' grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 60),
-#'                     max_depth = 2L)
-#' plot_difference(grp)                       # residual heatmap
-#' plot_difference(grp, layout = "tree")      # difference on the tree map
-#' @seealso \code{\link{compare_groups}} for the significance test.
+#' grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+#'                     action = "Action", group = "Achiever", max_depth = 1)
+#' plot_difference(grp)
+#' plot_difference(grp, measure = "probability")
+#' plot_difference(grp, comparison = compare_groups(grp, iter = 20),
+#'                 alpha = 0.1)
+#' plot_difference(grp, layout = "tree")
 #' @export
 plot_difference <- function(group, groups = NULL, depth = NULL,
                             min_count = 1L, comparison = NULL,
                             alpha = 0.05, annotate = TRUE,
                             layout = c("tile", "tree"),
                             measure = c("residual", "probability")) {
-  stopifnot(inherits(group, "transitiontrees_group"))
+  .tt_check_class(group, "transitiontrees_group", "group")
   layout  <- match.arg(layout)
   measure <- match.arg(measure)
   gn <- names(group)
   if (is.null(groups)) {
     if (length(gn) != 2L)
-      stop("The object has ", length(gn), " groups; name the two to ",
-           "subtract via 'groups = c(\"a\", \"b\")'.", call. = FALSE)
+      .tt_abort("The object has ", length(gn), " groups; name the two to ",
+           "subtract via 'groups = c(\"a\", \"b\")'.")
     groups <- gn[1:2]
   }
   if (length(groups) != 2L || !all(groups %in% gn))
-    stop("'groups' must name two groups of the object.", call. = FALSE)
+    .tt_abort("'groups' must name two groups of the object.")
   a <- group[[groups[1L]]]; b <- group[[groups[2L]]]
   alphabet <- a$alphabet
 
@@ -512,13 +556,13 @@ plot_difference <- function(group, groups = NULL, depth = NULL,
     a$nodes[[cc]]$n >= min_count && b$nodes[[cc]]$n >= min_count,
     logical(1))]
   if (length(ctx) == 0L)
-    stop("No shared contexts to compare (try a lower 'min_count' or ",
-         "another 'depth').", call. = FALSE)
+    .tt_abort("No shared contexts to compare (try a lower 'min_count' or ",
+         "another 'depth').")
 
   ## significance stars from the permutation comparison, if supplied
   sig_label <- function(p) p
   if (!is.null(comparison)) {
-    stopifnot(inherits(comparison, "transitiontrees_group_comparison"))
+    .tt_check_class(comparison, "transitiontrees_group_comparison", "comparison")
     cp <- comparison$pathways
     sig <- cp$pathway[cp$jsd_padj < alpha]
     sig_label <- function(p) ifelse(p %in% sig, paste0(p, " *"), p)
@@ -591,7 +635,7 @@ plot_difference <- function(group, groups = NULL, depth = NULL,
 }
 
 #' Difference rendered on the horizontal context-tree layout: a pooled
-#' backbone whose nodes and edges are coloured by which group reaches a
+#' backbone whose nodes and edges are colored by which group reaches a
 #' context more (prevalence early - late).
 #' @noRd
 .diff_tree <- function(a, b, groups, alphabet) {
@@ -599,7 +643,7 @@ plot_difference <- function(group, groups = NULL, depth = NULL,
   pooled <- context_tree(c(trajs_a, trajs_b),
                          max_depth = a$max_depth, min_count = a$nmin)
   if (length(pooled$nodes) == 0L)
-    stop("Pooled tree is empty; nothing to plot.", call. = FALSE)
+    .tt_abort("Pooled tree is empty; nothing to plot.", class = "transitiontrees_empty_result")
 
   contexts <- names(pooled$nodes)
   depths   <- vapply(contexts, .cg_depth, integer(1))

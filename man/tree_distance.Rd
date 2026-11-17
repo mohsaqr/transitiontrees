@@ -2,33 +2,61 @@
 % Please edit documentation in R/compare.R
 \name{tree_distance}
 \alias{tree_distance}
-\title{Symmetric KL Distance Between Two context trees}
+\title{Compute the divergence between two context trees}
 \usage{
 tree_distance(tree_a, tree_b, symmetric = TRUE)
 }
 \arguments{
-\item{tree_a, tree_b}{\code{transitiontrees} objects with matching
-alphabets.}
+\item{tree_a, tree_b}{\code{transitiontrees} objects with the same
+alphabet.}
 
-\item{symmetric}{Logical. \code{TRUE} (default) returns
-\eqn{0.5(D_{KL}(A\|B) + D_{KL}(B\|A))}; \code{FALSE} returns
-\eqn{D_{KL}(A\|B)} only.}
+\item{symmetric}{\code{TRUE} (default) for the symmetric divergence
+\eqn{\frac{1}{2}(D_{KL}(A \| B) + D_{KL}(B \| A))}{(KL(A || B) +
+KL(B || A)) / 2}; \code{FALSE} for \eqn{D_{KL}(A \| B)}{KL(A || B)}
+alone.}
 }
 \value{
-Numeric scalar (nats); 0 for identical predictions.
+A single non-negative number, in nats. It is \code{Inf} when,
+  at a context with a positive count, one tree gives probability zero
+  to a next state that the other tree gives positive probability.
 }
 \description{
-A single number: the count-weighted average of per-context symmetric
-Kullback-Leibler divergence (in nats) over the union of pathways
-present in either tree. A context missing from one tree is read from
-its longest matching suffix there. No null distribution; use
-\code{\link{compare_trees}()} for a permutation test.
+\code{tree_distance()} computes the divergence between two context trees
+fitted to different sets of sequences, a measure of how differently they
+predict the next state. The distance is the Kullback-Leibler divergence
+between the two trees' next-state distributions (symmetric by default),
+computed for every context present in either tree and averaged with weights
+equal to the context's combined count in the two trees. A context missing
+from one tree is evaluated there at its longest fitted suffix, which is the
+distribution that tree would use for prediction. The value is 0 when the two
+trees predict identically and grows as their predictions separate.
+
+It returns the distance only, in nats. It has no reference distribution, and
+it is positive even for two samples of one process; use
+\code{\link{compare_trees}()} for a permutation test and a per-context
+breakdown, or \code{\link{compare_groups}()} for more than two groups.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) either argument is
+    not a \code{transitiontrees} object.}
+  \item{\code{transitiontrees_alphabet_mismatch}}{(error) the two trees
+    have different alphabets.}
+}
+}
+
 \examples{
-set.seed(1)
-m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
-tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
-tree_distance(tr1, tr2)
+high <- context_tree(subset(group_regulation_long, Achiever == "High"),
+                     actor = "Actor", time = "Time", action = "Action",
+                     max_depth = 2)
+low  <- context_tree(subset(group_regulation_long, Achiever == "Low"),
+                     actor = "Actor", time = "Time", action = "Action",
+                     max_depth = 2)
+tree_distance(high, low)
+tree_distance(high, low, symmetric = FALSE)
+}
+\seealso{
+\code{\link{compare_trees}()} for the permutation test;
+  \code{\link{compare_groups}()} for several groups.
 }

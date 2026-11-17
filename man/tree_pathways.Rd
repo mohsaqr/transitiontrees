@@ -2,7 +2,7 @@
 % Please edit documentation in R/pathways.R
 \name{tree_pathways}
 \alias{tree_pathways}
-\title{Pathways from a Fitted Tree}
+\title{List the pathways of a fitted transition tree}
 \usage{
 tree_pathways(
   tree,
@@ -15,54 +15,74 @@ tree_pathways(
 \arguments{
 \item{tree}{A \code{transitiontrees} object.}
 
-\item{min_count}{Integer. Drop pathways with fewer than this many
-occurrences. Default 1.}
+\item{min_count}{Keep pathways that occurred at least this many times.
+Default 1.}
 
-\item{sort_by}{Character. One of \code{"count"} (default),
-\code{"divergence"}, or \code{"depth"}. Sorts the returned
-data.frame.}
+\item{sort_by}{Column to sort by: \code{"count"} (default),
+\code{"divergence"} or \code{"depth"}.}
 
-\item{decreasing}{Logical. Default \code{TRUE}.}
+\item{decreasing}{Sort in decreasing order. Default \code{TRUE}.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-A data.frame with columns \code{pathway} (arrow notation,
-  e.g. \code{"A -> B -> C"}; the root is reported as \code{"(start)"}),
-  \code{depth} (history length), \code{count}, \code{likely_next}
-  (the most likely next state), \code{next_probability} (its
-  probability), \code{divergence} (Kullback-Leibler divergence from
-  the parent context's prediction, in bits; \code{NA} for the root
-  and when the parent context is absent, and \code{Inf} when the
-  pathway places probability on a state the parent predicts with
-  probability 0), and \code{changes_prediction} (logical, did the
-  most likely next state change vs the parent context?). The empty
-  case returns a 0-row data.frame with the same schema.
+A \code{data.frame} with one row per pathway and columns
+  \describe{
+    \item{pathway}{The context, oldest state first; \code{"(start)"} for
+      the root.}
+    \item{depth}{Number of states in the pathway.}
+    \item{count}{Number of times the pathway was followed by a state
+      (weighted for a weighted fit).}
+    \item{likely_next}{Most likely next state.}
+    \item{next_probability}{Its smoothed probability.}
+    \item{divergence}{Kullback-Leibler divergence, in bits, of the
+      pathway's next-state distribution from its parent's; \code{NA} for
+      the root, and \code{Inf} when the pathway gives probability to a
+      state that the parent gives probability zero.}
+    \item{changes_prediction}{Whether \code{likely_next} differs from the
+      parent's most likely next state; \code{NA} for the root.}
+  }
+  A tree with no pathway returns a zero-row table with these columns.
 }
 \description{
-Returns a tidy data.frame with one row per pathway (= context) in the
-tree. The pathway is the sequence of states the tree conditions on;
-each row reports the count, depth, modal next state, and how
-surprising the next-state distribution is relative to a shorter
-history. This is the substantive consumer-facing API of a fitted
-tree -- a ranked list of trajectories that the data actually
-supports, with a consistent interpretive frame.
+\code{tree_pathways()} lists the pathways of a fitted tree. A pathway is a
+context of the tree: the run of states that precedes a point at which the
+next state is predicted, written from oldest to newest (\code{"A -> B ->
+C"}). For each pathway the tree records how often it occurred and the
+distribution of the state that followed. The pathway table therefore shows
+which histories occur in the data, what tends to follow each of them, and
+where a longer history changes what is expected next.
 
-Renamed from \code{pathways()} to avoid a naming collision with a
-sibling package.
+It returns one row per pathway with its depth and count, its most likely next
+state and that state's probability, the Kullback-Leibler divergence of its
+next-state distribution from that of its parent (the pathway without its
+oldest state), and whether the most likely next state differs from the
+parent's. The divergence, in bits, measures how much information the
+additional state of history carries about the next state. The root, written
+\code{"(start)"}, conditions on no history and holds the overall distribution
+of states.
+
+The ranked views \code{\link{common_pathways}()},
+\code{\link{divergent_pathways}()} and \code{\link{sharp_pathways}()}
+return the top rows of this table by count, divergence and next-state
+probability. \code{\link{tree_dependence}()} adds the entropy of each
+pathway's prediction, \code{\link{query_pathway}()} looks up one pathway,
+and \code{\link{bootstrap_pathways}()} assesses how stable each row is
+under resampling of sequences.
 }
-\details{
-Each row is a pathway -- a (possibly empty) sequence of states ending
-at the point where a prediction is made. The \code{divergence} column
-quantifies how much more information the pathway carries than its
-(k-1)-suffix in bits. \code{changes_prediction = TRUE} marks pathways
-where the longer history changes which next state is most likely.
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
 }
+
 \examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
+tree <- context_tree(trajectories, max_depth = 3)
 tree_pathways(tree)
-
+tree_pathways(tree, min_count = 20, sort_by = "divergence")
+}
+\seealso{
+\code{\link{common_pathways}()},
+  \code{\link{divergent_pathways}()}, \code{\link{sharp_pathways}()},
+  \code{\link{tree_dependence}()}, \code{\link{plot_pathways}()},
+  \code{\link{bootstrap_pathways}()}.
 }

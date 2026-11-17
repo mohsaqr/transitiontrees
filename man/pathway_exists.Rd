@@ -2,25 +2,37 @@
 % Please edit documentation in R/query.R
 \name{pathway_exists}
 \alias{pathway_exists}
-\title{Test Whether a Pathway Exists in the Tree}
+\title{Test whether a pathway is a context of the tree}
 \usage{
 pathway_exists(tree, pathway)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{pathway}{Character. Pathway as arrow-notation string or
-character vector.}
+\item{pathway}{The history, oldest state first: a string in arrow
+notation or a character vector.}
 }
 \value{
-Logical scalar.
+A single logical value.
 }
 \description{
-Test Whether a Pathway Exists in the Tree
+\code{pathway_exists()} reports whether a history is itself a context (node)
+of the fitted tree, that is, whether it occurred at least \code{min_count}
+times and, for a pruned tree, survived pruning. A history that is not a
+context is still predicted, from its longest suffix in the tree; see
+\code{\link{query_pathway}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+}
+
 \examples{
-set.seed(1)
-tr <- context_tree(matrix(sample(c("A","B"), 50, TRUE), 5),
-                   max_depth = 2L, min_count = 1L)
-pathway_exists(tr, "A")
+tree <- context_tree(trajectories, max_depth = 3)
+pathway_exists(tree, "Active -> Disengaged -> Active")
+pathway_exists(prune_tree(tree), "Active -> Disengaged -> Active")
+}
+\seealso{
+\code{\link{query_pathway}()}, \code{\link{subtree}()},
+  \code{\link{tree_pathways}()}.
 }

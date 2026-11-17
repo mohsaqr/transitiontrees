@@ -2,29 +2,35 @@
 % Please edit documentation in R/tune.R
 \name{plot.transitiontrees_tune}
 \alias{plot.transitiontrees_tune}
-\title{Plot a context tree CV Grid}
+\title{Plot the cross-validated perplexity of a tuning grid}
 \usage{
 \method{plot}{transitiontrees_tune}(x, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_tune} object.}
+\item{x}{A \code{transitiontrees_tune} object from
+\code{\link{tune_tree}()}.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: held-out perplexity (y) against
+  \code{max_depth} (x), colored by \code{min_count}, faceted by
+  smoothing and pruning.
 }
 \description{
-Visualises the held-out perplexity surface returned by
-\code{tune_tree()}. Lines track perplexity vs. \code{max_depth};
-facets split by smoothing scheme and \code{prune}; colour encodes
-\code{nmin}. The minimum-perplexity configuration is highlighted
-with a star.
+\code{plot()} draws the held-out perplexity surface of a
+\code{\link{tune_tree}()} grid: perplexity against maximum depth, one line
+per minimum count, with one panel per smoothing method (and per pruning
+choice when both were tried). The selected configuration is marked with a
+star. The plot shows where added depth stops lowering held-out perplexity and
+how sensitive that point is to the other settings.
 }
 \examples{
-set.seed(1)
-m  <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
-tg <- tune_tree(m, max_depth = 1:2, min_count = 5L, prune = FALSE,
-                folds = 3L)
-plot(tg)
+tuned <- tune_tree(trajectories, max_depth = 1:3, min_count = c(5, 10),
+                   prune = FALSE, folds = 3)
+plot(tuned)
+}
+\seealso{
+\code{\link{tune_tree}()},
+  \code{\link{summary.transitiontrees_tune}}.
 }

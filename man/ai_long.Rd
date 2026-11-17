@@ -3,36 +3,56 @@
 \docType{data}
 \name{ai_long}
 \alias{ai_long}
-\title{AI-collaboration messages (long format)}
+\title{AI turns in human-AI programming sessions (long event log)}
 \format{
-A \code{data.frame} with 8551 rows and 9 columns:
+A \code{data.frame} with 8,551 rows (codes) and 9 columns:
   \describe{
-    \item{message_id}{integer; the message the code was assigned to.}
-    \item{project}{character; the project (the actor).}
-    \item{session_id}{character; the session id.}
-    \item{timestamp}{integer; Unix time in seconds.}
-    \item{session_date}{character; the session date (YYYY-MM-DD).}
-    \item{code}{character; the move (eight codes, the fine state).}
-    \item{cluster}{character; the coarse state the code belongs to.}
-    \item{code_order}{integer; order of the code within its message.}
-    \item{order_in_session}{integer; order within the session.}
+    \item{message_id}{Integer identifier of the turn; the codes of one
+      turn share it.}
+    \item{project}{Project identifier, \code{"Project_1"} to
+      \code{"Project_34"}.}
+    \item{session_id}{Session identifier, a 12-character hash.}
+    \item{timestamp}{Integer Unix time in seconds (day resolution).}
+    \item{session_date}{Date of the row, \code{"YYYY-MM-DD"}.}
+    \item{code}{The assistant action, the state of the sequence.}
+    \item{cluster}{The cluster of the code.}
+    \item{code_order}{Order of the code within its turn, from 1.}
+    \item{order_in_session}{Position of the row in its session, counting
+      human and AI rows together.}
   }
 }
 \source{
-Bundled example dataset.
+Bundled example dataset. The same data are distributed with the
+  \pkg{Nestimate} package as \code{ai_long}.
 }
 \usage{
 ai_long
 }
 \description{
-A long, one-row-per-message log from an AI-assisted collaboration
-study, with Unix timestamps and an explicit session id. Used to
-demonstrate long-format loading with Unix time and sessions. Bundled
-example dataset.
+\code{ai_long} is a coded dataset of the turns of an AI coding assistant in
+428 human-AI pair-programming sessions across 34 projects, held between 5
+February and 8 March 2026, one row per code. A turn (message) can carry
+several codes, in the order given by \code{code_order}. Each code is one of
+eight assistant actions (\code{Ask}, \code{Delegate}, \code{Execute},
+\code{Explain}, \code{Investigate}, \code{Plan}, \code{Repair},
+\code{Report}), grouped into three clusters (\code{Action},
+\code{Communication}, \code{Repair}).
+
+Timestamps have day resolution (midnight, UTC+2, of the session date), so
+the order of events within a day comes from \code{order_in_session},
+which counts the human turns of the session as well and therefore has
+gaps. Use \code{actor = "session_id"} with
+\code{order = "order_in_session"} for one sequence per session, or
+\code{time = "timestamp"} to split sequences at changes of day.
 }
 \examples{
-data(ai_long)
-context_tree(ai_long, actor = "project", time = "timestamp",
-             action = "code", max_depth = 2L)
+tree <- context_tree(ai_long, actor = "session_id",
+                     order = "order_in_session", action = "code",
+                     max_depth = 2)
+state_frequencies(tree)
+common_pathways(tree, top = 5, depth = 2)
+}
+\seealso{
+\code{\link{prepare_input}()}, \code{\link{context_tree}()}.
 }
 \keyword{datasets}

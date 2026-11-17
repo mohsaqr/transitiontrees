@@ -1,3 +1,9 @@
+<!-- README.md is generated from README.Rmd. Please edit that file and rebuild
+     from the repository root with:
+     Rscript -e 'pkgload::load_all(".", quiet = TRUE); knitr::knit("README.Rmd", "README.md")' -->
+
+
+
 # transitiontrees
 
 <!-- badges: start -->
@@ -6,225 +12,176 @@
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
 
-Predictive pathway discovery in categorical sequence data.
+## Vignettes and guides
 
-`transitiontrees` fits a variable-depth pathway tree (a prediction
-suffix tree; Ron, Singer & Tishby 1996) from sequences and exposes a
-tidy, pathway-centric API: most common pathways, most predictively
-divergent pathways, modal-flip diagnostics, and next-state predictions.
+**Vignettes**
 
-## Why this package
+- [Variable-order transition trees](https://pak.dynasite.org/transitiontrees/articles/transitiontrees.html)
+- [Comparing groups](https://pak.dynasite.org/transitiontrees/articles/comparing-groups.html)
 
-Sequence-analysis tooling tends to either count k-grams (descriptive)
-or fit fixed-order Markov chains (one-size-fits-all memory). Real
-trajectories — student engagement weeks, patient pathways, clickstreams,
-play sequences — usually have memory that varies *by context*: some
-states predict the next state on their own, others only when paired
-with a longer history. `transitiontrees` makes that variable-depth
-structure the central object and reports it as a ranked list of pathways
-the data actually supports.
+**Guides**
 
-It is a self-contained, independent implementation of the variable-order
-prediction-suffix-tree model:
+- [A complete workflow](https://pak.dynasite.org/transitiontrees/articles/workflow.html)
+- [Data input: wide sequences, event logs and network objects](https://pak.dynasite.org/transitiontrees/articles/data-input.html)
+- [Smoothing and pruning](https://pak.dynasite.org/transitiontrees/articles/smoothing-and-pruning.html)
+- [Model selection: tuning, fit and perplexity](https://pak.dynasite.org/transitiontrees/articles/model-selection.html)
+- [Pathway reliability with the bootstrap](https://pak.dynasite.org/transitiontrees/articles/pathway-reliability.html)
+- [Prediction, scoring, imputation and mining](https://pak.dynasite.org/transitiontrees/articles/prediction-and-scoring.html)
+- [Visualizing transition trees](https://pak.dynasite.org/transitiontrees/articles/visualization.html)
+- [Verification against the PST package](https://pak.dynasite.org/transitiontrees/articles/verification.html)
 
-- pure base R with a single plotting dependency (ggplot2); no compiled
-  code and no heavy framework dependencies;
-- tidy `data.frame` outputs by default, in one canonical schema so every
-  table joins cleanly;
-- validated at machine precision against independent external reference
-  implementations of the model (counts, node probabilities at all depths,
-  context queries, per-position prediction, `logLik`, and topology), as
-  documented in
-  [`PARITY.md`](https://github.com/mohsaqr/transitiontrees/blob/main/PARITY.md)
-  (the equivalence suite runs locally and is not shipped with the package);
-- a pathway-centric API (`tree_pathways()`, `common_pathways()`,
-  `divergent_pathways()`, `sharp_pathways()`) that ranks trajectories
-  by frequency, predictive divergence, or modal-flip — the structure
-  domain experts actually want to read off the model;
-- verbs deliberately namespaced (`prune_tree()`, `tree_pathways()`,
-  `tree_dependence()`) so `library(transitiontrees)` does not shadow
-  common generics;
-- a full predictive-modelling toolchain: `logLik` / `AIC` / `BIC` /
-  `perplexity` / `score_sequences` / `score_positions` / `model_fit`,
-  five smoothing schemes (`floor`, `laplace`, `kneser_ney`,
-  `witten_bell`, `jelinek_mercer`), k-fold cross-validated `tune_tree()`,
-  permutation-tested two-tree `compare_trees()`, the multi-group
-  `compare_groups()` (behavioral and usage axes, Benjamini-Hochberg FDR),
-  and `bootstrap_pathways()` stability/informativeness with bootstrap CIs;
-- sequence tools: `impute_sequences()` fills internal gaps from the
-  fitted tree; `mine_contexts()` / `mine_sequences()` scan for contexts
-  where a state is unusually likely or unlikely and for the best/worst-fit
-  held-out sequences;
-- flexible ingestion — a wide character matrix/data.frame, a list of
-  character vectors, a long event log (via `actor` / `time` / `action` /
-  `order` / `session` arguments, or the standalone `prepare_input()`), a
-  `TraMineR` state-sequence exported with `as.matrix()` (the `%` void and
-  `*` missing codes are treated as gaps), or a compatible `tna` /
-  `Nestimate` transition/network object that carries its sequences — plus
-  per-sequence weights for social-science workflows;
-- five plot views — `horizontal` (default), `dendrogram`, `icicle`, an
-  `interactive` HTML-widget tree, and the forward `plot_trajectories()` —
-  with count-sized nodes and flow-sized edges.
+**Case studies**
+
+- [Collaborative regulation by achievement](https://pak.dynasite.org/transitiontrees/articles/case-regulation-achievement.html)
+- [Engagement trajectories](https://pak.dynasite.org/transitiontrees/articles/case-engagement.html)
+- [Human-AI collaboration](https://pak.dynasite.org/transitiontrees/articles/case-ai-collaboration.html)
+
+## Overview
+
+`transitiontrees` models how categorical processes unfold: how one state
+follows another in weekly engagement, collaborative regulation or the turns
+of a human-AI conversation. It fits variable-order transition trees, also
+known as prediction suffix trees (Ron, Singer, & Tishby, 1996) or
+variable-length Markov chains (Bühlmann & Wyner, 1999), in which the length
+of history used to predict the next state differs from one history to
+another: the tree is deep where earlier states change the prediction and
+shallow where they do not. Each branch is a pathway, a run of recent states
+with the distribution of the state that followed it. The package reports
+which pathways occur, which change the prediction relative to a shorter
+history, how stable they are under the bootstrap, and whether they differ
+between groups, separating differences in what follows a history from
+differences in how often the history occurs.
+
+Trees are fitted from wide sequence data, long event logs and
+sequence-bearing network objects; pruned by likelihood-ratio tests or
+information criteria; evaluated by log likelihood, information criteria and
+perplexity; and used to predict, score, simulate and impute sequences.
+Results are tidy data frames, and plots are ggplot2 objects.
+
+## Variable-order transition trees
+
+For a sequence $x_1, \dots, x_T$ over a set of states $S$, a context is a
+run of recent states $c = (x_{t-k}, \dots, x_{t-1})$, and each context in
+the tree carries a next-state distribution $P(x_t = s \mid c)$. A new state
+is predicted from the longest suffix of its history that is a context in
+the tree, $c^*(t)$, so that
+$\hat P(x_t \mid x_1, \dots, x_{t-1}) = \hat P(x_t \mid c^*(t))$. A
+context receives a node when it is no longer than `max_depth` and occurs
+at least `min_count` times; its distribution is estimated from the counts
+$N(c, s)$ and smoothed so that unobserved next states keep a small
+probability. A leaf $c$ is pruned when its counts are consistent with the
+prediction of its parent $\pi(c)$, the context with the oldest state
+removed, under the likelihood-ratio test
+
+$$
+G^2(c) = 2 \sum_{s} N(c, s) \log \frac{N(c, s)}{N(c)\, \tilde p(s \mid \pi(c))}
+\;\le\; \chi^2_{|S| - 1,\, 1 - \alpha},
+$$
+
+or under an AIC or BIC penalty (Ron, Singer, & Tishby, 1996; Bühlmann &
+Wyner, 1999; Gabadinho & Ritschard, 2016). Pathways are written oldest
+state first (`Average -> Disengaged`), and the empty context is shown as
+`(start)`.
 
 ## Installation
 
-```r
-# From CRAN
+
+``` r
 install.packages("transitiontrees")
 
-# Development version from GitHub
-# install.packages("remotes")
+# development version
+install.packages("remotes")
 remotes::install_github("mohsaqr/transitiontrees")
 ```
 
-## Usage
+## Example
 
-Every call below runs on the bundled datasets.
+`engagement` holds the weekly engagement states (`Active`, `Average`,
+`Disengaged`) of 1,000 students. The tree below allows histories of up to
+three weeks, and pruning keeps the contexts that pass the $G^2$ test.
 
-```r
+
+``` r
 library(transitiontrees)
 
-# --- Fit ------------------------------------------------------------
-# A wide character matrix / data.frame (one sequence per row), or a list
-# of character vectors. `min_count` is the minimum occurrences a context
-# needs to get its own node.
-tree <- context_tree(trajectories, max_depth = 4, min_count = 5,
-                     smoothing = "floor")
-
-# Smoothing as an explicit list (hyperparameters), or a different scheme:
-context_tree(trajectories, max_depth = 4, smoothing = list("floor", ymin = 0.001))
-context_tree(trajectories, max_depth = 4, smoothing = "kneser_ney")
-
-# From a long event log directly (no manual reshaping):
-context_tree(group_regulation_long, actor = "Actor", time = "Time",
-             action = "Action", max_depth = 3)
-# or build the wide frame yourself:
-wide <- prepare_input(group_regulation_long, actor = "Actor", time = "Time",
-                      action = "Action")
-
-# --- Inspect --------------------------------------------------------
-print(tree)
-summary(tree)
-model_fit(tree)                          # logLik, df, nobs, AIC, BIC, perplexity
-
-# --- Prune ----------------------------------------------------------
-# Collapse contexts whose extra depth is not a significant gain over
-# their parent (likelihood-ratio G^2 test at alpha = 0.05 per context).
+tree <- context_tree(engagement, max_depth = 3, min_count = 10)
 pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
-
-# --- The pathway-centric API ---------------------------------------
-tree_pathways(pruned)                       # all pathways, sorted by count
-common_pathways(pruned,    top = 8)         # top by frequency
-divergent_pathways(pruned, top = 6)         # top by KL from shorter history
-divergent_pathways(pruned, flips_only = TRUE)
-sharp_pathways(pruned,     top = 5)         # most deterministic continuations
-tree_dependence(pruned)                     # per-context entropy/KL diagnostic
-
-# --- Predict & evaluate --------------------------------------------
-predict(pruned, newdata = list(c("Active", "Average"), c("Disengaged")))
-predict(pruned, c("Active", "Active"), type = "class")   # modal next state
-logLik(pruned); AIC(pruned); BIC(pruned)
-perplexity(pruned, newdata = engagement)
-score_sequences(pruned, newdata = engagement)
-
-# Generate sequences from the fitted tree
-generate_sequences(pruned, n = 100, length = 20)
-simulate(pruned, nsim = 100, length = 20, seed = 1)   # S3 alias
-
-# --- Cross-validated tuning ----------------------------------------
-tg <- tune_tree(trajectories, max_depth = 1:4, min_count = c(3, 5),
-                smoothing = c("floor", "kneser_ney"),
-                prune = c(FALSE, TRUE), folds = 5)
-tg                                          # ranked grid + the best configuration
-plot(tg)
-
-# --- Group fits and comparisons ------------------------------------
-grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
-                    action = "Action", group = "Achiever", max_depth = 2)
-compare_trees(grp, iter = 200)              # two-tree permutation test
-compare_groups(grp, iter = 199)             # per-context behavioral + usage tests
-
-# --- Bootstrap pathway reliability ---------------------------------
-boot <- bootstrap_pathways(pruned, iter = 1000, stat = "count")
-summary(boot)        # tidy per-pathway stability + informativeness table
-plot(boot)
-
-# --- Tree introspection --------------------------------------------
-query_pathway(pruned, "Active -> Average")   # full predicted distribution
-pathway_exists(pruned, c("Active", "Average"))
-subtree(pruned, "Active")                    # restrict to descendants of "Active"
-
-# --- Impute & mine --------------------------------------------------
-gappy <- list(c("Active", NA, "Average"), c("Average", "Average", NA, "Active"))
-impute_sequences(pruned, gappy)                              # fill internal gaps
-mine_contexts(pruned, state = "Disengaged", min_prob = 0.5)  # where Disengaged is likely
-mine_sequences(pruned, engagement, which = "surprising")     # worst-fit sequences
-
-# --- Visualisation --------------------------------------------------
-plot(pruned)                                # horizontal tree (default)
-plot(pruned, style = "dendrogram")          # pure-ggplot dendrogram
-plot(pruned, style = "icicle")              # partition (sunburst) diagram
-plot(pruned, style = "interactive")         # interactive HTML widget (visNetwork)
-plot_pathways(pruned)                       # next-move probability heatmap
-plot_divergence(pruned)                     # per-context KL lollipop
-plot_distributions(pruned)                  # per-context next-state bars
-plot_pruning(tree, "Active -> Active -> Average")   # suffix-chain memory view
-plot_trajectories(pruned, measure = "frequency")    # forward trajectory tree
-plot_predictive(pruned, engagement)         # held-out confidence diagnostics
-plot_difference(grp, depth = 1)             # where two groups differ, per context
+model_fit(pruned)
+#>   logLik df  nobs   AIC   BIC perplexity
+#> 1 -16181 20 24555 32403 32565       1.93
 ```
 
-## Bundled datasets
+Pathways that change the prediction made from the shorter history are
+ranked by `divergent_pathways()`.
 
-Four datasets ship with the package for examples and tests:
 
-| Dataset | Shape | Notes |
-|---|---|---|
-| `trajectories` | 138 × 15 wide character matrix, trailing `NA` = end | engagement states over time |
-| `group_regulation_long` | 27,533-row long event log, POSIXct time | collaborative regulation moves, `Achiever` group label |
-| `ai_long` | 8,551-row long event log, Unix time + session id | AI-collaboration moves |
-| `engagement` | 1000 × 25 wide data.frame, `NA` = dropout | engagement-state sequences |
+``` r
+divergent_pathways(pruned, top = 5)
+#>                              pathway depth count likely_next next_probability divergence
+#> 1                         Disengaged     1  6598  Disengaged            0.786     0.9453
+#> 2                             Active     1 11894      Active            0.859     0.4183
+#> 3                            Average     1  5063     Average            0.548     0.3836
+#> 4     Active -> Disengaged -> Active     3    22      Active            0.727     0.2546
+#> 5 Active -> Disengaged -> Disengaged     3   449  Disengaged            0.788     0.0113
+#>   changes_prediction
+#> 1               TRUE
+#> 2              FALSE
+#> 3               TRUE
+#> 4              FALSE
+#> 5              FALSE
+```
 
-## Pathway notation
+`plot()` draws the tree from the root on the left, with node size
+proportional to the context count and the modal next state under each
+node.
 
-Pathways are reported in arrow notation (`A -> B -> C`). The leftmost
-state is the *oldest*; the next-state prediction is conditional on the
-trajectory ending at the rightmost state. The root context (the marginal
-next-state distribution) is shown as `(start)`.
 
-## Bootstrap interpretation
+``` r
+plot(pruned)
+```
 
-`bootstrap_pathways()` reports stability and informativeness separately.
-`p_stability` is the bootstrap-estimated probability that a pathway
-statistic falls outside the chosen consistency band under sequence-level
-resampling. Small values mean the pathway rarely fails the reproducibility
-criterion. `informative_rate` is the fraction of resamples where the
-pathway's empirical G² statistic exceeds the chi-square reference cutoff
-against its suffix-parent context.
+<div class="figure">
+<img src="man/figures/README-plot-tree-1.png" alt="The pruned context tree of the engagement data" width="100%" />
+<p class="caption">plot of chunk plot-tree</p>
+</div>
 
-Read the two flags together:
+`predict()` applies the longest-suffix rule to new histories; with
+`tidy = TRUE` it returns one row per history with the context used and the
+next-state distribution.
 
-| stable | informative | Interpretation |
-|---|---|---|
-| TRUE | TRUE | reproducible and predictively distinctive pathway |
-| TRUE | FALSE | reproducible pathway, but not predictively distinctive |
-| FALSE | TRUE | sharp/divergent pathway carried by an unstable subset of sequences |
-| FALSE | FALSE | weak or sample-fragile pathway |
+
+``` r
+predict(pruned, newdata = list(c("Active", "Average"),
+                               c("Average", "Disengaged")),
+        tidy = TRUE)
+#>   id               history               context  predicted probability Active Average
+#> 1  1     Active -> Average               Average    Average       0.548 0.3052   0.548
+#> 2  2 Average -> Disengaged Average -> Disengaged Disengaged       0.734 0.0556   0.210
+#>   Disengaged
+#> 1      0.147
+#> 2      0.734
+```
+
+## Authors and citation
+
+`transitiontrees` is written by [Mohammed Saqr](https://saqr.me) and
+[Sonsoles López-Pernas](https://sonsoles.me). Mohammed Saqr maintains the
+package. Questions and bug reports can be submitted through the
+[repository issue tracker](https://github.com/mohsaqr/transitiontrees/issues).
+The package citation is available through `citation("transitiontrees")`.
 
 ## References
 
-Begleiter, R., El-Yaniv, R., Yona, G. (2004). On prediction using
-variable-order Markov models. *Journal of Artificial Intelligence
-Research*, **22**, 385–421.
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains.
+*The Annals of Statistics*, *27*(2), 480–513.
+<https://doi.org/10.1214/aos/1018031204>
 
-Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia: learning
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software*, *72*(3). <https://doi.org/10.18637/jss.v072.i03>
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
 probabilistic automata with variable memory length. *Machine Learning*,
-**25**, 117–149.
+*25*(2–3), 117–149. <https://doi.org/10.1023/A:1026490906255>
 
-Willems, F.M.J., Shtarkov, Y.M., Tjalkens, T.J. (1995). The context-tree
-weighting method: basic properties. *IEEE Transactions on Information
-Theory*, **41**, 653–664.
 
-## License
-
-GPL-3.

@@ -2,7 +2,7 @@
 % Please edit documentation in R/smoothing.R
 \name{compare_smoothing}
 \alias{compare_smoothing}
-\title{Compare Smoothing Schemes on One Dataset}
+\title{Compare smoothing schemes on one dataset}
 \usage{
 compare_smoothing(
   data,
@@ -11,64 +11,58 @@ compare_smoothing(
 )
 }
 \arguments{
-\item{data}{Either sequence data in any form accepted by
-\code{\link{context_tree}} (wide matrix / data.frame, list of
-character vectors, or a transition/network
-object) -- fitted afresh under each
-scheme -- \strong{or} an already-fitted \code{transitiontrees}, which is
-\emph{re-smoothed} under each scheme (topology frozen, no
-re-count; e.g. to sweep smoothers on a pruned tree).}
+\item{data}{Sequences in any form accepted by \code{\link{context_tree}()},
+fitted afresh under each scheme, or a fitted \code{transitiontrees},
+re-smoothed under each scheme.}
 
-\item{smoothing}{Character vector of smoothing-method names to
-compare. Defaults to all five: \code{"floor"}, \code{"laplace"},
-\code{"kneser_ney"}, \code{"witten_bell"}, \code{"jelinek_mercer"}.}
+\item{smoothing}{Names of the schemes to compare. Default all five:
+\code{"floor"}, \code{"laplace"}, \code{"kneser_ney"},
+\code{"witten_bell"}, \code{"jelinek_mercer"}, each with its default
+hyperparameters.}
 
-\item{...}{Further arguments passed to \code{\link{context_tree}}
-(e.g. \code{max_depth}, \code{min_count}, \code{alphabet}), held fixed
-across every scheme. Ignored when \code{data} is a fitted tree.}
+\item{...}{Further arguments to \code{\link{context_tree}()}, such as
+\code{max_depth} and \code{min_count}, held fixed across schemes. Not
+used when \code{data} is a fitted tree.}
 }
 \value{
-A \code{data.frame} with one row per scheme (in the order
-  given by \code{smoothing}) and columns \code{smoothing} (method
-  name), \code{n_nodes} (tree size) and \code{perplexity} (in-sample).
+A \code{data.frame} with one row per scheme, in the order of
+  \code{smoothing}, and columns \code{smoothing}, \code{n_nodes} (number
+  of contexts) and \code{perplexity} (in-sample).
 }
 \description{
-Fits a context tree under several smoothing schemes -- holding
-\code{max_depth}, \code{min_count} and every other argument fixed -- and
-returns a tidy one-row-per-scheme comparison of tree size and
-in-sample perplexity. A convenience wrapper over repeated
-\code{\link{context_tree}} calls that collapses the usual five-line
-\code{lapply()} loop into a single call.
-}
-\details{
-The perplexity reported is \strong{in-sample} (computed on the
-fitting data), so it rewards memorisation and must \emph{not} be used
-to pick a smoother -- use \code{\link{tune_tree}()} for
-out-of-sample selection. The point of this table is the side-by-side
-view and the invariance of \code{n_nodes} across schemes: smoothing
-changes the \emph{probabilities} inside the tree, never \emph{which}
-contexts exist (topology is set by \code{min_count}, not by the smoother).
-}
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-                  simplify = FALSE)
-compare_smoothing(seqs, max_depth = 3L, min_count = 5L)
-compare_smoothing(seqs, smoothing = c("floor", "kneser_ney"),
-                  max_depth = 2L)
+\code{compare_smoothing()} fits a tree under each of several smoothing
+schemes, with every other setting held fixed, and reports one row per scheme
+with the size of the tree and its in-sample perplexity. Given an already
+fitted tree, it re-smooths that tree under each scheme instead, which keeps
+its contexts, for example after pruning.
 
+The number of contexts is the same for every scheme, because smoothing
+changes probabilities, not which contexts exist. In-sample perplexity
+favors schemes that stay close to the observed proportions and therefore
+is not a criterion for choosing one; \code{\link{tune_tree}()} compares
+schemes on held-out data. See \code{\link{smooth_tree}()} for the
+definitions of the schemes.
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{smoothing} is not a non-empty
+character vector of known methods, or when \code{data} cannot be fitted
+(see \code{\link{context_tree}()}).
+}
+
+\examples{
+compare_smoothing(trajectories, max_depth = 3)
+compare_smoothing(trajectories, smoothing = c("floor", "kneser_ney"),
+                  max_depth = 2, min_count = 10)
 }
 \references{
-Begleiter, R., El-Yaniv, R., & Yona, G. (2004). On prediction using
-variable order Markov models. \emph{Journal of Artificial Intelligence
-Research}, 22, 385-421. \doi{10.1613/jair.1491}
-
 Chen, S. F., & Goodman, J. (1999). An empirical study of smoothing
 techniques for language modeling. \emph{Computer Speech and Language},
-13(4), 359-394. \doi{10.1006/csla.1999.0128}
+13(4), 359-393. \doi{10.1006/csla.1999.0128}
 }
 \seealso{
-\code{\link{smooth_tree}} to re-smooth a fitted tree
-  without re-counting; \code{\link{tune_tree}} for
-  cross-validated selection.
+\code{\link{smooth_tree}()} for the schemes;
+  \code{\link{tune_tree}()} for cross-validated selection;
+  \code{\link{compare_pruning}()} for the analogous comparison of pruning
+  criteria.
 }

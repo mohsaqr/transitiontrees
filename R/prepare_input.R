@@ -16,8 +16,8 @@
   if (is.numeric(x) || isTRUE(is_unix_time)) {
     div <- switch(unix_time_unit,
                   seconds = 1, milliseconds = 1e3, microseconds = 1e6,
-                  stop("'unix_time_unit' must be 'seconds', ",
-                       "'milliseconds', or 'microseconds'.", call. = FALSE))
+                  .tt_abort("'unix_time_unit' must be 'seconds', ",
+                       "'milliseconds', or 'microseconds'."))
     return(as.POSIXct(as.numeric(x) / div, origin = "1970-01-01",
                       tz = "UTC"))
   }
@@ -26,75 +26,88 @@
     return(as.POSIXct(x, format = format, tz = "UTC"))
   parsed <- as.POSIXct(x, tz = "UTC")          # ISO-8601 / standard
   if (all(is.na(parsed) == is.na(x)) == FALSE || anyNA(parsed[!is.na(x)]))
-    stop("Could not parse 'time'; pass an explicit 'format' ",
-         "(see strptime) or 'is_unix_time = TRUE'.", call. = FALSE)
+    .tt_abort("Could not parse 'time'; pass an explicit 'format' ",
+         "(see strptime) or 'is_unix_time = TRUE'.")
   parsed
 }
 
-#' Reshape Long Event Data into a Wide Sequence Frame
+#' Reshape a long event log into one sequence per row
 #'
 #' @description
-#' Turns a long, one-row-per-event table into the wide, one-row-per-
-#' sequence character frame that \code{\link{context_tree}()} consumes.
-#' Events are grouped by \code{actor} and ordered by \code{time} (or
-#' \code{order}); when \code{time} is given, each actor's events are
-#' split into \strong{sessions} whenever the gap to the previous event
-#' exceeds \code{time_threshold} seconds. This mirrors the standard
-#' timestamp / session-splitting rule, in pure base R.
+#' \code{prepare_input()} reshapes a long event log into one sequence per row:
+#' the wide table that \code{\link{context_tree}()} fits. Process data are
+#' usually recorded as event logs, one row per event with the actor, a timestamp
+#' and the action or state, while sequence models need the events of each actor,
+#' or of each working session, in temporal order as one sequence.
 #'
-#' @param data A long-format \code{data.frame}, one row per event.
-#' @param actor Character. Column(s) naming the unit each sequence
-#'   belongs to (e.g. a user id). Several columns are combined with
-#'   \code{"-"}. \code{NULL} (default) treats the whole table as one
-#'   actor.
-#' @param time Character. Column holding the event timestamp, used both
-#'   to order events and to split sessions by \code{time_threshold}.
-#'   Numeric values are read as Unix time. \code{NULL} (default) uses
-#'   \code{order} (or row order) instead and does no session splitting.
-#' @param action Character. Column holding the event's state / code --
-#'   the symbol that becomes a cell of the sequence. Required.
-#' @param order Character. Optional column giving an explicit within-
-#'   actor ordering (used when \code{time} is absent, or to break time
-#'   ties). Defaults to row order.
-#' @param session Character. Optional column giving an explicit session
-#'   id within an actor. If supplied, sessions are taken from it directly
-#'   and no time-gap splitting is done.
-#' @param time_threshold Numeric. Seconds; a gap larger than this starts
-#'   a new session. Default \code{900} (15 minutes), the standard
-#'   session-splitting threshold.
-#' @param format Character. Optional \code{\link{strptime}} format for a
-#'   character \code{time} column.
-#' @param is_unix_time Logical. Force \code{time} to be read as Unix
-#'   time. Default \code{FALSE}.
-#' @param unix_time_unit One of \code{"seconds"} (default),
-#'   \code{"milliseconds"}, \code{"microseconds"}.
-#' @param meta Optional character vector of column names to carry through
-#'   the reshape as per-sequence metadata (one value per session, the
-#'   first event's). Returned as a \code{data.frame} on the
-#'   \code{"meta"} attribute of the result, aligned to its rows. Used by
-#'   \code{\link{context_tree}()} to align column-name \code{group}/
-#'   \code{block} to the wide rows. Default \code{NULL}.
+#' Events are grouped by \code{actor} and ordered by \code{time} (ties
+#' broken by \code{order}, then by row order). When \code{time} is given,
+#' each actor's events are split into sessions wherever the gap between
+#' consecutive events exceeds \code{time_threshold} seconds, so that a
+#' sequence covers one continuous episode of activity rather than all of an
+#' actor's events over days or weeks. A \code{session} column, when given,
+#' defines the sessions directly, and events within a session are then
+#' ordered by \code{order} or row order, not by \code{time}. Without \code{time} or \code{session},
+#' each actor contributes one sequence in the order of \code{order} or of
+#' the rows.
 #'
-#' @return A wide character \code{data.frame}, one row per sequence
-#'   (session), columns \code{T1, T2, ...} holding the ordered states and
-#'   trailing \code{NA}s past the end of each sequence. Row names are the
-#'   session ids. When \code{meta} is given, an aligned per-sequence
-#'   metadata \code{data.frame} is attached as \code{attr(., "meta")}.
-#'   Pass it straight to \code{\link{context_tree}()}.
+#' \code{context_tree()} calls \code{prepare_input()} itself when its
+#' \code{action} argument is set, so the reshaping is needed separately only
+#' to inspect the sequences or to pass them to other functions. The choice
+#' of \code{time_threshold} defines what counts as a sequence and changes
+#' every result fitted on it; it is worth checking that conclusions hold
+#' for neighboring thresholds.
+#'
+#' @param data A \code{data.frame} with one row per event.
+#' @param actor Name of the column, or columns, identifying whose events
+#'   form a sequence. Several columns are combined. \code{NULL} (default)
+#'   treats all rows as one actor.
+#' @param time Name of the timestamp column: date-times, dates, character
+#'   timestamps, or numbers read as Unix time. \code{NULL} (default) orders
+#'   by \code{order} or row order and does not split sessions.
+#' @param action Name of the column holding the state of each event.
+#'   Required.
+#' @param order Name of a column giving the order of events within an
+#'   actor, used without \code{time} or to break ties in time. \code{NULL}
+#'   (default) uses row order.
+#' @param session Name of a column identifying sessions within an actor.
+#'   When given, sessions are taken from it and \code{time_threshold} is not
+#'   used. Default \code{NULL}.
+#' @param time_threshold Gap in seconds between consecutive events that
+#'   starts a new session. Default 900 (15 minutes).
+#' @param format \code{\link{strptime}} format for a character \code{time}
+#'   column. \code{NULL} (default) accepts ISO 8601 timestamps.
+#' @param is_unix_time Read \code{time} as Unix time. Default \code{FALSE};
+#'   numeric columns are read as Unix time in any case.
+#' @param unix_time_unit Unit of Unix time: \code{"seconds"} (default),
+#'   \code{"milliseconds"} or \code{"microseconds"}.
+#' @param meta Names of columns to carry over as one value per sequence (the
+#'   value of its first event), used by \code{\link{context_tree}()} to
+#'   align \code{group} and \code{block} with the sequences. Default
+#'   \code{NULL}.
+#'
+#' @return A character \code{data.frame} with one row per sequence, named by
+#'   actor and session, and columns \code{T1}, \code{T2}, \ldots holding the
+#'   states in order; sequences shorter than the longest are padded with
+#'   \code{NA}. It can be passed directly to \code{\link{context_tree}()}.
+#'
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{action} or another named
+#' column is not in \code{data}, \code{time_threshold} is not a single
+#' non-negative number, or \code{time} cannot be parsed.
+#'
+#' @seealso \code{\link{context_tree}()}, which accepts the same arguments.
 #'
 #' @examples
-#' long <- data.frame(
-#'   user  = c("a","a","a","a","b","b"),
-#'   t     = as.POSIXct("2020-01-01 09:00:00", tz = "UTC") +
-#'             c(0, 60, 3600, 3660, 0, 30),
-#'   state = c("X","Y","X","Z","Y","X"),
-#'   stringsAsFactors = FALSE)
-#' ## one-hour gap splits user a into two sessions
-#' wide <- prepare_input(long, actor = "user", time = "t", action = "state")
-#' wide
-#' context_tree(wide, max_depth = 2L, min_count = 1L)
+#' sessions <- prepare_input(group_regulation_long, actor = "Actor",
+#'                           time = "Time", action = "Action")
+#' dim(sessions)
+#' head(sessions, 3)
 #'
-#' @seealso \code{\link{context_tree}}
+#' # Explicit session identifiers and within-session order
+#' turns <- prepare_input(ai_long, actor = "session_id",
+#'                        order = "order_in_session", action = "code")
+#' dim(turns)
 #' @export
 prepare_input <- function(data, actor = NULL, time = NULL, action = NULL,
                          order = NULL, session = NULL,
@@ -103,18 +116,18 @@ prepare_input <- function(data, actor = NULL, time = NULL, action = NULL,
                          unix_time_unit = c("seconds", "milliseconds",
                                             "microseconds"),
                          meta = NULL) {
-  stopifnot(is.data.frame(data), nrow(data) > 0L)
+  stopifnot("`data` must be a data.frame with at least one row" =
+              is.data.frame(data) && nrow(data) > 0L)
   unix_time_unit <- match.arg(unix_time_unit)
   if (is.null(action) || !action %in% names(data))
-    stop("'action' must name a column of 'data'.", call. = FALSE)
+    .tt_abort("'action' must name a column of 'data'.")
   missing_cols <- setdiff(c(actor, time, order, session, meta), names(data))
   if (length(missing_cols))
-    stop("'", paste(missing_cols, collapse = "', '"),
-         "' is not a column of 'data'.", call. = FALSE)
+    .tt_abort("'", paste(missing_cols, collapse = "', '"),
+         "' is not a column of 'data'.")
   if (!is.numeric(time_threshold) || length(time_threshold) != 1L ||
       time_threshold < 0)
-    stop("'time_threshold' must be a single non-negative number.",
-         call. = FALSE)
+    .tt_abort("'time_threshold' must be a single non-negative number.")
 
   n   <- nrow(data)
   act <- as.character(data[[action]])
@@ -195,7 +208,7 @@ prepare_input <- function(data, actor = NULL, time = NULL, action = NULL,
                          time_threshold = time_threshold, meta = meta))
   if (!is.null(actor) || !is.null(time) || !is.null(session) ||
       !is.null(order))
-    stop("To fit from long-format data, name the state column via ",
-         "'action ='.", call. = FALSE)
+    .tt_abort("To fit from long-format data, name the state column via ",
+         "'action ='.")
   data
 }

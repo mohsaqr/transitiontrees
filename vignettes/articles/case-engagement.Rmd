@@ -1,0 +1,310 @@
+---
+title: "Case study: engagement trajectories"
+author: "Written by [Mohammed Saqr](https://saqr.me) and [Sonsoles López-Pernas](https://sonsoles.me)"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Case study: engagement trajectories}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r knitr-options, include = FALSE}
+knitr::opts_chunk$set(collapse = FALSE, comment = "#>",
+                      fig.width = 7, fig.height = 4.5, fig.align = "center",
+                      dpi = 96)
+old_options <- options(digits = 3, width = 92)
+```
+
+Engagement in a course is not a fixed trait. Students move between active
+participation, average involvement and disengagement from one week to the
+next, and the sequence of these states over a course is a trajectory.
+Longitudinal studies of online engagement describe such trajectories as
+largely stable, with a minority of students drifting into persistent
+disengagement. Two questions follow for anyone who wants to act on them.
+The first is how persistent disengagement is once it begins. The second is
+whether the route into disengagement matters: is a student who has recently
+dropped from active to disengaged in the same position as one who has been
+disengaged for several weeks, or does the earlier history change what comes
+next?
+
+A first-order Markov chain answers the first question and assumes the answer
+to the second: the next state depends only on the current one. A
+variable-order transition tree (Ron, Singer & Tishby, 1996; Bühlmann &
+Wyner, 1999) relaxes that assumption locally. It keeps a longer history only
+where that history changes the prediction, so the fitted tree is itself an
+answer to the question of how far back the past reaches.
+
+This case study fits such a tree to the weekly engagement states of 1000
+learners. It asks how persistent each state is, which histories lead into
+disengagement, how much memory the process has, what the forward
+trajectories look like, and whether sequences simulated from the fitted
+model reproduce the observed data.
+
+```{r setup}
+library(transitiontrees)
+```
+
+## Data
+
+`engagement` is a bundled wide sequence frame: one row per learner and one
+column per time-step.
+
+- **Sequence:** each row — one learner's trajectory, 1000 learners.
+- **Time:** columns `T1` to `T25` — successive time-steps of the course;
+  trajectories run for 23 to 25 steps, and trailing `NA` marks the end of a
+  shorter trajectory.
+- **State:** each cell — the engagement state, `Active`, `Average` or
+  `Disengaged`.
+
+The frame is already in the shape that `context_tree()` consumes, so no
+reshaping is needed.
+
+## How persistent is each state?
+
+The tree is grown to a depth of four time-steps, with at least ten
+occurrences required for a context to receive its own node.
+
+```{r fit}
+tree <- context_tree(engagement, max_depth = 4L, min_count = 10L)
+tree
+```
+
+The tree is fitted on 1000 sequences and 24555 observed states. With no
+history the most likely state is `Active` (0.51), and after `Active` the
+most likely state is again `Active` (0.86). The first branches of the tree
+show how little the deeper `Active` histories change this: after two, three
+or four active steps the probability of staying active remains 0.86.
+
+`state_frequencies()` gives the overall distribution of states.
+
+```{r frequencies}
+state_frequencies(tree)
+```
+
+Half of all observed states are `Active` (50.6%), 28.0% are `Disengaged` and
+21.4% are `Average`. `common_pathways()` restricted to the first-order
+contexts gives the persistence of each state.
+
+```{r persistence}
+common_pathways(tree, depth = 1L)
+```
+
+`Active` is the most persistent state (0.86 probability of remaining
+active), followed by `Disengaged` (0.79). `Average` is the least stable: a
+learner in the average state stays there with probability 0.55. Once
+disengagement begins, it is therefore likely to continue: a learner who is
+disengaged now is disengaged at the next step four times out of five.
+
+## Does the route into disengagement matter?
+
+If disengagement entrenches over time, the probability of remaining
+disengaged should rise with the length of the disengaged run. `query_pathway()`
+returns the next-state distribution for any history.
+
+```{r runs}
+query_pathway(tree, "Disengaged")
+query_pathway(tree, "Disengaged -> Disengaged")
+query_pathway(tree, "Disengaged -> Disengaged -> Disengaged -> Disengaged")
+```
+
+The probability of remaining disengaged is 0.786 after one disengaged step,
+0.791 after two and 0.796 after four. The run length barely matters:
+disengagement is persistent, but it does not become measurably more
+persistent the longer it lasts.
+
+`mine_contexts()` asks the reverse question: which histories make
+disengagement the most likely next state? The `min_count` argument keeps
+contexts seen at least 50 times, and `min_prob` keeps those with a
+probability of at least 0.5.
+
+```{r mine}
+mine_contexts(tree, "Disengaged", min_prob = 0.5, min_count = 50L)
+```
+
+All 27 contexts end in `Disengaged`: no history that ends in an active or
+average step makes disengagement the most likely next state. The highest
+probabilities belong to recent drops from activity: after
+`Average -> Active -> Disengaged` the probability of remaining disengaged is
+0.90 (82 occurrences), and after `Active -> Disengaged` it is 0.82 (581
+occurrences), slightly above the 0.79 of `Disengaged` alone. The lowest
+belong to arrivals from the average state: after `Average -> Disengaged` the
+probability is 0.73 (719 occurrences). These are descriptive differences in
+the grown tree; the pruning step below tests which of them are supported.
+
+`tree_dependence()` measures, for each context, how far its next-state
+distribution departs from that of its parent (`divergence`) and how much
+next-state uncertainty it removes (`entropy_drop`, in bits).
+
+```{r dependence}
+tree_dependence(tree, top = 8)
+```
+
+The three first-order contexts dominate. `Disengaged` departs most from the
+root (divergence 0.95) and changes the prediction from `Active` to
+`Disengaged`. The longer contexts in the list are rare (10 to 31
+occurrences), and one of them, `Active -> Disengaged -> Active`, has a
+negative `entropy_drop` (-0.28 bits): the longer history leaves the next
+state more uncertain than its parent does. Rare contexts of this kind are
+the ones that pruning should remove.
+
+## How long is the memory?
+
+`compare_pruning()` shows how many contexts each pruning criterion keeps.
+
+```{r compare-pruning}
+compare_pruning(tree)
+```
+
+The grown tree has 109 nodes. The likelihood-ratio criterion (G²) keeps 17,
+AIC 21 and BIC 6; the Kullback-Leibler threshold is the most permissive and
+keeps 68. The criteria agree that most deep contexts are not supported, and
+differ in how many second-order refinements they retain.
+
+```{r prune}
+pruned <- prune_tree(tree, criterion = "G2")
+pruned
+```
+
+The G²-pruned tree keeps 16 contexts below the root. In the `Disengaged`
+branch it retains `Average -> Disengaged` (0.73) and
+`Disengaged -> Disengaged` (0.79), but not `Active -> Disengaged`. The route
+into disengagement therefore matters in one supported respect: a learner who
+arrives from the average state is less likely to remain disengaged than one
+in an established run. The higher persistence after an abrupt drop from
+activity, seen in the grown tree, is not distinguishable from that of
+`Disengaged` alone by the G² test.
+
+`tune_tree()` gives a held-out comparison of memory length. It cross-validates
+every combination of depth, minimum count and pruning over five folds of
+learners.
+
+```{r tune}
+tuned <- tune_tree(engagement, max_depth = 1L:4L, min_count = c(10L, 30L),
+                   prune = c(FALSE, TRUE), folds = 5L, seed = 1L)
+summary(tuned)
+print(as.data.frame(tuned), digits = 5)
+```
+
+The selected configuration is the unpruned depth-two tree, with a held-out
+perplexity of 1.934. The first-order model scores 1.935, and the worst
+configuration in the grid, the unpruned depth-four tree, scores 1.945. The
+differences are in the third decimal. Engagement in these data is close to
+a first-order process: the current state carries nearly all the information
+about the next one, and longer histories add little that generalises to new
+learners.
+
+## What do the forward trajectories look like?
+
+The context tree reads histories backwards, from the most recent state.
+`plot_trajectories()` draws the complementary forward view: the observed
+sequences as a prefix tree from the first time-step, with branches kept when
+they are followed by at least `min_count` learners.
+
+```{r trajectories, fig.width = 10, fig.height = 5.5, out.width = "100%"}
+plot_trajectories(pruned, min_count = 40L)
+```
+
+Each path from the left is a sequence of states that at least 40 learners
+share from the start of the course; branch width and color reflect the
+number of learners. The learners start almost evenly divided between the
+three states (343 active, 319 average and 338 disengaged). The active and
+disengaged starts both continue in long runs: 48 learners are active for all
+of the first 15 steps, and 43 learners who start disengaged are still
+disengaged at step 10. Learners who start in the average state split quickly
+between the other states. With `measure = "predictability"` the same tree is
+colored by the model's probability of each move given its history.
+
+```{r predictability, fig.width = 10, fig.height = 5.5, out.width = "100%"}
+plot_trajectories(pruned, measure = "predictability", min_count = 40L)
+```
+
+Moves that continue an active or disengaged run are predicted with
+probabilities of 0.86 and 0.79; switches between states and the first move
+are the less predictable ones. The first move is scored against the root
+distribution (51% active), which differs from the even split of observed
+starting states.
+
+## Does the model reproduce the data?
+
+A fitted transition tree is a generative model. If it captures the process,
+sequences simulated from it should resemble the observed ones.
+`simulate()` with `tidy = TRUE` returns a wide data frame in the same layout
+as `engagement`, which `context_tree()` accepts directly.
+
+```{r simulate}
+simulated <- simulate(pruned, nsim = 1000L, seed = 1L, length = 24L,
+                      tidy = TRUE)
+head(simulated, 3)
+```
+
+The simulated sequences are refitted, and the state distributions of the
+observed and simulated data are merged by state.
+
+```{r simulated-frequencies}
+simulated_tree <- context_tree(simulated, max_depth = 4L, min_count = 10L)
+merge(state_frequencies(tree), state_frequencies(simulated_tree),
+      by = "state", suffixes = c("_observed", "_simulated"))
+```
+
+The simulated data contain somewhat more `Active` states than the observed
+data (53.2% against 50.6%) and fewer `Disengaged` states (26.3% against
+28.0%). Part of this gap comes from the simulation design: each simulated
+sequence starts from the overall state distribution (51% active), whereas
+the observed learners start almost evenly divided between the three states,
+and every simulated sequence has 24 steps.
+
+`compare_trees()` tests whether the transition structure itself differs. It
+pools the two sets of sequences, permutes their labels and compares the
+observed distance between the two trees with the permutation distribution.
+
+```{r compare-simulated}
+observed_tree  <- context_tree(engagement, max_depth = 2L, min_count = 10L)
+simulated_tree <- context_tree(simulated, max_depth = 2L, min_count = 10L)
+summary(compare_trees(observed_tree, simulated_tree, iter = 99L))
+```
+
+The distance between the observed and simulated trees is not larger than
+the distances produced by random relabelling (p = 0.10 with 99
+permutations). Within the depth-two contexts tested here, the transition
+structure of the simulated data is consistent with that of the observed
+data, although the small number of permutations gives the test limited
+resolution.
+
+## What the analysis shows
+
+Engagement in these data is persistent and close to first-order. Active and
+disengaged states each tend to continue (probabilities 0.86 and 0.79), the
+average state is the least stable, and the probability of remaining
+disengaged barely changes with the length of the disengaged run. The route
+into disengagement makes a small, supported difference: learners who arrive
+from the average state are less likely to remain disengaged (0.73) than
+learners in an established run (0.79). Held-out perplexity confirms that histories longer than one or two
+steps add little predictive information, and the pruned model generates
+sequences whose transition structure matches the observed one.
+
+The analysis has limits. `engagement` is a bundled example dataset, so the
+estimates illustrate the method rather than describe a real course. The
+model is homogeneous in time: it assumes that the same transition rules hold
+at the start and at the end of the course, and it pools all learners, so
+heterogeneity between groups of learners appears only as averaged
+probabilities. The simulation check compares state frequencies and
+depth-two transitions; it does not test sequence-level properties such as
+the distribution of run lengths, and it uses only 99 permutations.
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics, 27*(2), 480-513.
+[doi:10.1214/aos/1018031204](https://doi.org/10.1214/aos/1018031204)
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning,
+25*(2-3), 117-149.
+[doi:10.1023/A:1026490906255](https://doi.org/10.1023/A:1026490906255)
+
+```{r restore-options, include = FALSE}
+options(old_options)
+```

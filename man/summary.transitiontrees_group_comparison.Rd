@@ -2,36 +2,43 @@
 % Please edit documentation in R/compare_groups.R
 \name{summary.transitiontrees_group_comparison}
 \alias{summary.transitiontrees_group_comparison}
-\title{Summarise a Group Comparison}
+\title{Summarize a group comparison}
 \usage{
 \method{summary}{transitiontrees_group_comparison}(object, alpha = 0.05, ...)
 }
 \arguments{
 \item{object}{A \code{transitiontrees_group_comparison} object.}
 
-\item{alpha}{Numeric. FDR cutoff used when counting significant
-pathways. Default 0.05.}
+\item{alpha}{False discovery rate cutoff used to count contexts.
+Default 0.05.}
 
 \item{...}{Ignored.}
 }
 \value{
-Invisibly, the per-pathway data.frame (\code{object$pathways});
-  see \code{\link{compare_groups}} for the column vocabulary.
+An object of class
+  \code{summary.transitiontrees_group_comparison}: a one-row data frame
+  with columns \code{groups} (the group names joined by \code{" vs "}),
+  \code{n_contexts}, \code{iter}, \code{stratified},
+  \code{behavioral_jsd} and \code{behavioral_p} (omnibus count-weighted
+  Jensen-Shannon divergence, bits, and its permutation p-value),
+  \code{usage_g2} and \code{usage_p} (omnibus usage statistic and its
+  p-value), \code{alpha}, \code{n_behavioral} and \code{n_usage}
+  (contexts with adjusted p-value below \code{alpha}) and
+  \code{n_flips} (contexts whose modal next state differs). It prints as
+  a short verdict.
 }
 \description{
-Prints a compact verdict for a \code{transitiontrees_group_comparison}:
-the omnibus behavioral and usage permutation p-values, and how many
-pathways pass the FDR cutoff on each axis or flip their modal next
-state between groups. Returns the per-pathway table invisibly.
+\code{summary()} reduces a \code{\link{compare_groups}()} result to one row:
+the omnibus behavioral and usage tests, and the number of contexts whose
+adjusted p-value is below \code{alpha} on each axis or whose modal next state
+differs between groups.
 }
 \examples{
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
-summary(cmp)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+summary(compare_groups(grp, iter = 20), alpha = 0.1)
+}
+\seealso{
+\code{\link{compare_groups}()},
+  \code{\link{as.data.frame.transitiontrees_group_comparison}}.
 }

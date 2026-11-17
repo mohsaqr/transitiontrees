@@ -2,54 +2,87 @@
 % Please edit documentation in R/compare.R
 \name{compare_trees}
 \alias{compare_trees}
-\title{Compare Two context trees by Symmetric Divergence with Permutation Test}
+\title{Test whether two context trees differ, with a permutation test}
 \usage{
 compare_trees(tree_a, tree_b = NULL, iter = 200L, seed = 1L, symmetric = TRUE)
 }
 \arguments{
-\item{tree_a, tree_b}{\code{transitiontrees} objects fit on data
-subsets A and B (unweighted: a weighted tree is refused because the
-permutation refits from the raw sequences).
-Alternatively, pass a two-element \code{transitiontrees_group} (from
-\code{context_tree(..., group =)}) as \code{tree_a} and leave
-\code{tree_b = NULL}; its two trees are compared in key order.}
+\item{tree_a, tree_b}{Unweighted \code{transitiontrees} objects fitted to
+the two groups. Alternatively a \code{transitiontrees_group} with two
+groups as \code{tree_a} and \code{tree_b = NULL} (default); its two
+trees are compared in group order.}
 
-\item{iter}{Integer. Number of permutations. Default 200.}
+\item{iter}{Number of permutations. Default 200.}
 
-\item{seed}{Integer. RNG seed for reproducibility, passed to
-\code{set.seed()}. Default 1.}
+\item{seed}{Seed for the permutations. Default 1. The call sets the
+session's random-number state.}
 
-\item{symmetric}{Logical. \code{TRUE} (default) uses the symmetric
-distance; \code{FALSE} uses \eqn{D_{KL}(A\|B)} only (see
-\code{\link{tree_distance}()}).}
+\item{symmetric}{\code{TRUE} (default) for the symmetric divergence;
+\code{FALSE} for \eqn{D_{KL}(A \| B)}{KL(A || B)} alone.}
 }
 \value{
-A \code{transitiontrees_comparison} object with components:
-\describe{
-  \item{pdist}{observed scalar distance (\code{\link{tree_distance}()}).}
-  \item{null_dist}{numeric vector, length \code{iter}: the distance
-    after each label permutation.}
-  \item{p_value}{one-sided permutation p-value,
-    \code{(1 + sum(null_dist >= pdist)) / (iter + 1)}.}
-  \item{pathways}{per-pathway breakdown data.frame, one row per
-    context in either tree; returned by \code{as.data.frame()}.}
-}
-The print method shows the observed distance, p-value and the most
-divergent pathways; \code{plot()} draws the null distribution.
+An object of class \code{transitiontrees_comparison}. Its
+  tables are returned by \code{as.data.frame(x, what = "pathways")}
+  (one row per context in either tree: counts in each tree and the two
+  directed and the symmetric divergence) and
+  \code{as.data.frame(x, what = "null")} (one row per permutation);
+  \code{summary()} gives one row with the observed distance, the null
+  mean, standard deviation and 95th percentile, and the p-value;
+  \code{plot()} draws the null distribution.
 }
 \description{
-Computes the count-weighted symmetric Kullback-Leibler divergence
-between two fitted transitiontrees, then provides a reference distribution
-by permuting sequence-to-tree assignments.
+\code{compare_trees()} tests whether two fitted context trees, one per group,
+predict differently overall, with a permutation test. The test statistic is
+the count-weighted symmetric Kullback-Leibler divergence between the trees'
+next-state distributions, the quantity returned by
+\code{\link{tree_distance}()}; two groups of sequences can pass through the
+same states and still differ in what tends to follow a given history.
 
-Use this to ask: do two cohorts (group A vs. group B, baseline vs.
-intervention) generate significantly different pathway dynamics?
+The divergence has no known sampling distribution and is positive even when
+both groups come from one process, so the reference distribution is built by
+permutation. The sequences of the two trees are pooled, reassigned at random
+to two groups of the original sizes, and two trees are refitted with each
+original tree's depth, minimum count, smoothing and pruning; this is repeated
+\code{iter} times. The p-value is the share of permuted distances at least as
+large as the observed one, counting the observed value once (\eqn{(1 + b) /
+(iter + 1)}). A per-context table shows which histories contribute most to
+the distance. The result is a \code{transitiontrees_comparison} object, read
+with \code{as.data.frame()} and \code{summary()} and drawn with
+\code{plot()}.
+
+The comparison is pairwise and treats sequences as exchangeable. For more
+than two groups, for separate tests of what follows a context and how often
+it is reached, for per-context p-values with false discovery rate control, or
+for a permutation stratified by person when one person contributes several
+sequences, use \code{\link{compare_groups}()}.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_bad_input}}{(error) an argument is not a
+    \code{transitiontrees} object; \code{tree_b} missing; a
+    \code{transitiontrees_group} without exactly two groups, or given
+    together with \code{tree_b}; \code{iter} not a positive number.}
+  \item{\code{transitiontrees_weighted_unsupported}}{(error) a tree was
+    fitted with weights; the permutation refits from the raw sequences
+    and would drop them.}
+  \item{\code{transitiontrees_alphabet_mismatch}}{(error) the trees have
+    different alphabets.}
+}
+}
+
 \examples{
-set.seed(1)
-m1 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-m2 <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr1 <- context_tree(m1, max_depth = 2L, min_count = 3L)
-tr2 <- context_tree(m2, max_depth = 2L, min_count = 3L)
-compare_trees(tr1, tr2, iter = 50)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+cmp <- compare_trees(grp, iter = 20)
+cmp
+summary(cmp)
+}
+\seealso{
+\code{\link{summary.transitiontrees_comparison}},
+  \code{\link{as.data.frame.transitiontrees_comparison}} and
+  \code{\link{plot.transitiontrees_comparison}} for the result;
+  \code{\link{tree_distance}()} for the distance alone;
+  \code{\link{compare_groups}()} for several groups and per-context
+  tests.
 }

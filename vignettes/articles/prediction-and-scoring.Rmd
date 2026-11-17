@@ -1,0 +1,359 @@
+---
+title: "Prediction, scoring, imputation and mining"
+author: "Written by [Mohammed Saqr](https://saqr.me) and [Sonsoles López-Pernas](https://sonsoles.me)"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{Prediction, scoring, imputation and mining}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7.5,
+                      fig.height = 4.2, fig.align = "center", dpi = 96)
+old_options <- options(digits = 3, width = 100)
+```
+
+A variable-order transition tree is a probabilistic model of the next state
+given the states that preceded it. For every history it selects the longest
+suffix that the tree holds as a context and returns that context's next-state
+distribution (Ron, Singer and Tishby, 1996; Bühlmann and Wyner, 1999). The
+same distribution serves several purposes. It predicts what comes next. It
+assigns a likelihood to an observed sequence, so sequences and single
+transitions can be ranked by how expected or surprising they are, and so a
+model can be judged by the probability it gives to sequences it has not seen.
+It generates new sequences, and it fills gaps in incomplete ones.
+
+This guide covers these uses: `predict()` and `query_pathway()` for the next
+state, `perplexity()` and `model_fit()` for held-out fit, `score_sequences()`,
+`score_positions()` and `plot_predictive()` for scoring, `mine_sequences()`
+and `mine_contexts()` for finding unusual sequences and contexts,
+`generate_sequences()` and `simulate()` for generation, and
+`impute_sequences()` for gaps.
+
+## Data
+
+`engagement` holds the engagement states of 1,000 students over 25 time
+steps.
+
+- **Sequence:** one row per student.
+- **Time:** columns `T1` to `T25`; `NA` marks positions after a student
+  dropped out.
+- **State:** `Active`, `Average` or `Disengaged`.
+
+The first 800 students are used to fit the tree and the last 200 are held
+out to evaluate it. `head()` and `tail()` split the rows.
+
+```{r data}
+library(transitiontrees)
+dim(engagement)
+training <- head(engagement, 800)
+held_out <- tail(engagement, 200)
+```
+
+## The model
+
+To fit the tree, we call `context_tree()` with `max_depth` for the longest
+history and `min_count` for the smallest number of observations a context
+needs; `prune_tree()` then removes contexts whose prediction does not differ
+from their parent's by the $G^2$ test.
+
+```{r fit}
+grown <- context_tree(training, max_depth = 3L, min_count = 10L)
+tree <- prune_tree(grown)
+tree
+```
+
+Of the 40 contexts grown, pruning keeps 6. One step of history carries most
+of the information: only two contexts of depth two survive,
+`Disengaged -> Average` and `Average -> Disengaged`, and none of depth three.
+The pathway notation reads oldest to newest, so `Disengaged -> Average` is a
+student who was disengaged and is now average.
+
+## Predicting the next state
+
+To predict the next state after one or more histories, we call `predict()`
+with `newdata` for the histories and `tidy = TRUE` for one row per history.
+Each history is a character vector of states, oldest first.
+
+```{r predict}
+histories <- list(c("Active", "Active"),
+                  c("Disengaged", "Average"),
+                  c("Average", "Average", "Disengaged"))
+predict(tree, newdata = histories, tidy = TRUE)
+```
+
+`history` is the history as given and `context` the longest suffix of it that
+the tree holds, from which the prediction is made. The first history backs off
+from `Active -> Active` to `Active`, because pruning removed the longer
+context; the third backs off to `Average -> Disengaged`. `predicted` is the most likely
+next state, `probability` its probability, and the last three columns give the
+full distribution. A student who was disengaged and is now average stays
+average with probability 0.57, becomes active with probability 0.32 and
+returns to disengagement with probability 0.11.
+
+To obtain only the predicted states, we set `type = "class"`.
+
+```{r predict-class}
+predict(tree, newdata = histories, type = "class")
+```
+
+## Querying a pathway
+
+To read the distribution of one context, we call `query_pathway()` with the
+pathway. A pathway the tree does not hold backs off to its longest held
+suffix, as in `predict()`.
+
+```{r query}
+query_pathway(tree, c("Disengaged", "Average"))
+```
+
+To obtain the probability of one next state, we add `next_state`.
+
+```{r query-state}
+query_pathway(tree, "Disengaged", next_state = "Disengaged")
+```
+
+To refuse back-off and require the context itself, we set `exact = TRUE`; a
+pathway the tree does not hold then returns `NA`. `pathway_exists()` answers
+the same question with `TRUE` or `FALSE`.
+
+```{r query-exact}
+query_pathway(tree, c("Active", "Active"), exact = TRUE)
+pathway_exists(tree, "Disengaged -> Average")
+pathway_exists(tree, "Active -> Active")
+```
+
+## Held-out fit
+
+Perplexity is the exponential of the average negative log-likelihood per
+predicted state. It reads as the effective number of equally likely next
+states the model is choosing between: a model that knows nothing about three
+states has perplexity 3, and a model that is always certain and correct has
+perplexity 1. To compute it on the training sequences and on the held-out
+ones, we call `perplexity()` without and with `newdata`.
+
+```{r perplexity}
+perplexity(tree)
+perplexity(tree, newdata = held_out)
+perplexity(grown, newdata = held_out)
+```
+
+The pruned tree has perplexity 1.93 on the sequences it was fitted to and 1.96
+on the held-out students, a small gap that shows little overfitting. The
+unpruned tree, with 40 contexts instead of 6, predicts the held-out students
+no better (1.96). To obtain the log-likelihood, degrees of freedom, number of
+predicted states, AIC, BIC and perplexity in one row, we call `model_fit()`.
+
+```{r model-fit}
+model_fit(tree)
+model_fit(tree, newdata = held_out)
+```
+
+The held-out row scores 5,000 transitions of the 200 students. The choice of
+`max_depth`, `min_count`, smoothing and pruning by cross-validated perplexity
+is covered in
+[Model selection: tuning, fit and perplexity](model-selection.html).
+
+## Scoring sequences
+
+To score each held-out sequence, we call `score_sequences()`. Each row is one
+sequence: `n_scored` is the number of states predicted, `log_lik` the summed
+natural-log probability of the observed states and `perplexity` the
+sequence's own perplexity.
+
+```{r score-sequences}
+sequence_scores <- score_sequences(tree, newdata = held_out)
+head(sequence_scores)
+summary(sequence_scores)
+```
+
+Most held-out students have a perplexity close to the model's 1.96; the
+range runs from 1.30 to 2.87. To list the sequences the model finds most
+surprising, we call `mine_sequences()` with `which = "surprising"` and `n`
+for the number to return; `which = "expected"` returns the most predictable.
+
+```{r mine-sequences}
+mine_sequences(tree, newdata = held_out, which = "surprising", n = 5L)
+mine_sequences(tree, newdata = held_out, which = "expected", n = 3L)
+```
+
+`sequence_id` is the row of `held_out`. The most surprising student, row 111,
+has a perplexity of 2.87, close to the value of 3 for a model that knows
+nothing; the most expected, row 99, has 1.30.
+
+## Scoring positions
+
+To score every transition, we call `score_positions()`. Each row is one
+position of one sequence, with the context used for the prediction, the
+observed state, the probability the tree gave it and its log-probability.
+
+```{r score-positions}
+position_scores <- score_positions(tree, newdata = held_out)
+head(position_scores)
+```
+
+To list the least expected transitions, we set `worst` to the number to
+return.
+
+```{r score-worst}
+score_positions(tree, newdata = held_out, worst = 5L)
+```
+
+The least expected transitions are all a jump from `Disengaged` straight to
+`Active`, which the tree gives a probability of 0.049.
+
+## Plotting predictive performance
+
+To see where in a sequence the model is uncertain, we call `plot_predictive()`
+with `type = "logloss"`. Each point is one transition's log-loss
+$-\log_2 P(\text{observed})$ in bits; the line follows the mean at each
+position.
+
+```{r plot-logloss}
+plot_predictive(tree, newdata = held_out, type = "logloss")
+```
+
+To see the distribution of the probabilities given to the observed states, we
+set `type = "ecdf"`. A curve that rises late belongs to a model that gives
+high probability to what happens.
+
+```{r plot-ecdf}
+plot_predictive(tree, newdata = held_out, type = "ecdf")
+```
+
+Because the pruned tree has six contexts, each giving one probability to
+each of the three states, the scored probabilities take at most 18 distinct
+values, and the curve rises in steps.
+
+To follow individual sequences, we set `type = "position"`. The view is
+readable for a few sequences, so we pass the first five held-out students.
+
+```{r plot-position}
+plot_predictive(tree, newdata = head(held_out, 5), type = "position")
+```
+
+## Mining contexts
+
+To find the contexts in which a state is likely, we call `mine_contexts()`
+with `state` and `min_prob`.
+
+```{r mine-contexts}
+mine_contexts(tree, state = "Disengaged", min_prob = 0.5)
+```
+
+Disengagement is the most likely next state after `Disengaged` (0.79) and
+after `Average -> Disengaged` (0.74). To find the contexts in which a state
+is unlikely, we use `max_prob`.
+
+```{r mine-contexts-low}
+mine_contexts(tree, state = "Active", max_prob = 0.1)
+```
+
+A student who was disengaged at the last step becomes active at the next step with
+probability 0.05 to 0.06.
+
+## Generating sequences
+
+A fitted tree is a generative model: walking forward and drawing each state
+from the distribution of the current context produces new sequences. To
+generate sequences, we call `generate_sequences()` with `n` for the number,
+`length` for their length and `tidy = TRUE` for a wide data frame with one row
+per sequence.
+
+```{r generate}
+set.seed(1)
+generate_sequences(tree, n = 4L, length = 10L, tidy = TRUE)
+```
+
+To fix the first state of each sequence, we pass one state per sequence to
+`start`.
+
+```{r generate-start}
+generate_sequences(tree, n = 3L, length = 8L,
+                   start = c("Active", "Average", "Disengaged"), tidy = TRUE)
+```
+
+`simulate()` is the standard R generic for the same draw; its `seed` argument
+makes the result reproducible without setting the global seed.
+
+```{r simulate}
+simulate(tree, nsim = 4L, seed = 42L, length = 10L, tidy = TRUE)
+```
+
+Simulated sequences can be compared with the data the tree was fitted to. To
+compare the state frequencies, we simulate 800 sequences of 25 states, fit a
+tree to them, and call `state_frequencies()` on both trees.
+
+```{r simulate-check}
+simulated <- simulate(tree, nsim = 800L, seed = 1L, length = 25L, tidy = TRUE)
+state_frequencies(context_tree(simulated, max_depth = 1L))
+state_frequencies(tree)
+```
+
+The proportions agree to within two percentage points (for example, 0.528
+`Active` in the simulated sequences and 0.510 in the training data). The
+simulated sequences have no dropout, so their totals differ.
+
+## Imputing gaps
+
+To fill internal gaps in incomplete sequences, we call `impute_sequences()`.
+Each missing state is predicted from the longest held context of the states
+before it, left to right, so an imputed state becomes part of the history for
+later gaps. Trailing `NA`s, which mark the end of a sequence, are left as
+they are. `method = "modal"` fills with the most likely state.
+
+```{r impute}
+gappy <- data.frame(T1 = c("Active", "Average", "Disengaged"),
+                    T2 = c("Active", NA, "Disengaged"),
+                    T3 = c(NA, "Average", NA),
+                    T4 = c("Disengaged", "Disengaged", "Average"),
+                    T5 = c("Disengaged", NA, NA))
+impute_sequences(tree, newdata = gappy, method = "modal")
+```
+
+The trailing `NA`s in `T5` remain. To sample each gap from the predicted
+distribution instead, we set `method = "prob"` with a `seed`; repeated draws
+with different seeds give multiple imputations.
+
+```{r impute-prob}
+impute_sequences(tree, newdata = gappy, method = "prob", seed = 1L)
+impute_sequences(tree, newdata = gappy, method = "prob", seed = 2L)
+```
+
+Modal imputation fills each gap with the single most likely state and so
+understates the variability of the data; sampled imputation keeps it.
+
+## Summary
+
+| Question | Call |
+|---|---|
+| What comes next after these histories? | `predict(tree, newdata, tidy = TRUE)` |
+| The predicted state only | `predict(tree, newdata, type = "class")` |
+| The distribution after one pathway | `query_pathway(tree, pathway)` |
+| Does the tree hold this context? | `pathway_exists(tree, pathway)` |
+| How well does the model predict new sequences? | `perplexity(tree, newdata)`, `model_fit(tree, newdata)` |
+| How expected is each sequence? | `score_sequences(tree, newdata)` |
+| The most surprising sequences | `mine_sequences(tree, newdata, which = "surprising")` |
+| How expected is each transition? | `score_positions(tree, newdata, worst = 5L)` |
+| Where is the model uncertain? | `plot_predictive(tree, newdata, type = "logloss")` |
+| In which contexts is a state likely? | `mine_contexts(tree, state, min_prob = 0.5)` |
+| New sequences from the model | `simulate(tree, nsim, seed, length, tidy = TRUE)` |
+| Fill gaps | `impute_sequences(tree, newdata, method = "modal")` |
+
+```{r restore, include = FALSE}
+options(old_options)
+```
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics, 27*(2), 480-513.
+<https://doi.org/10.1214/aos/1018031204>
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning,
+25*(2-3), 117-149. <https://doi.org/10.1023/A:1026490906255>

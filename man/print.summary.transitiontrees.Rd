@@ -2,26 +2,29 @@
 % Please edit documentation in R/context_tree.R
 \name{print.summary.transitiontrees}
 \alias{print.summary.transitiontrees}
-\title{Print a Context-Tree Summary}
+\title{Print the summary of a transition tree}
 \usage{
 \method{print}{summary.transitiontrees}(x, n = 10L, ...)
 }
 \arguments{
 \item{x}{A \code{summary.transitiontrees} object.}
 
-\item{n}{Integer. Number of pathway rows to print. Default 10.}
+\item{n}{Number of context rows to print. Default 10.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print method for the object returned by
-\code{\link{summary.transitiontrees}}: a one-line banner followed by the
-leading rows of the canonical pathway table.
+\code{print()} prints the object returned by
+\code{\link{summary.transitiontrees}()}: a one-line header followed by the
+first \code{n} rows of the context table.
 }
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
-print(summary(tree), n = 5L)
+tree <- context_tree(trajectories, max_depth = 2)
+print(summary(tree), n = 5)
+}
+\seealso{
+\code{\link{summary.transitiontrees}()}.
 }

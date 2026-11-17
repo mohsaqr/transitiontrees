@@ -1,0 +1,338 @@
+---
+title: "A complete workflow"
+author: "Written by [Mohammed Saqr](https://saqr.me) and [Sonsoles López-Pernas](https://sonsoles.me)"
+output:
+  rmarkdown::html_vignette:
+    toc: true
+    toc_depth: 2
+vignette: >
+  %\VignetteIndexEntry{A complete workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r options, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7.5,
+                      fig.height = 4.6, fig.align = "center", dpi = 96)
+old_options <- options(digits = 3, width = 90)
+```
+
+A variable-order Markov chain describes a process in which the amount of
+history needed to predict the next state depends on the history itself.
+The model is stored as a prediction suffix tree: every node is a context, a
+run of recent states, with a distribution over the next state, and a
+context is kept only where the data support it (Ron, Singer, & Tishby,
+1996; Bühlmann & Wyner, 1999). Fitting such a tree is one step of an
+analysis that also has to decide how deep the tree may grow, which of its
+contexts are reliable, how well it predicts data it has not seen, and
+whether two groups of sequences differ.
+
+This guide takes one event log through the whole analysis: reading the
+data, fitting the tree, reading its pathways, smoothing and pruning,
+choosing the depth by cross-validation, assessing fit, checking the
+reliability of the pathways with the bootstrap, predicting next states,
+and comparing two groups. Each step is treated briefly; the specialized
+guides give the detail:
+[data input](data-input.html),
+[smoothing and pruning](smoothing-and-pruning.html),
+[model selection](model-selection.html),
+[pathway reliability](pathway-reliability.html),
+[prediction and scoring](prediction-and-scoring.html),
+[comparing groups](comparing-groups.html) and
+[visualization](visualization.html).
+
+```{r package}
+library(transitiontrees)
+```
+
+## Data
+
+`group_regulation_long` is an event log of collaborative regulation of
+learning: each row is one regulation move made by a student working in a
+small group. The data are synthetic, generated for the `tna` package from
+its `group_regulation` data; they serve as a well-structured example and
+are not evidence about students.
+
+- **Actor:** `Actor`, the student; one sequence is built per student and
+  session.
+- **Time:** `Time`, the time stamp of the move (POSIXct), used to order the
+  moves and to split sessions.
+- **State:** `Action`, the regulation move, one of nine codes (`adapt`,
+  `cohesion`, `consensus`, `coregulate`, `discuss`, `emotion`, `monitor`,
+  `plan`, `synthesis`).
+- **Group covariate:** `Achiever`, whether the student is a high or a low
+  achiever; used in the group comparison.
+- **Other columns:** `Group` (the collaboration group) and `Course`; not
+  used here.
+
+```{r data}
+head(group_regulation_long)
+with(group_regulation_long,
+     c(events = length(Actor), students = length(unique(Actor)),
+       groups = length(unique(Group)), courses = length(unique(Course))))
+```
+
+The log holds 27,533 moves by 2,000 students in 200 groups and three
+courses.
+
+## Fitting the tree
+
+`context_tree()` reads the long log directly when the state column is
+named in `action`. The moves of each `actor` are ordered by `time`, and a
+gap of more than `time_threshold` seconds (default 900) starts a new
+session. The tree below allows histories of up to three moves and gives a
+context its own node when it occurs at least ten times.
+
+```{r fit}
+tree <- context_tree(group_regulation_long,
+                     actor = "Actor", time = "Time", action = "Action",
+                     max_depth = 3, min_count = 10)
+tree
+```
+
+The banner reports 2,000 sequences, one per student, and 27,533 observed
+moves. The unpruned tree has 377 contexts. The first line of the tree is
+the root, `(start)`: the next-move distribution with no history, in which
+`consensus` is the most likely move with probability 0.25. Every deeper
+context is judged against the prediction of its parent.
+
+The root distribution is the marginal frequency of each move.
+
+```{r frequencies}
+state_frequencies(tree)
+```
+
+The moves are unevenly used: `consensus` and `plan` account for about a
+quarter of the moves each, `adapt` and `synthesis` for 2% to 3%. A model
+that always predicts `consensus` is correct a quarter of the time, so the
+informative question is which histories change that default.
+
+## Common and divergent pathways
+
+The pathway tables give the contexts of the tree in one schema: the
+pathway (oldest move on the left), its depth, its count, the most likely
+next move and its probability, the Kullback-Leibler divergence in bits of
+its next-move distribution from that of its parent, and whether the most
+likely next move differs from the parent's (`changes_prediction`).
+`common_pathways()` ranks the contexts by count.
+
+```{r common}
+common_pathways(tree, top = 8)
+```
+
+The most frequent histories are the single moves and the pairs formed by
+`consensus` and `plan`. Their divergences are small at depth 2: after
+`consensus -> plan` the next move is predicted almost exactly as after
+`plan` alone (0.0006 bits). `divergent_pathways()` ranks by divergence
+instead.
+
+```{r divergent}
+divergent_pathways(tree, top = 8)
+```
+
+Six of the eight most divergent contexts are three-move histories seen
+10 to 19 times, close to the minimum of ten that the fit allows. After
+`consensus -> cohesion -> plan`, for example, `plan` follows with
+probability 0.83, against 0.36 after `cohesion -> plan`, but the estimate rests
+on 12 occurrences. A large divergence on a small count is the pattern that
+pruning and the bootstrap are designed to test: it may reflect a real
+routine or a handful of sequences.
+
+## Smoothing and pruning
+
+Each node carries a smoothed distribution; the default `floor` smoother
+leaves a fully observed distribution unchanged and gives every unobserved
+next move a probability of 0.001. Pruning then removes the contexts whose
+history does not change the prediction of the parent by more than chance.
+`compare_pruning()` applies the four criteria to the same tree.
+
+```{r compare-pruning}
+compare_pruning(tree)
+```
+
+The likelihood-ratio criterion `G2` keeps 23 of the 377 contexts; `AIC`
+keeps 20 and `BIC` 10, while `KL`, at its default threshold of 0.005
+nats, keeps almost all of them. Most of the grown depth is therefore not
+supported. The tree pruned with `G2` at $\alpha = 0.05$ is used below.
+
+```{r prune}
+pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
+pruned
+```
+
+The pruned tree keeps the root, the nine single moves and 13 longer
+histories. [Smoothing and pruning](smoothing-and-pruning.html) gives the
+formulas of the five smoothers and four criteria.
+
+## Choosing the depth by cross-validation
+
+In-sample criteria reward deeper trees. `tune_tree()` estimates the
+predictive quality of each configuration on data the tree has not seen: it
+divides the sequences into `folds` groups, fits on all but one, and
+computes the perplexity of the held-out group. The grid below crosses
+three depths with pruned and unpruned trees.
+
+```{r tune}
+tuning <- tune_tree(group_regulation_long,
+                    actor = "Actor", time = "Time", action = "Action",
+                    max_depth = 1:3, min_count = 10, prune = c(FALSE, TRUE),
+                    folds = 5, seed = 1)
+summary(tuning)
+as.data.frame(tuning, what = "grid")
+```
+
+The lowest held-out perplexity, 5.46, belongs to the first-order tree.
+The pruned trees of depth 2 and 3 are within 0.03 of it, whereas the
+unpruned depth-3 tree reaches 5.88: without pruning, the deeper contexts
+fit noise that does not recur in new sequences. For predicting the next
+move, one move of history is enough in these data; the longer contexts that
+survive pruning add little predictive accuracy, although they may still be
+of substantive interest. [Model selection](model-selection.html) covers
+the tuning grid, the information criteria and the stability of the
+selection across fold assignments.
+
+## Assessing fit
+
+`model_fit()` returns the log likelihood, the number of free parameters
+`df` (the number of contexts times the number of states minus one), the
+number of predicted moves, AIC, BIC and perplexity in one row.
+
+```{r fit-scalars}
+rbind(unpruned = model_fit(tree), pruned = model_fit(pruned))
+```
+
+The unpruned tree has the higher in-sample likelihood and the lower
+in-sample perplexity (5.21 against 5.43), but it spends 3,016 parameters
+to obtain them; both AIC and BIC favor the pruned tree with 184
+parameters. The in-sample perplexity of the pruned tree is close to its
+held-out value in the tuning grid (5.49), which indicates that it does not
+overfit.
+
+## Reliability of the pathways
+
+A context retained by pruning has passed a test in this sample.
+`bootstrap_pathways()` asks whether it would pass again: it resamples whole
+sequences with replacement, refits the tree on each resample, and reports
+for each pathway whether its count is stable and whether its likelihood
+ratio statistic against its parent exceeds the critical value in most
+resamples.
+
+```{r bootstrap}
+boot <- bootstrap_pathways(pruned, iter = 200, seed = 1)
+boot
+```
+
+Of the 23 pathways of the pruned tree, 22 are stable and 14 informative;
+13 are both: the nine single moves and four
+longer histories. `as.data.frame()` returns the bootstrap estimates of
+every pathway with percentile intervals; the longer histories are:
+
+```{r bootstrap-table}
+subset(as.data.frame(boot, what = "summary"), depth > 1,
+       select = c(pathway, count, stable, informative, informative_rate,
+                  ci_G2_lo, ci_G2_hi))
+```
+
+The four longer histories that are both stable and informative are
+`discuss -> coregulate -> discuss`, `emotion -> emotion -> consensus`,
+`adapt -> discuss` and `cohesion -> cohesion`; their likelihood ratio
+statistic exceeds the critical value of 15.5 in 84% to 96% of the
+resamples. These are the contexts on which a claim about longer memory can
+rest. The divergent `consensus -> cohesion -> plan` is retained by pruning
+and its count is stable, but its statistic exceeds the critical value in
+only 64% of the resamples, so its departure from `cohesion -> plan` is not
+reproducible.
+
+[Pathway reliability](pathway-reliability.html) describes the two criteria
+and the distribution of the resampled statistics.
+
+## Predicting the next move
+
+`predict()` applies the longest-suffix rule: the prediction for a history
+is the distribution of the longest context in the tree that ends the
+history. With `tidy = TRUE` it returns one row per history with the
+matched context, the most likely next move and the full distribution.
+
+```{r predict}
+histories <- list(c("plan", "consensus"),
+                  c("discuss", "coregulate", "discuss"),
+                  "monitor")
+predict(pruned, newdata = histories, tidy = TRUE)
+```
+
+The first history is predicted from `consensus` alone, because the pruned
+tree holds no longer context ending in it; the second matches the full
+three-move context retained by pruning. [Prediction and
+scoring](prediction-and-scoring.html) covers scoring of whole sequences,
+imputation and the generation of new sequences.
+
+## Comparing high and low achievers
+
+Naming the external grouping column in `group` fits one tree per group
+over a shared alphabet. The comparison uses depth 2, so that most contexts
+are observed often enough in both groups.
+
+```{r groups}
+groups <- context_tree(group_regulation_long,
+                       actor = "Actor", time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2, min_count = 10)
+summary(groups)
+```
+
+Each group contributes 1,000 sequences, with 13,721 and 13,812 moves;
+the two trees have 74 and 77 contexts. `compare_groups()` tests two kinds of
+difference by permuting the group labels of whole sequences: whether,
+after the same history, the groups choose different next moves
+(`behavioral`, a count-weighted Jensen-Shannon divergence), and whether
+they reach the same histories at the same rates (`usage`, a G-squared
+homogeneity statistic).
+
+```{r compare-groups}
+comparison <- compare_groups(groups, iter = 99, seed = 1)
+summary(comparison)
+```
+
+Both omnibus statistics exceed every one of the 99 permuted values
+(p = 0.01, the smallest attainable with 99 permutations), so high and low
+achievers differ both in what they do after a given history and in which
+histories they reach. The contexts ranked by behavioral divergence, with
+Benjamini-Hochberg adjusted p-values:
+
+```{r compare-pathways}
+head(as.data.frame(comparison, what = "pathways"))
+```
+
+[Comparing groups](comparing-groups.html) explains the two statistics, the
+stratified permutation for nested data and the plots of group differences.
+
+## Reporting
+
+A report of this analysis states the data and session rule, the fitted and
+selected configurations, and the evidence for each claim, for example:
+
+> Regulation moves were modeled as a variable-order Markov chain with a
+> prediction suffix tree (Ron, Singer, & Tishby, 1996). Moves were grouped
+> into one sequence per student and session (gap > 900 s), giving 2,000
+> sequences and 27,533 moves over nine codes. A tree of depth 3 (contexts
+> observed at least ten times; floor smoothing, $y_{\min} = 0.001$) was
+> pruned by likelihood-ratio tests at $\alpha = 0.05$, which retained 23
+> of 377 contexts. Five-fold cross-validation favored one move of history
+> (held-out perplexity 5.46; pruned depth 3: 5.49). In 200 bootstrap
+> resamples, 13 pathways were stable and informative, four of them
+> longer than one move. High and low achievers differed in next-move
+> choices given the same history and in the histories they reached
+> (permutation tests with 99 permutations, both p = 0.01).
+
+## References
+
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics*, 27(2), 480–513.
+https://doi.org/10.1214/aos/1018031204
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning*,
+25(2–3), 117–149. https://doi.org/10.1023/A:1026490906255
+
+```{r restore-options, include = FALSE}
+options(old_options)
+```

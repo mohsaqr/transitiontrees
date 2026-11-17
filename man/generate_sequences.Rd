@@ -2,37 +2,58 @@
 % Please edit documentation in R/predict.R
 \name{generate_sequences}
 \alias{generate_sequences}
-\title{Sample Sequences from a Fitted Context Tree}
+\title{Generate sequences from a fitted transition tree}
 \usage{
-generate_sequences(tree, n = 5L, length = 10L, start = NULL)
+generate_sequences(tree, n = 5L, length = 10L, start = NULL, tidy = FALSE)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{n}{Integer. Number of sequences to sample. Default 5.}
+\item{n}{Number of sequences. Default 5.}
 
-\item{length}{Integer. Length of each sampled sequence. Default 10.}
+\item{length}{Number of states in each sequence. Default 10.}
 
-\item{start}{NULL or character vector. If NULL (default), each
-sequence starts from the root marginal; otherwise must have
-length \code{n} and supply the first state of each sequence.}
+\item{start}{First state of each sequence, a character vector of length
+\code{n}. \code{NULL} (default) draws it from the root distribution.}
+
+\item{tidy}{Return a \code{data.frame} rather than a matrix. Default
+\code{FALSE}.}
 }
 \value{
-A character matrix with \code{n} rows (one sampled sequence
-  each) and \code{length} columns (time-steps).
+With \code{tidy = TRUE}, a \code{data.frame} with one row per
+  sequence and columns \code{T1} to \code{T<length>}, which
+  \code{\link{context_tree}()} accepts as input. With
+  \code{tidy = FALSE}, a character matrix with the same layout.
 }
 \description{
-Draws sequences by walking the fitted conditional distributions: each
-next state is sampled from the longest context in the tree that
-matches the history so far. Uses the session RNG, so call
-\code{set.seed()} first (or use \code{\link{simulate.transitiontrees}()}
-with \code{seed}) for reproducible draws.
-}
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-generate_sequences(tree, n = 5, length = 10)
+\code{generate_sequences()} draws new sequences from the process described by
+a fitted tree. Each sequence starts from a state drawn from the overall
+distribution of states (or from a given first state), and each further state
+is drawn from the next-state distribution of the longest context of the tree
+that matches the states generated so far. Generated sequences can be compared
+with the observed ones to check whether the tree reproduces features of the
+data that it was not fitted to directly, such as run lengths or the time
+spent in each state.
 
+Draws use the session's random number generator; call
+\code{\link{set.seed}()} first, or use
+\code{\link{simulate.transitiontrees}()} with \code{seed}, for reproducible
+sequences. It returns one sequence per row, as a character matrix or, with
+\code{tidy = TRUE}, a data frame.
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree,
+\code{n} or \code{length} is not a single positive number, or
+\code{start} does not have length \code{n}.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+set.seed(1)
+generate_sequences(tree, n = 5, length = 12, tidy = TRUE)
+}
+\seealso{
+\code{\link{simulate.transitiontrees}()},
+  \code{\link{predict.transitiontrees}()}.
 }

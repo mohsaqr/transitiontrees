@@ -2,30 +2,33 @@
 % Please edit documentation in R/context_tree.R
 \name{summary.transitiontrees}
 \alias{summary.transitiontrees}
-\title{Summary of a Context Tree}
+\title{Summarize a fitted transition tree}
 \usage{
 \method{summary}{transitiontrees}(object, ...)
 }
 \arguments{
-\item{object}{A \code{transitiontrees}.}
+\item{object}{A \code{transitiontrees} object.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-A \code{summary.transitiontrees} object. The \code{$table} slot is
-  the canonical pathway data.frame from
-  \code{\link{tree_pathways}} (columns \code{pathway},
-  \code{depth}, \code{count}, \code{likely_next},
-  \code{next_probability}, \code{divergence},
-  \code{changes_prediction}), re-sorted by \code{(depth, -count)} so
-  the structural tree order is read top-to-bottom. Its other
-  components are the scalars \code{n_states}, \code{max_depth},
-  \code{n_nodes} and \code{pruned}.
+An object of class \code{summary.transitiontrees}, which prints
+  a header and the first rows of the context table (columns as in
+  \code{\link{tree_pathways}()}). For the full table use
+  \code{as.data.frame()} on the tree; for fit statistics use
+  \code{\link{model_fit}()}.
 }
 \description{
-Summary of a Context Tree
+\code{summary()} summarizes a fitted tree by its size (numbers of states and
+contexts, depth, pruned or not) and its table of contexts ordered by depth
+and, within depth, by decreasing count, so that the table reads from the root
+downward.
 }
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
+tree <- context_tree(trajectories, max_depth = 2)
 summary(tree)
+}
+\seealso{
+\code{\link{print.summary.transitiontrees}()},
+  \code{\link{tree_pathways}()}, \code{\link{model_fit}()}.
 }

@@ -2,33 +2,41 @@
 % Please edit documentation in R/pathways.R
 \name{sharp_pathways}
 \alias{sharp_pathways}
-\title{Sharpest Pathways}
+\title{List the pathways with the most certain next state}
 \usage{
 sharp_pathways(tree, top = 10L, min_count = 1L)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{top}{Integer. Number of pathways to return. Default 10.}
+\item{top}{Number of pathways to return. Default 10.}
 
-\item{min_count}{Integer. Drop pathways with fewer than this many
-occurrences. Default 1.}
+\item{min_count}{Keep pathways that occurred at least this many times.
+Default 1.}
 }
 \value{
-A data.frame, same columns as \code{\link{tree_pathways}},
-  sorted by \code{next_probability} descending.
+A \code{data.frame} with the columns of
+  \code{\link{tree_pathways}()}, one row per pathway, sorted by
+  \code{next_probability} in decreasing order, at most \code{top} rows.
 }
 \description{
-Returns the top \code{n} pathways by predictive sharpness -- the
-probability mass on their modal next state. High values indicate
-strongly deterministic continuations; low values indicate
-ambiguous next-state distributions.
+\code{sharp_pathways()} returns the pathways whose most likely next state has
+the highest probability. A pathway with a next-state probability close to 1
+is followed almost always by the same state, a near-deterministic step in the
+process; a probability close to \eqn{1/k} (\eqn{k} states) means the next
+state is hard to predict from that history. Sharp pathways with small counts
+are often artefacts of few observations; set \code{min_count} accordingly.
 }
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-sharp_pathways(tree, top = 5)
+\section{Conditions}{
 
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+sharp_pathways(tree, top = 5, min_count = 20)
+}
+\seealso{
+\code{\link{tree_pathways}()}, \code{\link{common_pathways}()},
+  \code{\link{tree_dependence}()} for the entropy of each prediction.
 }

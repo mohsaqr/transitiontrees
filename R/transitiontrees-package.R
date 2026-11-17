@@ -1,11 +1,110 @@
-#' transitiontrees: Transition Trajectories and Dynamics of Variable-Length Pathways or Sequences
+#' @description
+#' \code{transitiontrees} models how categorical processes unfold: how one
+#' state follows another in learning sessions, collaborative work, care
+#' pathways or any other ordered record of events. Its model is the
+#' variable-order transition tree, known as a prediction suffix tree (Ron,
+#' Singer & Tishby, 1996) or variable-length Markov chain
+#' (\enc{Bühlmann}{Buhlmann} & Wyner, 1999). A first-order Markov chain
+#' predicts the next state from the current state alone, and a chain of
+#' fixed order \eqn{m} from the last \eqn{m} states, with a number of
+#' parameters that grows exponentially in \eqn{m}. A transition tree lets
+#' the length of the relevant history vary: it keeps a longer context only
+#' where the data show that the extra history changes what comes next.
 #'
-#' Analyzes transition trajectories in event, sequence, and ordered data
-#' using variable-order prediction suffix trees (Ron, Singer & Tishby
-#' 1996), in frequency-based and prediction-based forms. Provides
-#' multiple pruning, validation, and smoothing methods, next-state
-#' prediction, and visualisation as transition trees, radial sunbursts,
-#' transition heatmaps, and forward trajectory trees.
+#' Each node of the tree is a pathway, a run of recent states written from
+#' oldest to newest (\code{"A -> B -> C"}), with the distribution of the
+#' state that followed it. The package treats these pathways as the unit of
+#' analysis. It reports which pathways occur, which of them change the
+#' prediction relative to a shorter history, how stable they are under
+#' resampling, and whether they differ between groups, and it uses the
+#' fitted tree to predict, score, simulate and impute sequences. All
+#' results are returned as data frames with one row per pathway, sequence
+#' or group, and all plots are \pkg{ggplot2} objects.
+#'
+#' @details
+#' With the default floor smoothing, the fitted counts and probabilities
+#' match those of the \pkg{PST} package (Gabadinho & Ritschard, 2016). The
+#' smoothing schemes other than the floor, the pruning criteria,
+#' cross-validated tuning, the bootstrap and the permutation tests are
+#' this package's own.
+#'
+#' @section Data input:
+#' \code{\link{context_tree}()} accepts wide sequence tables, lists of
+#' sequences, long event logs (reshaped by \code{\link{prepare_input}()}),
+#' and transition network models from \pkg{tna} (Saqr et al., 2025) and
+#' \pkg{Nestimate} that carry their sequences. The bundled datasets are \code{\link{trajectories}},
+#' \code{\link{engagement}}, \code{\link{group_regulation_long}} and
+#' \code{\link{ai_long}}.
+#'
+#' @section Fitting and refining a tree:
+#' \code{\link{context_tree}()} fits a tree, or one tree per group.
+#' \code{\link{prune_tree}()} removes contexts that do not change the
+#' prediction, \code{\link{smooth_tree}()} re-estimates probabilities under
+#' another smoothing scheme, and \code{\link{compare_pruning}()} and
+#' \code{\link{compare_smoothing}()} tabulate the alternatives.
+#' \code{\link{tune_tree}()} chooses depth, minimum count, smoothing and
+#' pruning by cross-validated perplexity.
+#'
+#' @section Reading pathways:
+#' \code{\link{tree_pathways}()} (also \code{as.data.frame()}) lists every
+#' pathway; \code{\link{common_pathways}()},
+#' \code{\link{divergent_pathways}()} and \code{\link{sharp_pathways}()}
+#' rank them by frequency, divergence from the shorter history, and
+#' certainty of the next state. \code{\link{tree_dependence}()} adds
+#' entropies, \code{\link{state_frequencies}()} gives the state counts,
+#' and \code{\link{query_pathway}()}, \code{\link{pathway_exists}()},
+#' \code{\link{subtree}()} and \code{\link{mine_contexts}()} look up
+#' individual pathways.
+#'
+#' @section Fit, prediction and scoring:
+#' \code{\link{model_fit}()} returns log-likelihood, AIC, BIC and
+#' perplexity, in-sample or on new data (see also
+#' \code{\link{logLik.transitiontrees}()}, \code{\link{perplexity}()} and
+#' \code{\link{n_nodes}()}). \code{\link{predict.transitiontrees}()}
+#' predicts the next state, \code{\link{score_sequences}()},
+#' \code{\link{score_positions}()} and \code{\link{mine_sequences}()} score
+#' observed sequences, \code{\link{generate_sequences}()} simulates new
+#' ones, and \code{\link{impute_sequences}()} fills gaps.
+#'
+#' @section Reliability and comparison:
+#' \code{\link{bootstrap_pathways}()} resamples sequences to assess the
+#' stability of each pathway. \code{\link{compare_trees}()} and
+#' \code{\link{tree_distance}()} compare two trees, and
+#' \code{\link{compare_groups}()} tests group differences pathway by
+#' pathway with permutation tests.
+#'
+#' @section Visualization:
+#' \code{\link{plot.transitiontrees}()} draws the tree;
+#' \code{\link{plot_pathways}()}, \code{\link{plot_divergence}()} and
+#' \code{\link{plot_distributions}()} show pathways and their next-state
+#' distributions; \code{\link{plot_pruning}()} shows the pruning decision
+#' along one pathway; \code{\link{plot_predictive}()} shows predictive
+#' performance on new data; \code{\link{plot_trajectories}()} draws the
+#' forward tree of sequence beginnings; and
+#' \code{\link{plot_difference}()} and
+#' \code{\link{plot_pathway_resamples}()} show group differences and
+#' bootstrap distributions.
+#'
+#' @references
+#' \enc{Bühlmann}{Buhlmann}, P., & Wyner, A. J. (1999). Variable length
+#' Markov chains. \emph{The Annals of Statistics}, 27(2), 480-513.
+#' \doi{10.1214/aos/1018031204}
+#'
+#' Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+#' probabilistic suffix trees: The PST R package. \emph{Journal of
+#' Statistical Software}, 72(3). \doi{10.18637/jss.v072.i03}
+#'
+#' Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+#' probabilistic automata with variable memory length. \emph{Machine
+#' Learning}, 25(2-3), 117-149. \doi{10.1023/A:1026490906255}
+#'
+#' Saqr, M., \enc{López-Pernas}{Lopez-Pernas}, S.,
+#' \enc{Törmänen}{Tormanen}, T., Kaliisa, R., Misiejuk, K., & Tikka, S.
+#' (2025). Transition network analysis: A novel framework for modeling,
+#' visualizing, and identifying the temporal patterns of learners and
+#' learning processes. In \emph{Proceedings of the 15th International
+#' Learning Analytics and Knowledge Conference (LAK '25)} (pp. 351-361).
+#' \doi{10.1145/3706468.3706513}
 #'
 #' @keywords internal
 "_PACKAGE"

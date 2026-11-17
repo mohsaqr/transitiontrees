@@ -1,42 +1,53 @@
 # ---- Pathway-centric visualisations ----
 
-#' Plot Pathways as a Probability Heatmap
+#' Plot pathways as a heatmap of next-state probabilities
 #'
 #' @description
-#' Heatmap visualisation of the pathway table: rows are pathways
-#' (sorted), columns are next-state probabilities under the fitted
-#' tree. The modal next state of each row is annotated in bold; rows
-#' whose modal next state \emph{flips} relative to their parent
-#' pathway are flagged in the row labels (with a leading caret
-#' \code{>}). A side strip on the left encodes the pathway count on a
-#' log scale.
+#' \code{plot_pathways()} draws the pathway table of a context tree as a
+#' heatmap: one row per pathway, one column per next state, and the fitted
+#' probability \eqn{P(\mathrm{next} \mid \mathrm{pathway})}{P(next | pathway)}
+#' as fill. The pathway table lists, for every history, how often it occurs and
+#' what tends to follow it. The most likely next state of each row is printed in
+#' bold, other probabilities of at least 0.05 in plain text, and pathways whose
+#' most likely next state differs from that of their shorter suffix are marked
+#' with a leading \code{>}. One display then shows which pathways are common,
+#' which lead almost always to one state, which leave the next state open, and
+#' where a longer history changes the prediction that a first-order model would
+#' make.
 #'
-#' This is the natural pathway-focused visualisation: one glance shows
-#' which pathways are common, which are sharp (high mass on a single
-#' next state), which are diffuse (mass spread evenly), and which
-#' carry trajectory-specific structure that order-1 misses.
+#' Rows are the \code{top} pathways by count, by divergence from the
+#' shorter suffix, or by depth (the root is not shown). For the full
+#' distribution of a few contexts as bar charts use
+#' \code{\link{plot_distributions}()}; to rank pathways by how much their
+#' history matters use \code{\link{plot_divergence}()}.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param top Integer. Maximum number of pathways to show. Default 20.
-#' @param sort_by Character. One of \code{"count"} (default),
-#'   \code{"divergence"}, or \code{"depth"}.
-#' @param min_count Integer. Drop pathways with fewer than this many
-#'   occurrences. Default 5.
-#' @param show_flips Logical. Mark modal-flip pathways with a leading
-#'   caret in the label. Default \code{TRUE}.
-#' @param title Character. Plot title; if \code{NULL} (default) a title
-#'   is derived from \code{sort_by}.
+#' @param tree A \code{transitiontrees} object.
+#' @param top Maximum number of pathways shown. Default 20.
+#' @param sort_by Order of the rows: \code{"count"} (default),
+#'   \code{"divergence"} or \code{"depth"} (deepest first).
+#' @param min_count Pathways with a lower count are dropped. Default 5.
+#' @param show_flips Mark pathways whose most likely next state differs
+#'   from their parent's. Default \code{TRUE}.
+#' @param title Plot title. Default \code{NULL}: a title naming the
+#'   ordering.
 #' @param ... Ignored.
-#' @return A ggplot object.
+#' @return A ggplot object: a heatmap of pathways by next states.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) no pathway reaches
+#'     \code{min_count}.}
+#' }
+#'
+#' @seealso \code{\link{tree_pathways}()} for the table;
+#'   \code{\link{plot_distributions}()}, \code{\link{plot_divergence}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3)
-#' plot_pathways(tree)
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' plot_pathways(tree, top = 12)
 #' plot_pathways(tree, sort_by = "divergence", top = 12)
-#'
 #' @export
 plot_pathways <- function(tree,
                           top = 20L,
@@ -44,7 +55,7 @@ plot_pathways <- function(tree,
                           min_count = 5L,
                           show_flips = TRUE,
                           title = NULL, ...) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   sort_by <- match.arg(sort_by)
 
   pw <- tree_pathways(tree, min_count = min_count, sort_by = sort_by,
@@ -52,7 +63,7 @@ plot_pathways <- function(tree,
   pw <- pw[pw$pathway != .ROOT_LABEL, , drop = FALSE]
   pw <- utils::head(pw, n = as.integer(top))
   if (nrow(pw) == 0L)
-    stop("No pathways meet the threshold.", call. = FALSE)
+    .tt_abort("No pathways meet the threshold.", class = "transitiontrees_empty_result")
 
   ## Build the long form: one row per (pathway, next_state)
   states <- tree$alphabet
@@ -126,36 +137,54 @@ plot_pathways <- function(tree,
 }
 
 
-#' Lollipop Chart of Pathway Divergence
+#' Plot the pathways whose history changes the prediction most
 #'
 #' @description
-#' Lollipop chart of per-pathway Kullback-Leibler divergence from the
-#' (k-1)-suffix. Point size is proportional to pathway count; orange
-#' points mark pathways whose modal next state flips between orders.
-#' Annotates each flip with the prediction change, e.g. "Disengaged
-#' -> Active".
+#' \code{plot_divergence()} ranks pathways by the Kullback-Leibler divergence,
+#' in bits, between their next-state distribution and that of their shorter
+#' suffix, the context without the earliest state. In a variable-order model a
+#' longer history matters only where it changes what is expected next. Each
+#' pathway is a lollipop whose point size is its count; points are colored by
+#' whether the most likely next state differs from the suffix's, and those
+#' pathways are annotated with the new most likely state and its probability.
+#' The chart identifies the histories that carry information a shorter memory
+#' would lose.
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param top Integer. Number of pathways to show. Default 15.
-#' @param min_count Integer. Drop pathways below this count. Default 5.
-#' @param title Character. Plot title; if \code{NULL} (default) a
-#'   default title is used.
+#' The pathways are those returned by \code{\link{divergent_pathways}()}.
+#' A large divergence on a small count can be a sampling accident; check
+#' reproducibility with \code{\link{bootstrap_pathways}()}, and the
+#' pruning decision for one pathway with \code{\link{plot_pruning}()}.
+#'
+#' @param tree A \code{transitiontrees} object.
+#' @param top Number of pathways shown. Default 15.
+#' @param min_count Pathways with a lower count are dropped. Default 5.
+#' @param title Plot title. Default \code{NULL}: a title giving the number
+#'   of pathways.
 #' @param ... Ignored.
-#' @return A ggplot object.
+#' @return A ggplot object: one lollipop per pathway, divergence (bits) on
+#'   the x-axis.
+#'
+#' @section Conditions:
+#' \describe{
+#'   \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+#'     \code{transitiontrees} object.}
+#'   \item{\code{transitiontrees_empty_result}}{(error) no pathway reaches
+#'     \code{min_count}.}
+#' }
+#'
+#' @seealso \code{\link{divergent_pathways}()} for the table;
+#'   \code{\link{plot_pathways}()}, \code{\link{plot_pruning}()},
+#'   \code{\link{bootstrap_pathways}()}.
 #'
 #' @examples
-#' set.seed(1)
-#' seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-#'                   simplify = FALSE)
-#' tree <- context_tree(seqs, max_depth = 3L)
-#' plot_divergence(tree)
-#'
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' plot_divergence(tree, top = 10)
 #' @export
 plot_divergence <- function(tree, top = 15L, min_count = 5L,
                             title = NULL, ...) {
-  stopifnot(inherits(tree, "transitiontrees"))
+  .tt_check_class(tree, "transitiontrees", "tree")
   pw <- divergent_pathways(tree, top = top, min_count = min_count)
-  if (nrow(pw) == 0L) stop("No pathways meet the threshold.", call. = FALSE)
+  if (nrow(pw) == 0L) .tt_abort("No pathways meet the threshold.", class = "transitiontrees_empty_result")
   pw$pathway <- factor(pw$pathway, levels = rev(pw$pathway))
 
   if (is.null(title))

@@ -2,31 +2,59 @@
 % Please edit documentation in R/bootstrap.R
 \name{as.data.frame.transitiontrees_bootstrap}
 \alias{as.data.frame.transitiontrees_bootstrap}
-\title{Coerce a context tree Bootstrap to a Tidy Data Frame}
+\title{Convert a pathway bootstrap to a data frame}
 \usage{
-\method{as.data.frame}{transitiontrees_bootstrap}(x, row.names = NULL, optional = FALSE, ...)
+\method{as.data.frame}{transitiontrees_bootstrap}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  what = c("summary", "resamples"),
+  stat = c("count", "next_probability", "divergence", "G2", "changes_prediction"),
+  ...
+)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_bootstrap}.}
+\item{x}{A \code{transitiontrees_bootstrap} object.}
 
 \item{row.names, optional}{Ignored.}
+
+\item{what}{\code{"summary"} (default) for one row per pathway, or
+\code{"resamples"} for one row per resample and pathway.}
+
+\item{stat}{For \code{what = "resamples"}, the statistic:
+\code{"count"} (default), \code{"next_probability"},
+\code{"divergence"}, \code{"G2"} or \code{"changes_prediction"}.}
 
 \item{...}{Ignored.}
 }
 \value{
-A data.frame with one row per pathway; see
-  \code{\link{bootstrap_pathways}} for the full column vocabulary.
+A data frame. For \code{what = "summary"}, one row per pathway
+  with the columns described in \code{\link{bootstrap_pathways}()}. For
+  \code{what = "resamples"}, one row per resample and pathway with
+  columns \code{resample}, \code{pathway}, \code{stat} and \code{value}
+  (\code{NA} where the statistic is undefined in that resample).
 }
 \description{
-Uniform tidy-extract: returns the per-pathway summary table
-(\code{object$summary}), so \code{as.data.frame(boot)} and
-\code{summary(boot)} are interchangeable extractors.
+\code{as.data.frame()} returns the per-pathway summary of a
+\code{\link{bootstrap_pathways}()} result, or the values of one statistic in
+every resample.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_no_data}}{(error) \code{what =
+    "resamples"} for a bootstrap run with \code{keep_resamples =
+    FALSE}.}
+}
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
-                           iter = 50L)
-as.data.frame(boot)
+boot <- bootstrap_pathways(context_tree(trajectories, max_depth = 2),
+                           iter = 50)
+head(as.data.frame(boot))
+head(as.data.frame(boot, what = "resamples", stat = "G2"))
+}
+\seealso{
+\code{\link{bootstrap_pathways}()},
+  \code{\link{plot_pathway_resamples}()}.
 }

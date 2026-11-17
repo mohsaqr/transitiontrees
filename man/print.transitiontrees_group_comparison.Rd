@@ -2,36 +2,34 @@
 % Please edit documentation in R/compare_groups.R
 \name{print.transitiontrees_group_comparison}
 \alias{print.transitiontrees_group_comparison}
-\title{Print a Group Comparison}
+\title{Print a group comparison}
 \usage{
 \method{print}{transitiontrees_group_comparison}(x, n = 10L, digits = 3L, ...)
 }
 \arguments{
 \item{x}{A \code{transitiontrees_group_comparison} object.}
 
-\item{n}{Integer. Number of top pathways to print. Default 10.}
+\item{n}{Number of contexts to print. Default 10.}
 
-\item{digits}{Integer. Numeric digits for the printed tables.
-Default 3.}
+\item{digits}{Rounding digits for the printed tables. Default 3.}
 
 \item{...}{Ignored.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print method for a \code{transitiontrees_group_comparison}: a header with
-the groups and permutation setup, the omnibus behavioral / usage
-statistics, and the top pathways ranked by behavioral divergence.
+\code{print()} prints the groups and permutation design, the omnibus
+behavioral and usage tests, and the \code{n} contexts with the largest
+behavioral differences.
 }
 \examples{
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
-print(cmp, n = 3L)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+print(compare_groups(grp, iter = 20), n = 3)
+}
+\seealso{
+\code{\link{compare_groups}()},
+  \code{\link{as.data.frame.transitiontrees_group_comparison}} for every
+  context.
 }

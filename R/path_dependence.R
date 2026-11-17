@@ -17,71 +17,75 @@
   )
 }
 
-#' Per-Context Path Dependence of a Context Tree
+#' Measure how much each step of history changes the prediction
 #'
 #' @description
-#' For each non-root node in the tree, reports the Kullback-Leibler
-#' divergence of its conditional next-state distribution against its
-#' parent's. Large values flag contexts where extending memory by one
-#' more step changes the prediction; the \code{changes_prediction}
-#' column flags contexts where the most likely next state changes
-#' between the node and its parent.
+#' \code{tree_dependence()} measures how much each step of history changes the
+#' prediction of a fitted tree, that is, where the process is path dependent. A
+#' process is path dependent where what happens next depends on more than the
+#' current state. In a transition tree this shows as a context whose next-state
+#' distribution differs from that of its parent, the same context without its
+#' oldest state. The difference has two sides: how far the distribution moves
+#' (its divergence) and whether it becomes more or less certain (its change in
+#' entropy).
 #'
-#' Renamed from \code{path_dependence()} to avoid a naming collision with
-#' a sibling package.
+#' It returns one row for every context other than the root, with the
+#' Kullback-Leibler divergence of its next-state distribution from its parent's,
+#' the Shannon entropy of both distributions and their difference, and the most
+#' likely next state under each (Cover & Thomas, 2006). A positive
+#' \code{entropy_drop} means the additional state of history makes the next
+#' state more predictable; a negative one means it makes it less predictable.
+#' The divergence is the quantity that \code{\link{prune_tree}()} compares with
+#' its threshold under \code{criterion = "KL"} (there in nats).
 #'
-#' @param tree A \code{transitiontrees}.
-#' @param base Numeric. Logarithm base for the KL divergence. Default
-#'   2 (bits). Use \code{exp(1)} for nats or \code{10} for hartleys.
-#' @param sort_by Character. Column to sort by, descending. One of
-#'   \code{"divergence"} (default), \code{"entropy_drop"},
-#'   \code{"entropy"}, \code{"count"}, \code{"depth"}.
-#' @param top Integer or \code{NULL}. If given, keep only the top
-#'   \code{top} rows after sorting. Default \code{NULL} (all rows).
+#' For the pathway table with counts and ranked views, use
+#' \code{\link{tree_pathways}()} and \code{\link{divergent_pathways}()}; to
+#' see the full next-state distributions along one pathway, use
+#' \code{\link{plot_pruning}()}.
 #'
-#' @return A data.frame with one row per non-root pathway, sorted by
-#'   \code{divergence} descending. Columns: \code{pathway},
-#'   \code{depth}, \code{count}, \code{divergence} (Kullback-Leibler
-#'   divergence from the parent's prediction), \code{entropy} (Shannon
-#'   entropy of this pathway's next-state distribution),
-#'   \code{entropy_before} (entropy of the parent's distribution),
-#'   \code{entropy_drop} (\code{entropy_before - entropy}, the
-#'   uncertainty this step of history removes), \code{likely_next}
-#'   (this node's most likely next state), \code{likely_before} (the
-#'   parent context's most likely next state), \code{changes_prediction}
-#'   (\code{likely_next != likely_before}). The empty case returns a
-#'   0-row data.frame with the same schema.
+#' @param tree A \code{transitiontrees} object.
+#' @param base Base of the logarithm: 2 (default) for bits, \code{exp(1)}
+#'   for nats.
+#' @param sort_by Column to sort by, in decreasing order:
+#'   \code{"divergence"} (default), \code{"entropy_drop"}, \code{"entropy"},
+#'   \code{"count"} or \code{"depth"}.
+#' @param top Number of rows to keep after sorting. \code{NULL} (default)
+#'   keeps all.
 #'
-#' @details
-#' This is the \emph{diagnostic} that the tree's pruning rule (under
-#' \code{criterion = "KL"}) is comparing against its threshold. It
-#' answers the substantive question: for which contexts does this
-#' tree disagree with a memoryless / shorter-memory model, and where
-#' does that disagreement actually flip the prediction?
+#' @return A \code{data.frame} with one row per non-root context whose
+#'   parent is in the tree, and columns \code{pathway}, \code{depth},
+#'   \code{count}, \code{divergence} (from the parent's distribution),
+#'   \code{entropy} (of this context's distribution), \code{entropy_before}
+#'   (of the parent's), \code{entropy_drop} (\code{entropy_before} minus
+#'   \code{entropy}), \code{likely_next}, \code{likely_before} (the parent's
+#'   most likely next state) and \code{changes_prediction}. A tree with
+#'   only a root returns a zero-row table with these columns.
 #'
-#' The mean of \code{n * KL} across rows recovers, up to constants,
-#' the chain-level mutual-information gain from the variable-depth
-#' model over the order-1 model.
-#'
-#' @examples
-#' set.seed(1)
-#' seqs   <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-#'                     simplify = FALSE)
-#' tree   <- context_tree(seqs, max_depth = 3)
-#' pruned <- prune_tree(tree, criterion = "G2")
-#' tree_dependence(pruned)
+#' @section Conditions:
+#' \code{transitiontrees_bad_input} when \code{tree} is not a fitted tree.
 #'
 #' @references
-#' Cover, T.M. & Thomas, J.A. (2006). \emph{Elements of Information
-#' Theory}, 2nd ed. Wiley.
+#' Cover, T. M., & Thomas, J. A. (2006). \emph{Elements of information
+#' theory} (2nd ed.). Wiley.
 #'
+#' @seealso \code{\link{tree_pathways}()}, \code{\link{divergent_pathways}()},
+#'   \code{\link{prune_tree}()}, \code{\link{plot_divergence}()}.
+#'
+#' @examples
+#' tree <- context_tree(trajectories, max_depth = 3)
+#' tree_dependence(tree, top = 5)
+#' tree_dependence(prune_tree(tree), sort_by = "entropy_drop")
 #' @export
 tree_dependence <- function(tree, base = 2,
                                 sort_by = c("divergence", "entropy_drop",
                                             "entropy", "count", "depth"),
                                 top = NULL) {
-  stopifnot(inherits(tree, "transitiontrees"))
-  stopifnot(is.numeric(base), length(base) == 1L, base > 0, base != 1)
+  .tt_check_class(tree, "transitiontrees", "tree")
+  stopifnot(
+    "`base` must be a single positive number other than 1" =
+      is.numeric(base) && length(base) == 1L && !is.na(base) &&
+      base > 0 && abs(base - 1) > sqrt(.Machine$double.eps)
+  )
   sort_by <- match.arg(sort_by)
 
   H <- function(p) {

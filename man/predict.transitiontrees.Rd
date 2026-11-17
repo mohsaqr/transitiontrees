@@ -2,42 +2,77 @@
 % Please edit documentation in R/predict.R
 \name{predict.transitiontrees}
 \alias{predict.transitiontrees}
-\title{Predict Next-State Probabilities from a Context Tree}
+\title{Predict the next state after each history}
 \usage{
-\method{predict}{transitiontrees}(object, newdata, type = c("prob", "class"), ...)
+\method{predict}{transitiontrees}(object, newdata, type = c("prob", "class"), tidy = FALSE, ...)
 }
 \arguments{
-\item{object}{A \code{transitiontrees}.}
+\item{object}{A \code{transitiontrees} object.}
 
-\item{newdata}{Either (i) a list of character vectors (each is the
-"history" leading up to the prediction point), (ii) a wide
-data.frame / matrix whose rows are histories, or (iii) a single
-character vector treated as one history.}
+\item{newdata}{Histories, oldest state first: a list of character
+vectors, a wide \code{data.frame} or matrix with one history per row
+(missing or empty cells are dropped), or a single character vector.
+A history given as one arrow-notation string (\code{"A -> B"}) is
+split into its states.}
 
-\item{type}{One of \code{"prob"} (default; named numeric matrix of
-next-state probabilities) or \code{"class"} (character vector of
-modal predictions).}
+\item{type}{\code{"prob"} (default) for next-state probabilities or
+\code{"class"} for the most likely next state.}
 
-\item{...}{Ignored.}
+\item{tidy}{Return a \code{data.frame} with one row per history.
+Default \code{FALSE}.}
+
+\item{...}{Not used.}
 }
 \value{
-If \code{type = "prob"}: a matrix with one row per history
-  and one column per state. A list/data.frame/matrix \code{newdata}
-  always returns a matrix (1 x k for a single-history container);
-  a bare character vector returns a named vector for interactive
-  convenience. If \code{type = "class"}: a character vector of
-  modal predictions.
+With \code{tidy = TRUE}, a \code{data.frame} with one row per
+  history and columns \code{id} (position in \code{newdata}),
+  \code{history} (arrow notation; \code{"(start)"} when empty),
+  \code{context} (the matched context), \code{predicted} (most likely
+  next state), \code{probability} (its probability) and one column per
+  state with the next-state probabilities. With \code{tidy = FALSE} and
+  \code{type = "prob"}, a numeric matrix with one row per history and one
+  column per state, or a named vector when \code{newdata} is a single
+  character vector; with \code{type = "class"}, a character vector of
+  most likely next states.
 }
 \description{
-Predict Next-State Probabilities from a Context Tree
-}
-\examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-predict(tree, newdata = list(c("A","B"), c("C","C","B")))
-predict(tree, newdata = list(c("A","B")), type = "class")
-predict(tree, newdata = c("A","B"))   # bare vector -> named vector
+\code{predict()} predicts the state that follows each history from the
+longest context of a fitted tree that matches the end of that history.
+Histories longer than the tree's depth are read only as far back as the tree
+remembers, and histories whose recent states never formed a context fall back
+to a shorter suffix or to the root. The prediction is therefore always
+defined, and it uses as much of the past as the data supported when the tree
+was fitted.
 
+It returns, for each history, the probability of every next state, or the
+most likely next state with \code{type = "class"}. With \code{tidy = TRUE} it
+returns one row per history with the history, the context that was matched,
+the most likely next state and its probability, and the probability of every
+state.
+
+To score observed sequences rather than predict from given histories,
+use \code{\link{score_positions}()}; to look up a single pathway, use
+\code{\link{query_pathway}()}; to fill in missing states, use
+\code{\link{impute_sequences}()}.
+}
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{newdata} is not a list,
+data frame, matrix or character vector. A warning of class
+\code{transitiontrees_unknown_state} when a history contains a state
+outside the tree's alphabet; the prediction then uses the longest
+context after the last unknown state.
+}
+
+\examples{
+tree <- context_tree(trajectories, max_depth = 3)
+histories <- list(c("Active", "Active"),
+                  c("Average", "Disengaged", "Disengaged"),
+                  character(0))
+predict(tree, newdata = histories, tidy = TRUE)
+predict(tree, newdata = histories, type = "class")
+}
+\seealso{
+\code{\link{query_pathway}()}, \code{\link{score_positions}()},
+  \code{\link{impute_sequences}()}, \code{\link{generate_sequences}()}.
 }

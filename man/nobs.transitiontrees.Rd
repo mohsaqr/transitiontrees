@@ -2,27 +2,29 @@
 % Please edit documentation in R/likelihood.R
 \name{nobs.transitiontrees}
 \alias{nobs.transitiontrees}
-\title{Number of Observations Used to Fit a context tree}
+\title{Count the observations a transition tree was fitted on}
 \usage{
 \method{nobs}{transitiontrees}(object, ...)
 }
 \arguments{
-\item{object}{A \code{transitiontrees}.}
+\item{object}{A \code{transitiontrees} object.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-Integer. The number of state observations the tree was fitted
-  on -- the (weight-adjusted) token total, equal to the \code{"nobs"}
-  attribute of the \emph{in-sample} \code{\link{logLik.transitiontrees}()}.
-  (A held-out \code{logLik(newdata)} reports its own \code{"nobs"} --
-  the positions actually scored, e.g. excluding states outside the
-  tree's alphabet -- which can be smaller.)
+A single integer.
 }
 \description{
-Number of Observations Used to Fit a context tree
+\code{nobs()} returns the number of observed positions in the sequences the
+tree was fitted on, the number used by \code{\link[stats]{BIC}()}. For a
+weighted fit it is the weighted total. A held-out log-likelihood,
+\code{logLik(tree, newdata)}, carries its own count of scored positions.
 }
 \examples{
-tree <- context_tree(trajectories, max_depth = 2L)
+tree <- context_tree(trajectories, max_depth = 2)
 nobs(tree)
+}
+\seealso{
+\code{\link{logLik.transitiontrees}()},
+  \code{\link{model_fit}()}.
 }

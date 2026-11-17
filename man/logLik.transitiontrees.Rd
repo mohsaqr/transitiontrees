@@ -2,44 +2,58 @@
 % Please edit documentation in R/likelihood.R
 \name{logLik.transitiontrees}
 \alias{logLik.transitiontrees}
-\title{Log-Likelihood of a context tree}
+\title{Compute the log-likelihood of a transition tree}
 \usage{
 \method{logLik}{transitiontrees}(object, newdata = NULL, ...)
 }
 \arguments{
-\item{object}{A \code{transitiontrees}.}
+\item{object}{A \code{transitiontrees} object.}
 
-\item{newdata}{Optional. Sequence data in any format accepted by
-\code{context_tree()}. \code{NULL} (default) returns in-sample
+\item{newdata}{Sequences to score, in any form accepted by
+\code{\link{context_tree}()}. \code{NULL} (default) gives the in-sample
 log-likelihood.}
 
-\item{...}{Ignored.}
+\item{...}{Not used.}
 }
 \value{
-A \code{logLik} object with attributes \code{nobs} and
-  \code{df} (number of free parameters in the fitted tree).
+An object of class \code{logLik}: the log-likelihood (natural
+  logarithm), with attributes \code{df} (number of parameters) and
+  \code{nobs} (number of scored positions).
 }
 \description{
-Returns a \code{logLik} object compatible with \code{stats::AIC()},
-\code{stats::BIC()}, and the rest of the model-comparison toolchain.
-If \code{newdata} is \code{NULL}, returns the in-sample log-likelihood
-computed from the fitted node counts. Otherwise returns the held-out
-log-likelihood scoring \code{newdata} under the fitted tree.
+\code{logLik()} computes the log-likelihood of a fitted tree: the sum, over
+every observed position, of the log probability that the tree assigned to the
+state that occurred, given the longest context of the tree that matches the
+preceding history. It is the basis of the information criteria and of
+perplexity, and allows trees with different depths, pruning or smoothing to
+be compared on the same data.
+
+Without \code{newdata}, the log-likelihood is computed in-sample from the
+fitted counts. With \code{newdata}, the sequences are scored under the fitted
+tree, which gives the held-out log-likelihood. A state that is not among the
+tree's states is not scored, and the position after it is predicted from the
+root; the reported number of observations counts only scored positions. The
+number of parameters is the number of contexts times \eqn{k - 1}, for \eqn{k}
+states.
+
+The result is a \code{logLik} object and works with
+\code{\link[stats]{AIC}()} and \code{\link[stats]{BIC}()}.
+\code{\link{model_fit}()} returns log-likelihood, AIC, BIC and perplexity
+together as a table.
 }
-\details{
-Out-of-vocabulary handling: when \code{newdata} contains a state not
-in the tree's alphabet, the transition \emph{into} that state is
-omitted from scoring (it is not penalised), and the transition
-\emph{out} of it is scored against the root context (the unseen
-state cannot extend a history). The reported \code{nobs} therefore
-counts only the positions actually scored. \code{perplexity()},
-\code{score_sequences()}, and \code{score_positions()} inherit the
-same behaviour.
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{newdata} has an unsupported
+type or no usable sequence.
 }
+
 \examples{
-set.seed(1)
-tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
-                     max_depth = 2, min_count = 2)
+tree <- context_tree(trajectories, max_depth = 2)
 logLik(tree)
-AIC(tree); BIC(tree)
+AIC(tree)
+logLik(tree, newdata = engagement)
+}
+\seealso{
+\code{\link{model_fit}()}, \code{\link{perplexity}()},
+  \code{\link{score_sequences}()}, \code{\link{nobs.transitiontrees}()}.
 }

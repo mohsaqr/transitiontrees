@@ -2,7 +2,7 @@
 % Please edit documentation in R/bootstrap.R
 \name{bootstrap_pathways}
 \alias{bootstrap_pathways}
-\title{Bootstrap Pathway Stability and Informativeness}
+\title{Bootstrap the stability and informativeness of pathways}
 \usage{
 bootstrap_pathways(
   tree,
@@ -19,147 +19,129 @@ bootstrap_pathways(
 )
 }
 \arguments{
-\item{tree}{A fitted \code{transitiontrees} carrying \code{tree$data}.}
+\item{tree}{An unweighted \code{transitiontrees} object that carries
+its sequences (any tree from \code{\link{context_tree}()}).}
 
-\item{iter}{Integer. Number of bootstrap iterations.
-Default \code{1000}.}
+\item{iter}{Number of bootstrap resamples. Default 1000.}
 
-\item{stat}{Character. Pathway statistic on which
-\code{p_stability} is measured. One of \code{"count"}
-(default; the edge-weight analogue), \code{"next_probability"}
-(the most-likely next-state probability), or \code{"divergence"}.}
+\item{stat}{Statistic used for stability: \code{"count"} (default),
+\code{"next_probability"} (probability of the most likely next state)
+or \code{"divergence"} (divergence from the parent context, bits).}
 
-\item{consistency_range}{Numeric vector of length 2.
-Multiplicative tolerance band around the observed value.
-Default \code{c(0.5, 1.5)}: a resample counts as consistent when
-its statistic stays within half-to-one-and-a-half times the
-observed value.}
+\item{consistency_range}{Lower and upper multiples of the observed
+value that bound a consistent resample. Default \code{c(0.5, 1.5)}.}
 
-\item{stability_threshold}{Numeric in \eqn{(0, 1)}. Backward-
-compatible stability-rate threshold. A pathway is
-\code{stable = TRUE} when
-\code{p_stability < 1 - stability_threshold}. Default
-\code{0.95}: at least 95\% of resamples must fall inside the
-(wide) \code{consistency_range} band.}
+\item{stability_threshold}{A pathway is stable when
+\code{p_stability < 1 - stability_threshold}. Default 0.95.}
 
-\item{informative_threshold}{Numeric in \eqn{(0, 1)}. A pathway
-is \code{informative = TRUE} when \code{informative_rate >=
-informative_threshold}. Default \code{0.80}: a pathway must
-clear the \eqn{G^2} critical value in at least 80\% of resamples
-to be called informative.}
+\item{informative_threshold}{A pathway is informative when the share of
+resamples with a significant \eqn{G^2} is at least this. Default 0.80.}
 
-\item{alpha}{Numeric in \eqn{(0, 1)}. Significance level for
-the \eqn{G^2} test against parent. Default \code{0.05}.}
+\item{alpha}{Significance level of the \eqn{G^2} test against the
+parent context. Default 0.05.}
 
-\item{ci_level}{Numeric in \eqn{(0, 1)}. Tail probability for the
-bootstrap CIs on \code{count}, \code{next_probability},
-\code{divergence}, \code{G2}. Default \code{0.05} (95\% CI).}
+\item{ci_level}{Total tail probability of the percentile intervals.
+Default 0.05 (95\% intervals).}
 
-\item{seed}{Integer or \code{NULL}. RNG seed passed to
-\code{set.seed()}; \code{NULL} uses the current RNG state.
-Default \code{1L}.}
+\item{seed}{Seed for the resampling, or \code{NULL} to use the current
+random-number state. Default 1. A non-\code{NULL} seed sets the
+session's random-number state.}
 
-\item{keep_resamples}{Logical. If \code{TRUE} (default), the
-per-iteration resample matrices \code{M_count},
-\code{M_next_probability}, \code{M_divergence}, \code{M_G2},
-\code{M_changes_prediction} are retained on the
-returned object. Set to \code{FALSE} to drop them (each is
-\code{iter x n_pathways}) when memory matters; the summary table
-is unaffected.}
+\item{keep_resamples}{Keep the per-resample values (default
+\code{TRUE}); needed by \code{as.data.frame(x, what = "resamples")}
+and \code{\link{plot_pathway_resamples}()}. \code{FALSE} saves memory
+and leaves the summary table unchanged.}
 
-\item{progress}{Logical. Show a progress bar.
-Default \code{FALSE}.}
+\item{progress}{Show a progress bar. Default \code{FALSE}.}
 }
 \value{
-A \code{transitiontrees_bootstrap} object: a list with
-  \describe{
-    \item{summary}{Per-pathway data.frame (one row per pathway of the
-      original tree; the root row has \code{NA} \code{G2}), sorted so that
-      \code{stable & informative} pathways come first then by
-      \code{stability_rate} descending. Columns: the canonical
-      \code{pathway}, \code{depth}, \code{count}, \code{likely_next},
-      \code{next_probability}, \code{divergence},
-      \code{changes_prediction} (computed from raw counts, no
-      smoothing); \code{G2} (likelihood-ratio statistic against the
-      parent); \code{p_stability}, \code{stability_rate},
-      \code{stable}; \code{informative_rate}, \code{informative};
-      \code{flip_consistency} (share of resamples reproducing the
-      original \code{changes_prediction} flag); and, for each of
-      \code{count}, \code{next_probability}, \code{divergence} and
-      \code{G2}, the bootstrap \code{mean_*}, \code{sd_*},
-      \code{ci_*_lo} and \code{ci_*_hi} (percentile interval at
-      \code{ci_level}). Returned by \code{summary()} and
-      \code{as.data.frame()}.}
-    \item{pathways_orig}{Empirical original-pathway statistics
-      (no smoothing) as a tidy data.frame.}
-    \item{M_count, M_next_probability, M_divergence, M_G2,
-      M_changes_prediction}{Raw resample matrices:
-      \code{iter x n_pathways}, columns named by pathway.}
-    \item{iter, stat, consistency_range, stability_threshold,
-      informative_threshold, alpha_g2, ci_level, seed,
-      g2_critical_value}{Configuration (\code{alpha_g2} stores
-      \code{alpha}).}
-  }
+An object of class \code{transitiontrees_bootstrap}.
+  \code{as.data.frame(x)} (or \code{summary(x)}) returns one row per
+  pathway of the original tree, stable and informative pathways first,
+  with columns \code{pathway}, \code{depth}, \code{count},
+  \code{likely_next}, \code{next_probability}, \code{divergence} (bits),
+  \code{changes_prediction}, \code{G2} (\code{NA} for the root),
+  \code{p_stability}, \code{stability_rate}, \code{stable},
+  \code{informative_rate}, \code{informative}, \code{flip_consistency}
+  (share of resamples reproducing \code{changes_prediction}), and for
+  each of \code{count}, \code{next_probability}, \code{divergence} and
+  \code{G2} the bootstrap \code{mean_*}, \code{sd_*}, \code{ci_*_lo}
+  and \code{ci_*_hi}. \code{as.data.frame(x, what = "resamples")}
+  returns the per-resample values; \code{plot()} draws the \eqn{G^2}
+  intervals.
 }
 \description{
-Non-parametric sequence bootstrap for a fitted \code{transitiontrees}.
-Methodologically built on Saqr, Tikka & López-Pernas (2025),
-extending an edge-level bootstrap framework to
-variable-depth pathways.
+\code{bootstrap_pathways()} assesses, by resampling sequences, whether each
+context of a fitted tree is stable and informative: whether a sample of the
+same size would reproduce it, and whether its departure from the shorter
+history is reproducible. The procedure extends the edge-level bootstrap of
+transition network analysis (Saqr et al., 2025) from single transitions to
+variable-length pathways, and separates pathways that reflect a regularity of
+the process from those that reflect only the particular sequences that were
+sampled.
 
-The bootstrap tracks every pathway in the original tree. Each
-iteration resamples whole sequences with replacement, aggregates
-raw counts per depth, and reads each pathway's count vector
-directly from the resample. \strong{No smoothing, no \code{nmin}
-filter, no extra parameters} inside the loop -- the bootstrap
-operates on counts analogously to an edge-weight bootstrap.
+Each iteration resamples whole sequences with replacement (Efron &
+Tibshirani, 1993) and recounts every pathway of the original tree from raw
+counts, without smoothing or a minimum count. A pathway is \emph{stable} when
+the chosen statistic (its count by default, or the probability of its most
+likely next state, or its divergence from its parent) stays within
+\code{consistency_range} times the observed value in enough resamples:
+\code{p_stability} is the share of resamples outside that band, counting the
+observed sample once (\eqn{(b + 1) / (iter + 1)}), and the pathway is stable
+when it is below \code{1 - stability_threshold}. A pathway is
+\emph{informative} when its likelihood-ratio statistic \eqn{G^2} against its
+parent context exceeds the chi-square critical value at \code{alpha}
+(\eqn{|A| - 1} degrees of freedom for alphabet \eqn{A}) in at least
+\code{informative_threshold} of the resamples. Percentile intervals are
+reported for the count, the next-state probability, the divergence and
+\eqn{G^2}.
 
-Two complementary measures are reported per pathway:
+The two flags are read together. A stable and informative pathway is
+reproducible and predicts differently from its shorter history; a stable
+pathway that is not informative recurs but adds nothing to its parent's
+prediction; an informative pathway that is not stable is distinctive but
+carried by a subset of sequences; a pathway that is neither is fragile. The
+result is a \code{transitiontrees_bootstrap} object, read with
+\code{as.data.frame()} (one row per pathway) and drawn with \code{plot()}.
+
+The bootstrap evaluates the pathways of one tree; to choose the depth use
+\code{\link{tune_tree}()}, to remove contexts that do not differ from their
+parent use \code{\link{prune_tree}()}, and to compare groups use
+\code{\link{compare_groups}()}.
+}
+\section{Conditions}{
+
 \describe{
-  \item{\code{p_stability}}{Bootstrap-estimated probability that
-    the chosen \code{stat} (default \code{count}) falls outside
-    \code{[cr[1] * observed, cr[2] * observed]}, with a +1
-    correction. This is a stability p-value: small values mean the
-    pathway rarely fails the chosen reproducibility criterion under
-    sequence-level resampling.}
-  \item{\code{stability_rate}}{Uncorrected descriptive companion:
-    the fraction of resamples where the chosen \code{stat} lies
-    inside the consistency band. A pathway whose count drops to zero
-    in a resample fails the band test automatically.}
-  \item{\code{informative_rate}}{Fraction of resamples where the
-    pathway's empirical \eqn{G^2} likelihood-ratio statistic
-    against its parent context exceeds the chi-square critical
-    value at level \code{alpha} (df = \code{|alphabet| - 1}).
-    Tests \emph{reproducibly significant divergence from the
-    shorter-history baseline}.}
+  \item{\code{transitiontrees_bad_input}}{(error) \code{tree} is not a
+    \code{transitiontrees} object, or has no pathways.}
+  \item{\code{transitiontrees_weighted_unsupported}}{(error) the tree
+    was fitted with weights, which resampling would drop.}
+  \item{\code{transitiontrees_no_data}}{(error) the tree does not carry
+    its sequences.}
+}
 }
 
-Read \code{stable} and \code{informative} together:
-\itemize{
-  \item \code{stable && informative}: reproducible and predictively
-    distinctive pathway.
-  \item \code{stable && !informative}: reproducible pathway count /
-    statistic, but not predictively distinctive from its parent.
-  \item \code{!stable && informative}: sharp or divergent pathway
-    carried by an unstable subset of sequences.
-  \item \code{!stable && !informative}: weak or sample-fragile
-    pathway.
-}
-}
 \examples{
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 1L)
-boot <- bootstrap_pathways(tree, iter = 50L)
-summary(boot)
+tree <- context_tree(trajectories, max_depth = 2)
+boot <- bootstrap_pathways(tree, iter = 50)
+boot
+head(as.data.frame(boot))
 }
 \references{
-Saqr, M., Tikka, S., & López-Pernas, S. (2025). Transition
-Network Analysis. In \emph{Proceedings of the 15th International
-Learning Analytics and Knowledge Conference (LAK '25)}.
-\doi{10.1145/3706468.3706513}
+Saqr, M., López-Pernas, S., Törmänen, T., Kaliisa, R., Misiejuk, K.,
+& Tikka, S. (2025). Transition network analysis: A novel framework for
+modeling, visualizing, and identifying the temporal patterns of
+learners and learning processes. In \emph{Proceedings of the 15th
+International Learning Analytics and Knowledge Conference (LAK '25)}
+(pp. 351-361). \doi{10.1145/3706468.3706513}
 
 Efron, B., & Tibshirani, R. J. (1993). \emph{An Introduction to the
-Bootstrap}. Chapman & Hall.
+Bootstrap}. Chapman & Hall/CRC. \doi{10.1201/9780429246593}
+}
+\seealso{
+\code{\link{as.data.frame.transitiontrees_bootstrap}},
+  \code{\link{plot.transitiontrees_bootstrap}} and
+  \code{\link{plot_pathway_resamples}()} for the result;
+  \code{\link{tree_pathways}()} for the observed pathway table;
+  \code{\link{prune_tree}()} for significance-based pruning.
 }

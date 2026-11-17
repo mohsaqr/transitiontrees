@@ -2,24 +2,35 @@
 % Please edit documentation in R/likelihood.R
 \name{n_nodes}
 \alias{n_nodes}
-\title{Number of Contexts (Nodes) in a Tree}
+\title{Count the contexts of a transition tree}
 \usage{
 n_nodes(tree)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees} or \code{transitiontrees_group}.}
+\item{tree}{A \code{transitiontrees} or \code{transitiontrees_group}
+object.}
 }
 \value{
-An integer. For a \code{transitiontrees_group}, a named integer
-  vector with one count per group.
+A single integer; for a \code{transitiontrees_group}, a named
+  integer vector with one count per group.
 }
 \description{
-The number of contexts (nodes, including the root) the tree
-represents -- the number printed in the tree banner.
+\code{n_nodes()} returns the number of contexts (nodes) in a fitted tree, the
+root included: the number shown in the printed header and a direct measure of
+the tree's complexity, for example before and after pruning.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+group.
+}
+
 \examples{
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-n_nodes(context_tree(seqs, max_depth = 3L))
+tree <- context_tree(trajectories, max_depth = 3)
+n_nodes(tree)
+n_nodes(prune_tree(tree))
+}
+\seealso{
+\code{\link{prune_tree}()}, \code{\link{compare_pruning}()},
+  \code{\link{summary.transitiontrees_group}()}.
 }

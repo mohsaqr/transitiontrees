@@ -1,30 +1,67 @@
-# transitiontrees 0.1.4
+# transitiontrees 0.1.6
 
-* `_pkgdown.yml` is left out of the built package.
+This release collects the changes made since the CRAN release 0.1.2
+(including the unreleased 0.1.3 and 0.1.4).
 
-# transitiontrees 0.1.3
+## New functions and arguments
+
+* `state_frequencies()` returns the count and proportion of each state
+  (one table per group for a grouped fit).
+* `summary()` methods for groups of trees, two-tree comparisons and tuning
+  grids; `summary()` of a group comparison now returns a one-row summary
+  object with its own print method instead of printing and returning the
+  pathway table invisibly.
+* `as.data.frame()` methods gain a `what` argument to reach every table of a
+  result: `what = "null"` for the permutation null of `compare_trees()`,
+  `what = "omnibus"` and `what = "distance"` for `compare_groups()`,
+  `what = "best"` for `tune_tree()` (new method), and `what = "resamples"`
+  (with `stat`) for `bootstrap_pathways()`.
+* `predict()` gains `tidy = TRUE`, returning one row per history with the
+  matched context, the most likely next state and the full distribution.
+  `generate_sequences()` and `simulate()` gain `tidy = TRUE`, returning a
+  wide data frame that `context_tree()` accepts. The default outputs are
+  unchanged.
+* `context_tree()` accepts the object returned by `tna::prepare_data()`.
+
+## Changes in behavior
+
+* The column of the `tune_tree()` grid that holds the minimum count is now
+  named `min_count`, matching the argument (it was `nmin`).
+* A tuning configuration whose folds all fail now reports `logLik`,
+  `perplexity` and `n_nodes_avg` as `NA` (the log-likelihood was 0). The
+  warning includes the first fold error.
+* `predict()` splits a history given as an arrow-notation string
+  (`"A -> B"`) into its states, and warns when a history contains a state
+  outside the alphabet.
+* Errors and warnings carry condition classes (`transitiontrees_bad_input`,
+  `transitiontrees_alphabet_mismatch`, `transitiontrees_no_data`,
+  `transitiontrees_weighted_unsupported`, `transitiontrees_empty_result`,
+  `transitiontrees_missing_package`, and the warnings
+  `transitiontrees_fold_failed`, `transitiontrees_no_best`,
+  `transitiontrees_unknown_state`,
+  `transitiontrees_degenerate_permutation`); argument checks use named
+  `stopifnot()` messages.
+* `plot(tune_tree(...))` marks the selected configuration only in its own
+  facet; `plot()` of a bootstrap result no longer emits a ggplot2 message.
+* `plot_pruning()` labels use ASCII text, so the plot draws in any locale.
+* `common_pathways(depth = )` returns consecutive row names.
+* ggplot2 (>= 3.5.0) is required.
 
 ## Documentation
 
-* Every help page now has examples that run unwrapped (no `\donttest{}`),
-  with fixed seeds, and examples were added for the `print()`, `summary()`,
-  `plot()` and `as.data.frame()` methods, `simulate()` and `nobs()`.
-* `@return` sections describe the returned structure (one row per what,
-  every column), including the bootstrap summary columns, the
-  `compare_groups()` omnibus table and `stratified` flag, and the
-  `weights` component of a fitted tree.
-* Corrected stale or wrong statements: `compare_pruning(alpha =)` is used
-  by `"G2"` only (not by AIC/BIC); `compare_smoothing()` holds
-  `min_count` (not `nmin`) fixed; the bootstrap G-squared level is the
-  `alpha` argument; the `trajectories` help no longer points at a
-  non-existent vignette; `plot_pruning()` no longer cites the unshipped
-  `PARITY.md`.
-* Added method references (AIC, BIC, smoothing, Jensen-Shannon divergence,
-  Benjamini-Hochberg, bootstrap) and replaced non-ASCII punctuation in the
-  help pages.
-* README and vignettes: examples run on the bundled data, and results are
-  read through the package's printed objects and accessors instead of
-  `$` / `attr()` extraction.
+* Help pages rewritten: each describes the method, the returned structure
+  and the conditions raised, with examples on the bundled data, and the
+  references were checked (Bühlmann and Wyner, 1999, and Gabadinho and
+  Ritschard, 2016, added; the author list of the transition network
+  analysis reference corrected).
+* New vignettes "Variable-order transition trees" and "Comparing groups",
+  and on the package website eight guides (workflow, data input, smoothing
+  and pruning, model selection, pathway reliability, prediction and
+  scoring, visualization, verification against PST) and three case
+  studies. The previous five vignettes are folded into these.
+* Every example runs unwrapped with fixed seeds; examples were added for
+  the print, summary, plot and as.data.frame methods.
+* `_pkgdown.yml` is left out of the built package.
 
 # transitiontrees 0.1.2
 

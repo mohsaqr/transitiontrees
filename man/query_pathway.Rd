@@ -2,42 +2,56 @@
 % Please edit documentation in R/query.R
 \name{query_pathway}
 \alias{query_pathway}
-\title{Query the Probability of a Specific Pathway -> Next State}
+\title{Look up the next-state distribution after a pathway}
 \usage{
 query_pathway(tree, pathway, next_state = NULL, exact = FALSE)
 }
 \arguments{
-\item{tree}{A \code{transitiontrees}.}
+\item{tree}{A \code{transitiontrees} object.}
 
-\item{pathway}{Character. The conditioning pathway, either as a
-single arrow-notation string ("A -> B -> C") or as a character
-vector of states (\code{c("A","B","C")}).}
+\item{pathway}{The history, oldest state first: a single string in arrow
+notation (\code{"A -> B"}) or a character vector (\code{c("A", "B")}).
+\code{"(start)"} or an empty vector denotes the root.}
 
-\item{next_state}{Character. Next-state symbol to query, or
-\code{NULL} (default) to return the full conditional distribution.}
+\item{next_state}{A state whose probability is returned. \code{NULL}
+(default) returns the whole distribution.}
 
-\item{exact}{Logical. Default \code{FALSE} -- fall back to longest
-matching suffix.}
+\item{exact}{Require \code{pathway} to be a context of the tree. Default
+\code{FALSE} (use the longest matching suffix).}
 }
 \value{
-If \code{next_state} is supplied, a numeric scalar. Otherwise
-  a named numeric vector indexed by alphabet.
+With \code{next_state}, a single probability. Otherwise a named
+  numeric vector with one probability per state, in the order of the
+  tree's states. \code{NA} for a pathway that is not a context when
+  \code{exact = TRUE}.
 }
 \description{
-Returns the probability the fitted tree assigns to a given pathway
-/ next-state pair. Two lookup modes:
-\itemize{
-  \item \code{exact = TRUE}: the pathway must appear as a node;
-    otherwise returns \code{NA}.
-  \item \code{exact = FALSE} (default): if the pathway is missing,
-    falls back to the longest matching suffix that \emph{is} in the tree
-    (mirrors \code{predict.transitiontrees()}).
+\code{query_pathway()} returns the probability distribution that the fitted
+tree assigns to the next state after a given history, or the probability of
+one particular next state. For example, it gives the probability of
+Disengaged after the history Active, Average, read directly from the fitted
+model.
+
+By default the history need not be a context of the tree: as in
+prediction, the longest suffix of the history that is in the tree is
+used, falling back to the root when no suffix matches. With
+\code{exact = TRUE} only a context of the tree is accepted, and other
+histories return \code{NA}. To find which context matched, use
+\code{\link{predict.transitiontrees}()} with \code{tidy = TRUE}; to test
+whether a pathway is a context, use \code{\link{pathway_exists}()}.
 }
+\section{Conditions}{
+
+\code{transitiontrees_bad_input} when \code{tree} is not a fitted tree or
+\code{next_state} is not one of its states.
 }
+
 \examples{
-set.seed(1)
-m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-query_pathway(tr, c("A","B"))
-query_pathway(tr, "A -> B", next_state = "C")
+tree <- context_tree(trajectories, max_depth = 3)
+query_pathway(tree, "Active -> Average")
+query_pathway(tree, c("Active", "Average"), next_state = "Disengaged")
+}
+\seealso{
+\code{\link{pathway_exists}()}, \code{\link{subtree}()},
+  \code{\link{predict.transitiontrees}()}, \code{\link{tree_pathways}()}.
 }

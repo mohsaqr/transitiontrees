@@ -2,27 +2,31 @@
 % Please edit documentation in R/tune.R
 \name{print.transitiontrees_tune}
 \alias{print.transitiontrees_tune}
-\title{Print a context tree Tuning Grid}
+\title{Print a tuning grid}
 \usage{
 \method{print}{transitiontrees_tune}(x, n = 10L, ...)
 }
 \arguments{
 \item{x}{A \code{transitiontrees_tune} object.}
 
-\item{n}{Integer. Number of configurations to print. Default 10.}
+\item{n}{Number of configurations to print. Default 10.}
 
 \item{...}{Ignored.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print a context tree Tuning Grid
+\code{print()} prints the number of configurations, the first \code{n} rows
+of the grid (lowest held-out perplexity first) and the selected
+configuration.
 }
 \examples{
-set.seed(1)
-m  <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
-tg <- tune_tree(m, max_depth = 1:2, min_count = 5L, prune = FALSE,
-                folds = 3L)
-print(tg, n = 3L)
+tuned <- tune_tree(trajectories, max_depth = 1:2, min_count = 5,
+                   prune = FALSE, folds = 3)
+print(tuned, n = 3)
+}
+\seealso{
+\code{\link{tune_tree}()},
+  \code{\link{as.data.frame.transitiontrees_tune}} for the full grid.
 }

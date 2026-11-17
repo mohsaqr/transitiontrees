@@ -2,29 +2,35 @@
 % Please edit documentation in R/compare.R
 \name{print.transitiontrees_comparison}
 \alias{print.transitiontrees_comparison}
-\title{Print a context tree Comparison}
+\title{Print a two-tree comparison}
 \usage{
 \method{print}{transitiontrees_comparison}(x, digits = 3L, n = 6L, ...)
 }
 \arguments{
 \item{x}{A \code{transitiontrees_comparison} object.}
 
-\item{digits}{Integer. Numeric digits for the printed table.
-Default 3.}
+\item{digits}{Significant digits for the distances and rounding digits
+for the per-context table. Default 3.}
 
-\item{n}{Integer. Number of top divergent pathways to print.
-Default 6.}
+\item{n}{Number of contexts to print. Default 6.}
 
 \item{...}{Ignored.}
 }
 \value{
-\code{x} invisibly.
+\code{x}, invisibly.
 }
 \description{
-Print a context tree Comparison
+\code{print()} prints the number of permutations, the observed distance, the
+mean of the null distribution, the p-value, and the \code{n} contexts that
+contribute most to the distance.
 }
 \examples{
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-print(compare_trees(grp, iter = 50L), n = 3L)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+print(compare_trees(grp, iter = 20), n = 3)
+}
+\seealso{
+\code{\link{compare_trees}()},
+  \code{\link{as.data.frame.transitiontrees_comparison}} for every
+  context.
 }

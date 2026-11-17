@@ -2,29 +2,36 @@
 % Please edit documentation in R/context_tree.R
 \name{as.data.frame.transitiontrees_group}
 \alias{as.data.frame.transitiontrees_group}
-\title{Coerce a Group of Trees to One Tidy Data Frame}
+\title{Convert a group of transition trees to one data frame of contexts}
 \usage{
 \method{as.data.frame}{transitiontrees_group}(x, row.names = NULL, optional = FALSE, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_group}.}
+\item{x}{A \code{transitiontrees_group} object.}
 
-\item{row.names, optional}{Ignored.}
+\item{row.names, optional}{Not used.}
 
-\item{...}{Forwarded to \code{\link{tree_pathways}()}.}
+\item{...}{Passed to \code{\link{tree_pathways}()}: \code{min_count},
+\code{sort_by} and \code{decreasing}.}
 }
 \value{
-A data.frame with one row per (group, pathway): a leading
-  \code{group} column identifying the source tree, then the canonical
-  pathway columns of \code{\link{tree_pathways}}.
+A \code{data.frame} with one row per group and context: a
+  \code{group} column followed by the columns of
+  \code{\link{tree_pathways}()}.
 }
 \description{
-Row-binds each group's \code{\link{tree_pathways}} table, tagged
-with a leading \code{group} column, so the whole batch is one tidy
-frame ready to filter, facet, or join.
+\code{as.data.frame()} stacks the context table of each tree in a
+\code{transitiontrees_group}, as returned by \code{\link{tree_pathways}()},
+under a leading \code{group} column, so that the contexts of all groups can
+be read, filtered or plotted together.
 }
 \examples{
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-as.data.frame(grp)
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+head(as.data.frame(groups, min_count = 50))
+}
+\seealso{
+\code{\link{tree_pathways}()}; \code{\link{compare_groups}()}
+  to test group differences context by context.
 }

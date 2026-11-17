@@ -2,38 +2,52 @@
 % Please edit documentation in R/compare_groups.R
 \name{plot.transitiontrees_group_comparison}
 \alias{plot.transitiontrees_group_comparison}
-\title{Plot a Group Comparison}
+\title{Plot the context-level differences between groups}
 \usage{
 \method{plot}{transitiontrees_group_comparison}(x, style = c("divergence", "matrix"), top = 15L, alpha = 0.05, ...)
 }
 \arguments{
-\item{x}{A \code{transitiontrees_group_comparison}.}
+\item{x}{A \code{transitiontrees_group_comparison} object.}
 
-\item{style}{One of \code{"divergence"} (default; top pathways ranked
-by behavioral JSD, significant ones highlighted) or \code{"matrix"}
-(heatmap of the between-group symmetric-KL distance matrix).}
+\item{style}{\code{"divergence"} (default) for the ranked contexts, or
+\code{"matrix"} for the between-group distance heatmap.}
 
-\item{top}{Integer. Pathways to show in \code{"divergence"}. Default 15.}
+\item{top}{Number of contexts shown by \code{"divergence"}. Default 15.}
 
-\item{alpha}{Numeric. FDR cutoff for highlighting. Default 0.05.}
+\item{alpha}{False discovery rate cutoff for highlighting. Default 0.05.}
 
 \item{...}{Ignored.}
 }
 \value{
-A ggplot object.
+A ggplot object: for \code{"divergence"}, one row per context
+  with its divergence in bits; for \code{"matrix"}, one tile per pair of
+  groups with its symmetric Kullback-Leibler distance printed.
 }
 \description{
-Plot a Group Comparison
+\code{plot()} draws a \code{\link{compare_groups}()} result in one of two
+ways. The default lollipop chart ranks the contexts by the Jensen-Shannon
+divergence between the groups' next-state distributions, with point size for
+the context's count and color separating contexts whose adjusted p-value is
+below \code{alpha}; it shows where, given the same history, the groups
+continue differently. \code{style = "matrix"} draws the pairwise distances
+between groups as a labeled heatmap.
 }
+\section{Conditions}{
+
+\describe{
+  \item{\code{transitiontrees_empty_result}}{(error) for
+    \code{"divergence"}, no context has a positive divergence.}
+}
+}
+
 \examples{
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
-plot(cmp)
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+cmp <- compare_groups(grp, iter = 20)
+plot(cmp, alpha = 0.1)
 plot(cmp, style = "matrix")
+}
+\seealso{
+\code{\link{compare_groups}()}; \code{\link{plot_difference}()}
+  for the next-state differences within each context.
 }

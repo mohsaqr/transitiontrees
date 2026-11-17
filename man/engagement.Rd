@@ -3,26 +3,43 @@
 \docType{data}
 \name{engagement}
 \alias{engagement}
-\title{Student engagement state sequences (wide format)}
+\title{Student engagement sequences (wide format)}
 \format{
-A \code{data.frame} with 1000 rows (learners) and 25 columns
-  (time-steps). States \code{"Active"}, \code{"Average"},
-  \code{"Disengaged"}; \code{NA} marks missing / dropped-out positions.
+A \code{data.frame} with 1,000 rows (students) and 25 character
+  columns \code{T1} to \code{T25}, holding \code{"Active"},
+  \code{"Average"}, \code{"Disengaged"} or \code{NA}.
 }
 \source{
-Bundled example dataset.
+The \code{engagement} sequence object of the \pkg{tna} package,
+  converted to character with its void and missing codes set to
+  \code{NA} (identical values).
 }
 \usage{
 engagement
 }
 \description{
-A wide set of student engagement-state sequences, one learner per row
-and one time-step per column. Used to demonstrate fitting from wide
-sequence data and from the network objects (\pkg{tna} / \pkg{Nestimate})
-built on top of it. Bundled example dataset.
+\code{engagement} is a synthetic dataset of the engagement states of 1,000
+students over a study program, generated to resemble the engagement
+trajectories analyzed by Saqr, \enc{López-Pernas}{Lopez-Pernas}, Helske and
+Hrastinski (2023). It has one row per student and one column per time point
+(23 to 25 observed states per student). Each state is \code{"Active"},
+\code{"Average"} or \code{"Disengaged"}; missing values occur only at the end
+of a row.
 }
 \examples{
-data(engagement)
-context_tree(engagement, max_depth = 2L)
+tree <- context_tree(engagement, max_depth = 3, min_count = 20)
+tree
+divergent_pathways(tree, top = 5)
+}
+\references{
+Saqr, M., \enc{López-Pernas}{Lopez-Pernas}, S., Helske, S., &
+Hrastinski, S. (2023). The longitudinal association between engagement
+and achievement varies by time, students' profiles, and achievement
+state: A full program study. \emph{Computers & Education}, 199, 104787.
+\doi{10.1016/j.compedu.2023.104787}
+}
+\seealso{
+\code{\link{trajectories}} for a smaller engagement dataset;
+  \code{\link{context_tree}()}.
 }
 \keyword{datasets}
