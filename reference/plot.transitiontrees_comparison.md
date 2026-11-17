@@ -1,9 +1,11 @@
-# Plot a context tree Comparison
+# Plot the permutation distribution of a two-tree comparison
 
-Visualises the permutation-test result. Histogram of the null
-distribution of transitiontrees distances under shuffled group labels; a
-vertical line marks the observed distance; the panel header carries the
-p-value.
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws the
+permutation null distribution of the distance between two context trees
+as a histogram, with the observed distance as a vertical line and the
+permutation p-value in the subtitle. An observed line far in the right
+tail indicates that the two groups predict differently beyond what
+random reassignment of sequences produces.
 
 ## Usage
 
@@ -16,11 +18,12 @@ plot(x, bins = 30L, ...)
 
 - x:
 
-  A `transitiontrees_comparison` object.
+  A `transitiontrees_comparison` object from
+  [`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md).
 
 - bins:
 
-  Integer. Histogram bins. Default 30.
+  Number of histogram bins. Default 30.
 
 - ...:
 
@@ -28,12 +31,19 @@ plot(x, bins = 30L, ...)
 
 ## Value
 
-A ggplot object.
+A ggplot object: a histogram of the permuted distances with the observed
+distance marked.
+
+## See also
+
+[`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md),
+[`as.data.frame.transitiontrees_comparison`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_comparison.md)
+for the permuted values.
 
 ## Examples
 
 ``` r
-grp <- context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-                    max_depth = 2L)
-plot(compare_trees(grp, iter = 50L))
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+plot(compare_trees(grp, iter = 20), bins = 10)
 ```

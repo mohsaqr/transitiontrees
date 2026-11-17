@@ -1,12 +1,26 @@
-# Log-Likelihood of a context tree
+# Compute the log-likelihood of a transition tree
 
-Returns a `logLik` object compatible with
-[`stats::AIC()`](https://rdrr.io/r/stats/AIC.html),
-[`stats::BIC()`](https://rdrr.io/r/stats/AIC.html), and the rest of the
-model-comparison toolchain. If `newdata` is `NULL`, returns the
-in-sample log-likelihood computed from the fitted node counts. Otherwise
-returns the held-out log-likelihood scoring `newdata` under the fitted
-tree.
+[`logLik()`](https://rdrr.io/r/stats/logLik.html) computes the
+log-likelihood of a fitted tree: the sum, over every observed position,
+of the log probability that the tree assigned to the state that
+occurred, given the longest context of the tree that matches the
+preceding history. It is the basis of the information criteria and of
+perplexity, and allows trees with different depths, pruning or smoothing
+to be compared on the same data.
+
+Without `newdata`, the log-likelihood is computed in-sample from the
+fitted counts. With `newdata`, the sequences are scored under the fitted
+tree, which gives the held-out log-likelihood. A state that is not among
+the tree's states is not scored, and the position after it is predicted
+from the root; the reported number of observations counts only scored
+positions. The number of parameters is the number of contexts times
+\\k - 1\\, for \\k\\ states.
+
+The result is a `logLik` object and works with
+[`AIC()`](https://rdrr.io/r/stats/AIC.html) and
+[`BIC()`](https://rdrr.io/r/stats/AIC.html).
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
+returns log-likelihood, AIC, BIC and perplexity together as a table.
 
 ## Usage
 
@@ -19,45 +33,44 @@ logLik(object, newdata = NULL, ...)
 
 - object:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - newdata:
 
-  Optional. Sequence data in any format accepted by
+  Sequences to score, in any form accepted by
   [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
-  `NULL` (default) returns in-sample log-likelihood.
+  `NULL` (default) gives the in-sample log-likelihood.
 
 - ...:
 
-  Ignored.
+  Not used.
 
 ## Value
 
-A `logLik` object with attributes `nobs` and `df` (number of free
-parameters in the fitted tree).
+An object of class `logLik`: the log-likelihood (natural logarithm),
+with attributes `df` (number of parameters) and `nobs` (number of scored
+positions).
 
-## Details
+## Conditions
 
-Out-of-vocabulary handling: when `newdata` contains a state not in the
-tree's alphabet, the transition *into* that state is omitted from
-scoring (it is not penalised), and the transition *out* of it is scored
-against the root context (the unseen state cannot extend a history). The
-reported `nobs` therefore counts only the positions actually scored.
+`transitiontrees_bad_input` when `newdata` has an unsupported type or no
+usable sequence.
+
+## See also
+
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md),
 [`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md),
 [`score_sequences()`](https://pak.dynasite.org/transitiontrees/reference/score_sequences.md),
-and
-[`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md)
-inherit the same behaviour.
+[`nobs.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/nobs.transitiontrees.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-tree <- context_tree(matrix(sample(c("A","B","C"), 200, TRUE), 20),
-                     max_depth = 2, min_count = 2)
+tree <- context_tree(trajectories, max_depth = 2)
 logLik(tree)
-#> 'log Lik.' -209.1249 (df=26)
-AIC(tree); BIC(tree)
-#> [1] 470.2498
-#> [1] 556.0061
+#> 'log Lik.' -1565.772 (df=26)
+AIC(tree)
+#> [1] 3183.543
+logLik(tree, newdata = engagement)
+#> 'log Lik.' -18657.84 (df=26)
 ```

@@ -1,6 +1,8 @@
-# Print a context tree Tuning Grid
+# Print a tuning grid
 
-Print a context tree Tuning Grid
+[`print()`](https://rdrr.io/r/base/print.html) prints the number of
+configurations, the first `n` rows of the grid (lowest held-out
+perplexity first) and the selected configuration.
 
 ## Usage
 
@@ -17,7 +19,7 @@ print(x, n = 10L, ...)
 
 - n:
 
-  Integer. Number of configurations to print. Default 10.
+  Number of configurations to print. Default 10.
 
 - ...:
 
@@ -25,27 +27,31 @@ print(x, n = 10L, ...)
 
 ## Value
 
-`x` invisibly.
+`x`, invisibly.
+
+## See also
+
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md),
+[`as.data.frame.transitiontrees_tune`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_tune.md)
+for the full grid.
 
 ## Examples
 
 ``` r
-set.seed(1)
-m  <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
-tg <- tune_tree(m, max_depth = 1:2, min_count = 5L, prune = FALSE,
-                folds = 3L)
-print(tg, n = 3L)
+tuned <- tune_tree(trajectories, max_depth = 1:2, min_count = 5,
+                   prune = FALSE, folds = 3)
+print(tuned, n = 3)
 #> <transitiontrees_tune>  2 configurations
-#>  max_depth nmin                           smoothing prune    logLik n_scored
-#>          1    5 floor(ymin=0.001, rule=interpolate) FALSE -402.2564      360
-#>          2    5 floor(ymin=0.001, rule=interpolate) FALSE -417.2043      360
-#>  perplexity n_nodes_avg folds_failed
-#>    3.056831           4            0
-#>    3.186429          13            0
+#>  max_depth min_count                           smoothing prune    logLik
+#>          2         5 floor(ymin=0.001, rule=interpolate) FALSE -1592.852
+#>          1         5 floor(ymin=0.001, rule=interpolate) FALSE -1659.904
+#>  n_scored perplexity n_nodes_avg folds_failed
+#>      1870   2.343845          13            0
+#>      1870   2.429412           4            0
 #> 
 #> best (min perplexity):
-#>  max_depth nmin                           smoothing prune    logLik n_scored
-#>          1    5 floor(ymin=0.001, rule=interpolate) FALSE -402.2564      360
-#>  perplexity n_nodes_avg folds_failed
-#>    3.056831           4            0
+#>  max_depth min_count                           smoothing prune    logLik
+#>          2         5 floor(ymin=0.001, rule=interpolate) FALSE -1592.852
+#>  n_scored perplexity n_nodes_avg folds_failed
+#>      1870   2.343845          13            0
 ```

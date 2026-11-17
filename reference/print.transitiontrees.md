@@ -1,6 +1,14 @@
-# Print a Context Tree
+# Print a fitted transition tree
 
-Print a Context Tree
+[`print()`](https://rdrr.io/r/base/print.html) prints a header (numbers
+of contexts, depth and states, the data the tree was fitted on, the
+smoothing scheme and `min_count`, and the pruning criterion when the
+tree is pruned), followed by the tree drawn as text. Each line of the
+drawing is one context: the state it adds to its parent's history (the
+older state), its count `n`, and the most likely next state with its
+probability. Long trees are cut after `max_lines` lines;
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) gives
+every context.
 
 ## Usage
 
@@ -13,29 +21,35 @@ print(x, max_lines = 25L, digits = 2L, ...)
 
 - x:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - max_lines:
 
-  Integer. Maximum tree-rendering lines. Default 25.
+  Maximum number of tree lines to print. Default 25.
 
 - digits:
 
-  Integer. Probability digits. Default 2.
+  Decimal places for probabilities. Default 2.
 
 - ...:
 
-  Ignored.
+  Not used.
 
 ## Value
 
-`x` invisibly.
+`x`, invisibly.
+
+## See also
+
+[`summary.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees.md),
+[`as.data.frame.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees.md),
+[`plot.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees.md).
 
 ## Examples
 
 ``` r
-tree <- context_tree(trajectories, max_depth = 2L)
-print(tree, max_lines = 10L)
+tree <- context_tree(trajectories, max_depth = 2)
+print(tree, max_lines = 10)
 #> <transitiontrees>  13 nodes, depth <= 2, 3 states  [unpruned]
 #>   alphabet : Active, Average, Disengaged
 #>   fit on   : 136 sequences, 1870 observations

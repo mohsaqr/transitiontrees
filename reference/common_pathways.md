@@ -1,7 +1,12 @@
-# Most Common Pathways in a Fitted Tree
+# List the most frequent pathways of a tree
 
-Returns the top `n` pathways by occurrence count – the trajectories the
-data actually contains many copies of.
+`common_pathways()` returns the pathways that occurred most often,
+optionally at one depth. Frequent pathways are the typical routes
+through the process: the histories most learners or sessions actually
+pass through, and the state each of them most often leads to. Frequency
+says nothing about whether a pathway's prediction differs from that of
+its shorter suffix; for that, see
+[`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md).
 
 ## Usage
 
@@ -13,70 +18,67 @@ common_pathways(tree, top = 10L, depth = NULL, min_count = 1L)
 
 - tree:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - top:
 
-  Integer. Number of pathways to return. Default 10.
+  Number of pathways to return. Default 10.
 
 - depth:
 
-  Integer or NULL. Restrict to pathways of this exact depth. `NULL`
-  (default) keeps all depths.
+  Return only pathways of this depth. `NULL` (default) returns all
+  depths.
 
 - min_count:
 
-  Integer. Minimum count cut-off. Default 1.
+  Keep pathways that occurred at least this many times. Default 1.
 
 ## Value
 
-A data.frame, same columns as
-[`tree_pathways`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
-sorted by count descending.
+A `data.frame` with the columns of
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
+one row per pathway, sorted by `count` in decreasing order, at most
+`top` rows.
+
+## Conditions
+
+`transitiontrees_bad_input` when `tree` is not a fitted tree.
+
+## See also
+
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
+[`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md),
+[`sharp_pathways()`](https://pak.dynasite.org/transitiontrees/reference/sharp_pathways.md),
+[`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-common_pathways(tree, top = 8)
-#>   pathway depth count likely_next next_probability  divergence
-#> 1 (start)     0   600           A        0.3666667          NA
-#> 2       A     1   200           A        0.3800000 0.003825681
-#> 3       B     1   181           A        0.3977901 0.013246404
-#> 4       C     1   169           C        0.3491124 0.008133498
-#> 5  B -> A     2    67           A        0.4776119 0.030761672
-#> 6  A -> A     2    66           A        0.3787879 0.003552395
-#> 7  A -> C     2    60           B        0.3500000 0.001283401
-#> 8  B -> B     2    58           B        0.4310345 0.021097272
+tree <- context_tree(trajectories, max_depth = 3)
+common_pathways(tree, top = 5)
+#>              pathway depth count likely_next next_probability divergence
+#> 1            (start)     0  1870     Average        0.4347594         NA
+#> 2            Average     1   751     Average        0.6098535 0.11356246
+#> 3             Active     1   658      Active        0.6975684 0.34948716
+#> 4   Active -> Active     2   433      Active        0.7852194 0.02860157
+#> 5 Average -> Average     2   419     Average        0.6778043 0.01466796
 #>   changes_prediction
 #> 1                 NA
 #> 2              FALSE
-#> 3              FALSE
-#> 4               TRUE
+#> 3               TRUE
+#> 4              FALSE
 #> 5              FALSE
-#> 6              FALSE
-#> 7               TRUE
-#> 8               TRUE
-common_pathways(tree, top = 8, depth = 3L)   # restrict to depth-3
-#>        pathway depth count likely_next next_probability divergence
-#> 14 B -> A -> A     3    31           C        0.3870968 0.02360426
-#> 15 A -> B -> A     3    22           A        0.6363636 0.07652960
-#> 16 B -> B -> B     3    22           A        0.4090909 0.13625381
-#> 17 C -> B -> A     3    21           A        0.3809524 0.03090333
-#> 18 A -> A -> B     3    20           B        0.6000000 0.15408490
-#> 19 A -> B -> B     3    20           B        0.7000000 0.27863441
-#> 20 B -> A -> C     3    19           C        0.4736842 0.06159616
-#> 21 C -> C -> B     3    18           A        0.3888889 0.01229457
-#>    changes_prediction
-#> 14               TRUE
-#> 15              FALSE
-#> 16               TRUE
-#> 17              FALSE
-#> 18               TRUE
-#> 19              FALSE
-#> 20               TRUE
-#> 21              FALSE
+common_pathways(tree, top = 5, depth = 3)
+#>                                  pathway depth count likely_next
+#> 1             Active -> Active -> Active     3   316      Active
+#> 2          Average -> Average -> Average     3   248     Average
+#> 3 Disengaged -> Disengaged -> Disengaged     3    81  Disengaged
+#> 4           Active -> Average -> Average     3    80     Average
+#> 5            Active -> Active -> Average     3    74     Average
+#>   next_probability  divergence changes_prediction
+#> 1        0.8354430 0.011491875              FALSE
+#> 2        0.7177419 0.006242261              FALSE
+#> 3        0.7037037 0.008106021              FALSE
+#> 4        0.5750000 0.101876320              FALSE
+#> 5        0.5540541 0.024836699              FALSE
 ```

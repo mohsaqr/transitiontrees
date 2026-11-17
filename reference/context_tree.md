@@ -1,11 +1,45 @@
-# Fit a Prediction Suffix Tree from Categorical Sequence Data
+# Fit a variable-order transition tree
 
-Estimates a variable-depth context tree (prediction suffix tree; Ron,
-Singer & Tishby 1996) from a collection of sequences. Each internal node
-represents a context (string of recent states); each leaf carries a
-smoothed conditional distribution over the next state. The tree is grown
-to `max_depth`, then optionally pruned via
-[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md).
+`context_tree()` fits a variable-order transition tree to a set of
+sequences. The tree, known in the literature as a prediction suffix tree
+(Ron, Singer & Tishby, 1996) or a variable-length Markov chain (Bühlmann
+& Wyner, 1999), describes how the next state of a process depends on the
+states that precede it, while letting the amount of history that matters
+differ from one history to another. Each node of the tree is a context,
+or pathway: the most recent states, read from oldest to newest
+(`"A -> B -> C"`). The root holds the marginal distribution of states;
+its children condition on the last state, their children on the last two
+states, and so on. The tree shows how much of the past is needed to
+predict what comes next, and along which pathways a longer history
+changes the prediction.
+
+It counts every context of up to `max_depth` states that occurs at least
+`min_count` times and estimates, for each, the conditional distribution
+of the next state, smoothed so that unobserved continuations keep a
+small probability. Sequences may be given as a wide table or matrix (one
+row per sequence, one column per time point), a list of character
+vectors, a long event log (one row per event; name the state column in
+`action`), or a fitted network object from tna or Nestimate that carries
+its sequences. With `group`, or with a grouped network object, one tree
+is fitted per group over a shared set of states. With the default floor
+smoothing, the fitted counts and probabilities match those of the PST
+package (Gabadinho & Ritschard, 2016). It returns a `transitiontrees`
+object, or a `transitiontrees_group` with one tree per group.
+
+The tree is returned unpruned: every context that clears `min_count` is
+kept. Use
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
+to retain only the contexts whose prediction differs from that of their
+shorter suffix,
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
+to choose `max_depth`, `min_count` and the smoothing scheme by
+cross-validation, and
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
+or [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) to
+read the fitted contexts as a table. Group differences are tested with
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
+and the stability of individual pathways with
+[`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md).
 
 ## Usage
 
@@ -32,199 +66,134 @@ context_tree(
 
 - data:
 
-  Sequence data in any of these forms: a wide data.frame / character
-  matrix (rows = trajectories, columns = time-steps), a list of
-  character vectors, or a **supported network/transition model object**,
-  taken directly: a fitted network object carrying its sequences, or a
-  transition-network object. Any such object that follows the same
-  convention (a `$data`/`$sequences`/ `$seqdata` sequence slot) is
-  detected structurally and works with no special-casing. For these
-  objects the sequence frame is extracted from wherever the upstream
-  stored it; an integer-coded frame is decoded through the object's
-  label map (`$nodes` id/label table, positional `$labels`, or a
-  `labels`/`alphabet` attribute), and that label set becomes the default
-  alphabet so the tree shares the model's symbol space. A *pure graph*
-  object that carries no sequences anywhere (an aggregated transition
-  network) is rejected with guidance – sequences cannot be recovered
-  from edge weights, the same reason numeric transition matrices are
-  rejected; route to the sequence-bearing object explicitly. In wide /
-  list input, `NA`, the empty string, and the TraMineR codes `"%"`
-  (void) and `"*"` (missing) all mark "no observation": the cell is
-  dropped (gaps closed, trailing padding trimmed) rather than treated as
-  a state.
+  Sequences: a wide `data.frame` or character matrix (one row per
+  sequence, one column per time point), a list of character vectors, a
+  long event log (with `action`), or a tna or Nestimate model object
+  that carries its sequence data. `NA`, `""` and the TraMineR codes
+  `"%"` and `"*"` mark positions without an observation and are dropped.
+  Numeric matrices are not accepted; convert them to character first.
 
 - max_depth:
 
-  Integer. Maximum context length the tree may represent. Default 5.
+  Longest context, in states, that the tree may contain. Default 5.
 
 - min_count:
 
-  Integer. Minimum number of times a context must occur to receive its
-  own node. Default 5. Contexts seen fewer than `min_count` times are
-  absorbed into their parent.
+  Minimum number of occurrences for a context to become a node. Default
+  5.
 
 - smoothing:
 
-  Smoothing specification: a method name as a string (uses defaults for
-  that method's hyperparameters) or a list of the form
-  `list(method, ...kwargs)` for explicit hyperparameters. Methods:
-  `"floor"` (default; `ymin = 0.001`), `"laplace"` (`alpha = 1`),
-  `"kneser_ney"` (`discount = 0.75`), `"witten_bell"`,
-  `"jelinek_mercer"` (`lambda = 0.5`). The `"floor"` method also takes
-  `rule`: `"interpolate"` (default, the interpolating floor – a
-  distribution with a zero-count state is shifted toward uniform so each
-  zero lands at exactly `ymin`) or `"cap"` (clamp every probability up
-  to `ymin` and renormalise), e.g.
-  `list("floor", ymin = 0.001, rule = "cap")`.
+  Smoothing scheme for the next-state probabilities: a method name or a
+  list of the method name and its hyperparameters. Methods are `"floor"`
+  (default; `ymin = 0.001`, `rule = "interpolate"` or `"cap"`),
+  `"laplace"` (`alpha = 1`), `"kneser_ney"` (`discount = 0.75`),
+  `"witten_bell"` and `"jelinek_mercer"` (`lambda = 0.5`). See
+  [`smooth_tree()`](https://pak.dynasite.org/transitiontrees/reference/smooth_tree.md).
 
 - alphabet:
 
-  Character vector. Optional. Override the data-derived alphabet (useful
-  when the test set may include states unseen in training).
+  Character vector of states. `NULL` (default) uses the states observed
+  in `data` (for a network object, its node labels). Supply it when new
+  data may contain states unseen here.
 
 - weights:
 
-  Numeric vector of per-sequence weights, length equal to the number of
-  input rows / list elements. `NULL` (default) fits unweighted.
+  Non-negative weight per sequence, one per row or list element of
+  `data`. `NULL` (default) fits unweighted.
 
 - group:
 
-  Optional grouping for a **batch fit**: a vector with one entry per
-  input sequence, a column name of a network object's `$metadata`, or —
-  in long-format mode (`action` given) — a column name of `data`
-  (collapsed to one value per sequence). When supplied (or when `data`
-  is itself a grouped object such as a `netobject_group` or a
-  `group_tna`), `context_tree()` fits one tree per group over a shared
-  alphabet and returns a `transitiontrees_group` (a named list of
-  `transitiontrees`s). Default `NULL` (single tree).
+  Grouping for one tree per group: a vector with one value per sequence,
+  the name of a column of `data` (long format) or of a network object's
+  metadata. `NULL` (default) fits a single tree.
 
 - block:
 
-  Optional block id for a stratified group comparison, in the same
-  shapes as `group` (per-sequence vector, or a column name of `data` in
-  long-format mode). Carried on the returned `transitiontrees_group` and
-  used automatically by
+  Optional block (stratum) identifier in the same forms as `group`, kept
+  with the fitted group and used by
   [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
-  so the caller never re-aligns it. Only meaningful alongside `group`.
-  Default `NULL`.
+  for a stratified permutation test. Default `NULL`.
 
 - actor, time, order, session, time_threshold:
 
-  Passed to
-  [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
-  when `action` is given: the unit each sequence belongs to (`actor`),
-  the timestamp column (`time`), an explicit ordering (`order`) or
-  session id (`session`), and the gap in seconds that starts a new
-  session (`time_threshold`, default 900).
+  Long-format arguments passed to
+  [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md):
+  the column identifying whose events form a sequence, the timestamp
+  column, an ordering column, a session column, and the gap in seconds
+  that starts a new session (default 900). Each defaults to `NULL`.
 
 - action:
 
-  Character. Naming a state/code column switches `data` to
-  **long-format** mode: it is reshaped to a wide sequence frame with
+  Name of the state column of a long event log. Giving it reshapes
+  `data` with
   [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
-  before fitting. Required to use any of `actor`/`time`/`order`/
-  `session`. Default `NULL` (data is already in sequence shape).
+  before fitting. Default `NULL` (`data` is already in sequence form).
 
 ## Value
 
-For a single fit, a `transitiontrees` object (described below). For a
-grouped fit (`group =` supplied, or a grouped family object passed in) a
-`transitiontrees_group`: a named list of `transitiontrees`s, one per
-group, in the group's key order, with its own `print` and
-`as.data.frame` methods. A single `transitiontrees` is a list with
-components
-
-- nodes:
-
-  Named list of node descriptors. Names are context strings (e.g.
-  `"A -> B"`); the root is keyed by the literal sentinel `"<root>"`.
-  Each entry has `depth` (integer), `counts` (numeric vector indexed by
-  alphabet), `prob` (smoothed probability vector), and `n` (sum of
-  counts).
-
-- edges:
-
-  data.frame with columns `parent`, `child`, `symbol` for fast tree
-  traversal.
-
-- alphabet:
-
-  character vector of states.
-
-- max_depth:
-
-  Integer. The fitted depth (may be less than the requested `max_depth`
-  if data are short).
-
-- nmin:
-
-  the `min_count` threshold used for the fit.
-
-- smoothing:
-
-  resolved smoothing list (`method` + hyperparameters).
-
-- n_seq, n_obs:
-
-  number of sequences and observations.
-
-- pruned:
-
-  Logical. `TRUE` after
-  [`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-  has been applied.
-
-- pruning:
-
-  When `pruned` is `TRUE`, a list capturing the criterion / alpha /
-  threshold used; otherwise `NULL`.
-
-- data:
-
-  The cleaned trajectories (a list of character vectors) retained for
-  downstream bootstrap and permutation routines.
-
-- weights:
-
-  The per-sequence weights aligned to `data`, or `NULL` for an
-  unweighted fit. Weighted trees are refused by
-  [`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md),
-  [`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md)
-  and
-  [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
-  which rebuild counts from the raw sequences.
-
-Read the fitted tree through its accessors rather than these components:
+An object of class `transitiontrees`, the fitted tree. Read it through
+its accessors:
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) or
 [`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
-/ [`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) for the
-node table,
+for one row per context,
+[`state_frequencies()`](https://pak.dynasite.org/transitiontrees/reference/state_frequencies.md)
+for the state counts,
 [`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
-for the fit scalars, and
+for the log-likelihood, information criteria and perplexity, and
 [`n_nodes()`](https://pak.dynasite.org/transitiontrees/reference/n_nodes.md)
-for the size.
+for the number of contexts. With `group`, or a grouped input, an object
+of class `transitiontrees_group`: one `transitiontrees` per group, in
+group order, summarized by
+[`summary()`](https://rdrr.io/r/base/summary.html) with one row per
+group and flattened by
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) to one
+row per group and context.
 
-## Details
+## Conditions
 
-Construction is bottom-up via k-gram counting. The root holds the
-marginal next-state distribution; depth-k nodes hold the next-state
-distribution conditional on the most recent k states. Nodes whose total
-count falls below `min_count` are not created. All nodes start "live"
-and unpruned;
-[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-decides which to retain.
+`transitiontrees_bad_input` when `max_depth` or `min_count` is not a
+single valid number, `data` has an unsupported type or no usable
+sequence, a named column is absent, `weights`, `group` or `block` do not
+have one entry per sequence, a network object carries no sequence data,
+or the smoothing specification is invalid.
 
 ## References
 
-Ron, D., Singer, Y., Tishby, N. (1996). The power of amnesia: learning
+Bühlmann, P., & Wyner, A. J. (1999). Variable length Markov chains. *The
+Annals of Statistics*, 27(2), 480-513.
+[doi:10.1214/aos/1018031204](https://doi.org/10.1214/aos/1018031204)
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software*, 72(3).
+[doi:10.18637/jss.v072.i03](https://doi.org/10.18637/jss.v072.i03)
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
 probabilistic automata with variable memory length. *Machine Learning*,
-25, 117-149.
+25(2-3), 117-149.
 [doi:10.1023/A:1026490906255](https://doi.org/10.1023/A%3A1026490906255)
+
+## See also
+
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
+and
+[`smooth_tree()`](https://pak.dynasite.org/transitiontrees/reference/smooth_tree.md)
+to refine a fitted tree;
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
+to choose its settings;
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
+to read it;
+[`plot.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees.md)
+to draw it;
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+to compare groups.
 
 ## Examples
 
 ``` r
-# Wide character matrix: one learner per row, one time-step per column
-tree <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
+# Wide sequences: one learner per row, one time point per column
+tree <- context_tree(trajectories, max_depth = 3)
 tree
 #> <transitiontrees>  38 nodes, depth <= 3, 3 states  [unpruned]
 #>   alphabet : Active, Average, Disengaged
@@ -257,33 +226,89 @@ tree
 #> |       |-- Active    n=7      -> Disengaged (0.57)
 #> |       |-- Average   n=64     -> Disengaged (0.48) 
 #> ... 12 more nodes (use as.data.frame(x) or summary(x))
+as.data.frame(tree)
+#>                                   pathway depth count likely_next
+#> 1                                 (start)     0  1870     Average
+#> 2                                 Average     1   751     Average
+#> 3                                  Active     1   658      Active
+#> 4                        Active -> Active     2   433      Active
+#> 5                      Average -> Average     2   419     Average
+#> 6                              Disengaged     1   325  Disengaged
+#> 7              Active -> Active -> Active     3   316      Active
+#> 8           Average -> Average -> Average     3   248     Average
+#> 9                       Active -> Average     2   160     Average
+#> 10                      Average -> Active     2   144      Active
+#> 11               Disengaged -> Disengaged     2   139  Disengaged
+#> 12                  Average -> Disengaged     2   134     Average
+#> 13                  Disengaged -> Average     2   122     Average
+#> 14 Disengaged -> Disengaged -> Disengaged     3    81  Disengaged
+#> 15           Active -> Average -> Average     3    80     Average
+#> 16            Active -> Active -> Average     3    74     Average
+#> 17            Average -> Active -> Active     3    70      Active
+#> 18           Average -> Average -> Active     3    66      Active
+#> 19           Average -> Active -> Average     3    64      Active
+#> 20       Average -> Disengaged -> Average     3    64  Disengaged
+#> 21       Disengaged -> Average -> Average     3    63     Average
+#> 22       Average -> Average -> Disengaged     3    62     Average
+#> 23            Active -> Average -> Active     3    53     Average
+#> 24    Disengaged -> Average -> Disengaged     3    46     Average
+#> 25    Average -> Disengaged -> Disengaged     3    45  Disengaged
+#> 26    Disengaged -> Disengaged -> Average     3    31     Average
+#> 27                   Disengaged -> Active     2    29      Active
+#> 28                   Active -> Disengaged     2    23      Active
+#> 29        Active -> Average -> Disengaged     3    17      Active
+#> 30         Disengaged -> Active -> Active     3    15      Active
+#> 31        Average -> Disengaged -> Active     3    13      Active
+#> 32        Disengaged -> Average -> Active     3    12     Average
+#> 33        Disengaged -> Active -> Average     3    10     Average
+#> 34     Disengaged -> Disengaged -> Active     3     9     Average
+#> 35         Active -> Active -> Disengaged     3     9      Active
+#> 36     Active -> Disengaged -> Disengaged     3     7  Disengaged
+#> 37        Active -> Disengaged -> Average     3     7  Disengaged
+#> 38         Active -> Disengaged -> Active     3     6      Active
+#>    next_probability  divergence changes_prediction
+#> 1         0.4347594          NA                 NA
+#> 2         0.6098535 0.113562458              FALSE
+#> 3         0.6975684 0.349487162               TRUE
+#> 4         0.7852194 0.028601567              FALSE
+#> 5         0.6778043 0.014667961              FALSE
+#> 6         0.4830769 0.403065556               TRUE
+#> 7         0.8354430 0.011491875              FALSE
+#> 8         0.7177419 0.006242261              FALSE
+#> 9         0.5187500 0.122825881              FALSE
+#> 10        0.5000000 0.147275598              FALSE
+#> 11        0.6762590 0.109773627              FALSE
+#> 12        0.5000000 0.046118168               TRUE
+#> 13        0.5163934 0.176186405              FALSE
+#> 14        0.7037037 0.008106021              FALSE
+#> 15        0.5750000 0.101876320              FALSE
+#> 16        0.5540541 0.024836699              FALSE
+#> 17        0.5285714 0.233006163              FALSE
+#> 18        0.5757576 0.022257659              FALSE
+#> 19        0.4531250 0.020767156               TRUE
+#> 20        0.4843750 0.029405449               TRUE
+#> 21        0.6507937 0.011442647              FALSE
+#> 22        0.5161290 0.026852413              FALSE
+#> 23        0.5471698 0.013380529               TRUE
+#> 24        0.6086957 0.048844466              FALSE
+#> 25        0.6000000 0.079870032              FALSE
+#> 26        0.7085484 0.198404690              FALSE
+#> 27        0.5172414 0.129904345              FALSE
+#> 28        0.3913043 0.347809514               TRUE
+#> 29        0.4117647 0.313295862               TRUE
+#> 30        0.6666667 0.077077745              FALSE
+#> 31        0.5384615 0.006062059              FALSE
+#> 32        0.8318333 0.393334181               TRUE
+#> 33        0.5000000 0.547770136              FALSE
+#> 34        0.5555556 0.106026615               TRUE
+#> 35        0.4444444 0.024571720              FALSE
+#> 36        0.5714286 0.312801206              FALSE
+#> 37        0.5707143 0.201375668               TRUE
+#> 38        0.8318333 0.677361037              FALSE
 
-# A list of character vectors works the same way
-set.seed(1)
-seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-                  simplify = FALSE)
-context_tree(seqs, max_depth = 2L)
-#> <transitiontrees>  13 nodes, depth <= 2, 3 states  [unpruned]
-#>   alphabet : A, B, C
-#>   fit on   : 50 sequences, 600 observations
-#>   smoothing: floor(ymin=0.001, rule=interpolate)   min_count = 5
-#> (start)   n=600    -> A (0.37)
-#> |-- A         n=200    -> A (0.38)
-#> |   |-- A         n=66     -> A (0.38)
-#> |   |-- B         n=67     -> A (0.48)
-#> |   `-- C         n=49     -> C (0.41)
-#> |-- B         n=181    -> A (0.40)
-#> |   |-- A         n=56     -> A (0.43)
-#> |   |-- B         n=58     -> B (0.43)
-#> |   `-- C         n=51     -> A (0.43)
-#> `-- C         n=169    -> C (0.35)
-#>     |-- A         n=60     -> B (0.35)
-#>     |-- B         n=42     -> C (0.43)
-#>     `-- C         n=51     -> B (0.37) 
-
-# Long event log: name the columns and it is reshaped first
+# A long event log, split into sessions at gaps over 15 minutes
 context_tree(group_regulation_long, actor = "Actor", time = "Time",
-             action = "Action", max_depth = 2L)
+             action = "Action", max_depth = 2)
 #> <transitiontrees>  87 nodes, depth <= 2, 9 states  [unpruned]
 #>   alphabet : adapt, cohesion, consensus, coregulate, discuss, emotion, monitor, plan, synthesis
 #>   fit on   : 2000 sequences, 27533 observations
@@ -316,10 +341,17 @@ context_tree(group_regulation_long, actor = "Actor", time = "Time",
 #> |   |-- emotion   n=830    -> plan (0.39) 
 #> ... 61 more nodes (use as.data.frame(x) or summary(x))
 
-# One tree per group over a shared alphabet
-context_tree(trajectories, group = rep(c("early", "late"), each = 69),
-             max_depth = 2L)
-#> <transitiontrees_group>  2 groups
-#>   early           13 nodes, depth <= 2, 69 seq, 969 obs
-#>   late            13 nodes, depth <= 2, 67 seq, 901 obs
+# One tree per achievement group over a shared set of states
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+summary(groups)
+#> <transitiontrees_group summary>  2 groups
+#> 
+#>  group n_seq n_obs n_nodes max_depth pruned logLik  df  nobs   AIC   BIC
+#>   High  1000 13721      80         2  FALSE -22773 640 13721 46826 51643
+#>    Low  1000 13812      82         2  FALSE -22968 656 13812 47248 52190
+#>  perplexity
+#>        5.26
+#>        5.27
 ```

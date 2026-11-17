@@ -1,27 +1,25 @@
-# Predictive Diagnostics for Held-Out Scoring
+# Plot how well a context tree predicts new sequences
 
-Visual diagnostics for how a fitted tree scores held-out sequences,
-built on
-[`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md):
+`plot_predictive()` plots how much probability a context tree gives to
+what happens next in sequences it has not seen, the measure of its value
+as a predictive model. It scores every transition of held-out sequences
+with
+[`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md)
+and shows where the model is confident and where it is surprised.
 
-- `type = "position"`:
+`type = "position"` plots the probability given to each observed next
+state against its position in the sequence. `type = "ecdf"` plots the
+empirical cumulative distribution of those probabilities, showing how
+often the model gives high or low probability to what actually happened.
+`type = "logloss"` plots the per-transition log-loss \\-\log_2
+P(\mathrm{observed})\\ in bits against position, with the mean at each
+position and the overall mean; 0 bits is a certain and correct
+prediction.
 
-  predicted probability of the observed next state against position in
-  the sequence – where the model is confident vs. surprised as a
-  sequence unfolds.
-
-- `type = "ecdf"`:
-
-  the empirical cumulative distribution of those predicted probabilities
-  – a calibration-style view of how often the model assigns high vs. low
-  probability to what actually happened.
-
-- `type = "logloss"`:
-
-  the per-position log-loss \\-\log_2 P(\mathrm{observed})\\ against
-  position – a per-position log-loss view. Lower is better (0 = certain
-  and correct); the dashed line is the mean log-loss over all scored
-  positions.
+For one number summarizing held-out prediction use
+[`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md),
+and to choose the settings that minimize it use
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md).
 
 ## Usage
 
@@ -33,33 +31,46 @@ plot_predictive(tree, newdata, type = c("position", "ecdf", "logloss"))
 
 - tree:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - newdata:
 
-  Held-out sequence data in any format accepted by
+  Held-out sequences in any format accepted by
   [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
 
 - type:
 
-  One of `"position"` (default), `"ecdf"`, or `"logloss"`.
+  `"position"` (default), `"ecdf"` or `"logloss"`.
 
 ## Value
 
-A ggplot object.
+A ggplot object of the scored transitions.
+
+## Conditions
+
+- `transitiontrees_bad_input`:
+
+  (error) `tree` is not a `transitiontrees` object.
+
+- `transitiontrees_empty_result`:
+
+  (error) `newdata` has no transitions to score.
+
+## See also
+
+[`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md)
+for the scored transitions as a table;
+[`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md);
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-fit  <- replicate(60, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(fit, max_depth = 2L)
-new  <- replicate(15, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-plot_predictive(tree, new, type = "position")
+tree <- context_tree(trajectories, max_depth = 2)
+held_out <- head(engagement, 40)
+plot_predictive(tree, held_out)
 
-plot_predictive(tree, new, type = "ecdf")
+plot_predictive(tree, held_out, type = "ecdf")
 
-plot_predictive(tree, new, type = "logloss")
+plot_predictive(tree, held_out, type = "logloss")
 ```

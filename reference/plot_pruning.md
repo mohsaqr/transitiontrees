@@ -1,23 +1,33 @@
-# Illustrate Pruning Along a Pathway's Suffix Chain
+# Plot how much memory one pathway needs
 
-A suffix-chain pruning view: take one pathway and show, side by side,
-the next-state distribution at every context along its suffix chain –
-the full context, then the context with its oldest move dropped, and so
-on down to the root – marking which contexts
-[`prune_tree`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-(criterion `"G2"`) keeps versus prunes. It answers "how much memory does
-this pathway actually need?": each context is drawn as its own panel
-(deepest memory on the left, root on the right) and classified into
-three states by opacity. **Solid** contexts are *informative* – their
-own \\G^2\\ clears the cutoff, so they add predictive information over
-their one-shorter parent. **Mid-opacity** contexts are *retained*: their
-own \\G^2\\ is below the cutoff, but a deeper context diverges, so
-[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-keeps them only as a structural bridge – they do not themselves add
-memory. **Faded** contexts are *pruned* (the redundant tail). The panel
-title carries the full context, the decision, and the \\G^2\\. The
-requested pathway must be a fitted context; the function errors rather
-than silently plotting a shorter suffix.
+`plot_pruning()` plots how much memory one pathway needs: how many past
+states are needed to predict what follows it. A context tree keeps a
+longer history only when it predicts the next state differently from its
+shorter suffix, and the plot makes that decision visible for one
+pathway. It follows the pathway's suffix chain (the full history, then
+the history without its earliest state, and so on down to the root) and
+draws the next-state distribution at every link as its own panel,
+deepest history on the left and the root on the right.
+
+Each context is classified by the \\G^2\\ rule of
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md):
+the likelihood-ratio statistic of its next-state counts against its
+one-shorter parent is compared with the chi-square critical value at
+`alpha`. A context whose own \\G^2\\ exceeds it *adds memory* and is
+drawn solid; a context below it that is kept only because a deeper
+context exceeds it is drawn at medium opacity; a context below it with
+no deeper context exceeding it is *pruned* and drawn faded. Each panel
+title gives the context, the decision and \\G^2\\. The distributions are
+the node values reported by
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
+and
+[`query_pathway()`](https://pak.dynasite.org/transitiontrees/reference/query_pathway.md).
+
+Pass an unpruned tree so that the whole chain is visible. To prune the
+whole tree use
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md);
+to compare pruning rules use
+[`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md).
 
 ## Usage
 
@@ -29,42 +39,37 @@ plot_pruning(tree, pathway, alpha = 0.05)
 
 - tree:
 
-  A `transitiontrees` (typically *unpruned*, so the full chain is
-  visible).
+  A `transitiontrees` object, usually unpruned.
 
 - pathway:
 
-  A single pathway string in arrow form (`"A -> B -> C"`, oldest on the
-  left).
+  One fitted context in arrow notation (`"A -> B -> C"`, earliest state
+  on the left).
 
 - alpha:
 
-  Significance level for the `G2` keep/prune decision. Default 0.05.
+  Significance level of the \\G^2\\ test. Default 0.05.
 
 ## Value
 
-A ggplot object.
+A ggplot object with one panel per context of the suffix chain.
 
-## Details
+## Conditions
 
-The keep/prune decision is exactly `prune_tree`'s G2 rule (\\2N \cdot
-\mathrm{KL} \> \chi^2\_{1-\alpha, k-1}\\); the cumulative `pruned` flag
-follows the leaf-up amnesia rule. The distributions and counts shown are
-the same node values reported throughout the pathway API
-([`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
-[`query_pathway()`](https://pak.dynasite.org/transitiontrees/reference/query_pathway.md)).
+- `transitiontrees_bad_input`:
+
+  (error) `tree` is not a `transitiontrees` object; `alpha` is not in
+  (0, 1); `pathway` is not a context of the tree.
 
 ## See also
 
-[`prune_tree`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md),
-[`plot_distributions`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md).
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md),
+[`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md),
+[`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(80, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3L, min_count = 3L)
-plot_pruning(tree, "A -> B -> C")
+tree <- context_tree(trajectories, max_depth = 3)
+plot_pruning(tree, "Average -> Active -> Active")
 ```

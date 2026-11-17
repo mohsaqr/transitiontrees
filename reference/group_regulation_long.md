@@ -1,12 +1,20 @@
-# Collaborative-regulation events (long format)
+# Regulation of collaborative learning (long event log)
 
-A long, one-row-per-event log of collaborative regulation moves, with
-timestamps. Used to demonstrate long-format loading: reshape with
-[`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
-(or name `action =` in
-[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md))
-to split each actor's events into time-gap sessions. Bundled example
-dataset.
+`group_regulation_long` is a coded dataset of the regulation actions of
+2,000 students working in 200 small groups across three courses, one row
+per action with a timestamp. Each action is one of nine regulation
+moves: `adapt`, `cohesion`, `consensus`, `coregulate`, `discuss`,
+`emotion`, `monitor`, `plan` and `synthesis`. Each student is classified
+as a high or low achiever (1,000 each), which makes the data suited to
+comparing the regulation pathways of two groups.
+
+The data are in long format. Name the columns in
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
+(`actor = "Actor"`, `time = "Time"`, `action = "Action"`) or reshape
+them with
+[`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md);
+with the default 15-minute session gap, each student's actions form one
+sequence of 2 to 26 actions.
 
 ## Usage
 
@@ -16,71 +24,57 @@ group_regulation_long
 
 ## Format
 
-A `data.frame` with 27533 rows and 6 columns:
+A `data.frame` with 27,533 rows (actions) and 6 columns:
 
 - Actor:
 
-  integer; the learner.
+  Integer student identifier, 1 to 2,000.
 
 - Achiever:
 
-  character; an achievement-level covariate.
+  Achievement level, `"High"` or `"Low"`, constant within a student.
 
 - Group:
 
-  numeric; the collaboration group.
+  Numeric collaboration group, 1 to 200; each student belongs to one
+  group.
 
 - Course:
 
-  character; the course.
+  Course, `"A"`, `"B"` or `"C"`.
 
 - Time:
 
-  POSIXct; the event timestamp.
+  `POSIXct` timestamp of the action.
 
 - Action:
 
-  character; the regulation move (the state).
+  The regulation move, the state of the sequence.
 
 ## Source
 
-Bundled example dataset.
+Identical to `group_regulation_long` in the tna package (there a
+tibble), where it is described as generated synthetically from that
+package's `group_regulation` data.
+
+## See also
+
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
+[`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md).
 
 ## Examples
 
 ``` r
-data(group_regulation_long)
-context_tree(group_regulation_long, actor = "Actor", time = "Time",
-             action = "Action", max_depth = 3L)
-#> <transitiontrees>  471 nodes, depth <= 3, 9 states  [unpruned]
-#>   alphabet : adapt, cohesion, consensus, coregulate, discuss, emotion, monitor, plan, synthesis
-#>   fit on   : 2000 sequences, 27533 observations
-#>   smoothing: floor(ymin=0.001, rule=interpolate)   min_count = 5
-#> (start)   n=27533  -> consensus (0.25)
-#> |-- adapt     n=509    -> consensus (0.47)
-#> |   |-- consensus  n=27     -> cohesion (0.48)
-#> |   |   |-- discuss   n=6      -> consensus (0.66)
-#> |   |   `-- plan      n=7      -> consensus (0.71)
-#> |   |-- coregulate  n=28     -> consensus (0.50)
-#> |   |   `-- consensus  n=21     -> consensus (0.43)
-#> |   |-- discuss   n=259    -> consensus (0.47)
-#> |   |   |-- adapt     n=6      -> cohesion (0.50)
-#> |   |   |-- cohesion  n=8      -> consensus (0.37)
-#> |   |   |-- consensus  n=60     -> consensus (0.53)
-#> |   |   |-- coregulate  n=37     -> consensus (0.43)
-#> |   |   |-- discuss   n=48     -> consensus (0.52)
-#> |   |   |-- emotion   n=14     -> consensus (0.50)
-#> |   |   |-- monitor   n=25     -> consensus (0.40)
-#> |   |   `-- plan      n=26     -> consensus (0.42)
-#> |   |-- emotion   n=6      -> consensus (0.83)
-#> |   |-- monitor   n=16     -> consensus (0.50)
-#> |   |   `-- plan      n=5      -> cohesion (0.40)
-#> |   |-- plan      n=6      -> consensus (0.66)
-#> |   `-- synthesis  n=140    -> consensus (0.48)
-#> |       |-- consensus  n=8      -> cohesion (0.37)
-#> |       |-- coregulate  n=5      -> consensus (0.60)
-#> |       |-- discuss   n=107    -> consensus (0.45)
-#> |       `-- monitor   n=6      -> consensus (0.66)
-#> |-- cohesion  n=1695   -> consensus (0.50) 
-#> ... 445 more nodes (use as.data.frame(x) or summary(x))
+groups <- context_tree(group_regulation_long, actor = "Actor",
+                       time = "Time", action = "Action",
+                       group = "Achiever", max_depth = 2)
+summary(groups)
+#> <transitiontrees_group summary>  2 groups
+#> 
+#>  group n_seq n_obs n_nodes max_depth pruned logLik  df  nobs   AIC   BIC
+#>   High  1000 13721      80         2  FALSE -22773 640 13721 46826 51643
+#>    Low  1000 13812      82         2  FALSE -22968 656 13812 47248 52190
+#>  perplexity
+#>        5.26
+#>        5.27
 ```

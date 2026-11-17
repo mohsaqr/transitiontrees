@@ -1,7 +1,12 @@
-# Coerce a context tree to a Tidy Data Frame
+# Convert a fitted transition tree to a data frame of contexts
 
-Returns the canonical tidy node table, identical to
-`tree_pathways(tree)`: one row per context (pathway).
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) returns
+the contexts of a fitted tree as a table with one row per context, the
+same table that
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
+returns. Each row gives the context, its depth and count, the most
+likely next state and its probability, and how much the context's
+prediction departs from that of its shorter suffix.
 
 ## Usage
 
@@ -14,29 +19,36 @@ as.data.frame(x, row.names = NULL, optional = FALSE, ...)
 
 - x:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - row.names, optional:
 
-  Ignored.
+  Not used.
 
 - ...:
 
-  Forwarded to
-  [`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md).
+  Passed to
+  [`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md):
+  `min_count`, `sort_by` and `decreasing`.
 
 ## Value
 
-A data.frame with columns `pathway`, `depth`, `count`, `likely_next`,
-`next_probability`, `divergence`, `changes_prediction`; one row per
-pathway. See
-[`tree_pathways`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
-for the column meanings.
+A `data.frame` with one row per context and columns `pathway`, `depth`,
+`count`, `likely_next`, `next_probability`, `divergence` and
+`changes_prediction`, described in
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md).
+
+## See also
+
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
+[`common_pathways()`](https://pak.dynasite.org/transitiontrees/reference/common_pathways.md),
+[`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md),
+[`tree_dependence()`](https://pak.dynasite.org/transitiontrees/reference/tree_dependence.md).
 
 ## Examples
 
 ``` r
-tree <- context_tree(trajectories, max_depth = 2L)
+tree <- context_tree(trajectories, max_depth = 2)
 as.data.frame(tree)
 #>                     pathway depth count likely_next next_probability divergence
 #> 1                   (start)     0  1870     Average        0.4347594         NA

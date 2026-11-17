@@ -1,55 +1,84 @@
-# Sample Sequences from a Fitted Context Tree
+# Generate sequences from a fitted transition tree
 
-Draws sequences by walking the fitted conditional distributions: each
-next state is sampled from the longest context in the tree that matches
-the history so far. Uses the session RNG, so call
-[`set.seed()`](https://rdrr.io/r/base/Random.html) first (or use
+`generate_sequences()` draws new sequences from the process described by
+a fitted tree. Each sequence starts from a state drawn from the overall
+distribution of states (or from a given first state), and each further
+state is drawn from the next-state distribution of the longest context
+of the tree that matches the states generated so far. Generated
+sequences can be compared with the observed ones to check whether the
+tree reproduces features of the data that it was not fitted to directly,
+such as run lengths or the time spent in each state.
+
+Draws use the session's random number generator; call
+[`set.seed()`](https://rdrr.io/r/base/Random.html) first, or use
 [`simulate.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/simulate.transitiontrees.md)
-with `seed`) for reproducible draws.
+with `seed`, for reproducible sequences. It returns one sequence per
+row, as a character matrix or, with `tidy = TRUE`, a data frame.
 
 ## Usage
 
 ``` r
-generate_sequences(tree, n = 5L, length = 10L, start = NULL)
+generate_sequences(tree, n = 5L, length = 10L, start = NULL, tidy = FALSE)
 ```
 
 ## Arguments
 
 - tree:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - n:
 
-  Integer. Number of sequences to sample. Default 5.
+  Number of sequences. Default 5.
 
 - length:
 
-  Integer. Length of each sampled sequence. Default 10.
+  Number of states in each sequence. Default 10.
 
 - start:
 
-  NULL or character vector. If NULL (default), each sequence starts from
-  the root marginal; otherwise must have length `n` and supply the first
-  state of each sequence.
+  First state of each sequence, a character vector of length `n`. `NULL`
+  (default) draws it from the root distribution.
+
+- tidy:
+
+  Return a `data.frame` rather than a matrix. Default `FALSE`.
 
 ## Value
 
-A character matrix with `n` rows (one sampled sequence each) and
-`length` columns (time-steps).
+With `tidy = TRUE`, a `data.frame` with one row per sequence and columns
+`T1` to `T<length>`, which
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
+accepts as input. With `tidy = FALSE`, a character matrix with the same
+layout.
+
+## Conditions
+
+`transitiontrees_bad_input` when `tree` is not a fitted tree, `n` or
+`length` is not a single positive number, or `start` does not have
+length `n`.
+
+## See also
+
+[`simulate.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/simulate.transitiontrees.md),
+[`predict.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/predict.transitiontrees.md).
 
 ## Examples
 
 ``` r
+tree <- context_tree(trajectories, max_depth = 3)
 set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3)
-generate_sequences(tree, n = 5, length = 10)
-#>      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10]
-#> [1,] "A"  "A"  "A"  "A"  "C"  "C"  "B"  "C"  "C"  "A"  
-#> [2,] "B"  "C"  "B"  "A"  "B"  "A"  "A"  "B"  "C"  "C"  
-#> [3,] "C"  "A"  "C"  "C"  "B"  "C"  "C"  "B"  "C"  "C"  
-#> [4,] "A"  "A"  "A"  "A"  "B"  "C"  "B"  "A"  "C"  "B"  
-#> [5,] "C"  "B"  "A"  "C"  "C"  "B"  "B"  "C"  "B"  "A"  
+generate_sequences(tree, n = 5, length = 12, tidy = TRUE)
+#>           T1         T2      T3         T4         T5         T6         T7
+#> 1    Average Disengaged Average    Average     Active     Active     Active
+#> 2    Average Disengaged Average    Average    Average    Average    Average
+#> 3     Active     Active  Active Disengaged Disengaged Disengaged Disengaged
+#> 4 Disengaged    Average Average    Average    Average     Active     Active
+#> 5    Average    Average  Active    Average     Active    Average    Average
+#>           T8         T9        T10     T11     T12
+#> 1     Active     Active     Active  Active  Active
+#> 2 Disengaged Disengaged Disengaged Average Average
+#> 3 Disengaged    Average    Average Average Average
+#> 4    Average    Average     Active  Active Average
+#> 5    Average    Average    Average Average Average
 ```

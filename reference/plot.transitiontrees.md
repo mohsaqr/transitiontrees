@@ -1,32 +1,41 @@
-# Plot a Context Tree
+# Plot a context tree
 
-Renders a fitted transitiontrees in one of four styles:
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws a fitted
+context tree. A context tree organizes the histories that precede each
+state: the root holds the overall distribution of states; each child
+extends its parent's history by one earlier state; and every node
+carries the distribution of the next state given that history. A drawing
+of the tree shows which histories occur often enough to be modeled, how
+far back the model's memory reaches along each branch, and where
+branches stop because a longer history was too rare or, after pruning,
+added nothing to the prediction.
 
-- `"horizontal"` (default) – pure-ggplot2 left-to-right phylogram: root
-  on the left, contexts fanned out vertically to the right, each
-  labelled beneath with its full arrow-notation context and (by default)
-  its modal prediction `"(state pct%)"` on a second line. Node fill is
-  the *most recent* move (rightmost token), so each branch off a depth-1
-  hub shares a colour. Set `show_prediction = FALSE` for context-only
-  labels.
+Four drawings are available. `"horizontal"` (the default) is a
+left-to-right tree with depth on the x-axis; each node is labeled with
+its full history and, by default, its most likely next state and that
+state's probability, and is filled by the most recent state of the
+history. `"dendrogram"` is a radial tree with the root at the center,
+each node filled by the state its depth adds to the history. `"icicle"`
+is a sunburst: rings are depths, the angular width of an arc is
+proportional to the summed count of the deepest histories beneath it,
+and the fill is the state the ring adds to the history. `"interactive"`
+is a visNetwork widget with draggable nodes and a tooltip that gives
+each node's count and full next-state distribution. In the node-link
+drawings, node size is the count of the history and edge width the count
+of the child history. The first three drawings are ggplot objects; the
+interactive one is an htmlwidget.
 
-- `"dendrogram"` – pure-ggplot2 radial tree: root at the centre, leaves
-  on the outer ring.
-
-- `"icicle"` – pure-ggplot2 circular partition / sunburst; inner ring
-  carries full state names, outer rings carry 3-letter abbreviations.
-
-- `"interactive"` – `visNetwork` htmlwidget (Suggests). A draggable,
-  zoomable hierarchical tree; node size = context count and edge width =
-  child's count (“flow”), the same encoding as the static styles. Hover
-  for a tooltip with the full pathway, count, modal next state, and the
-  complete next-state distribution.
-
-Common encoding: node size = context count, edge thickness = child's
-count (“flow”). Node fill is the most recent move (rightmost token of
-the context) in the `"horizontal"` style; the `"dendrogram"`,
-`"icicle"`, and `"interactive"` styles colour by the branching (oldest)
-token.
+The context tree reads backwards in time: every history ends at the
+moment of prediction. For the forward view, sequences followed from
+their first state, use
+[`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md).
+The next-state probabilities of many pathways are compared more easily
+in
+[`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md)
+or
+[`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md),
+and differences between two groups in
+[`plot_difference()`](https://pak.dynasite.org/transitiontrees/reference/plot_difference.md).
 
 ## Usage
 
@@ -45,59 +54,79 @@ plot(
 
 - x:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - style:
 
-  One of `"horizontal"` (default), `"dendrogram"`, `"icicle"`, or
+  `"horizontal"` (default), `"dendrogram"`, `"icicle"` or
   `"interactive"`.
 
 - point_size_range:
 
-  Numeric length-2 vector controlling the minimum and maximum node-point
-  size. Default `c(5, 16)` for `"dendrogram"`, `c(4, 14)` for
-  `"horizontal"`, `c(10, 45)` (pixels) for `"interactive"`. Ignored by
-  `"icicle"`.
+  Smallest and largest node size. Default `NULL`: `c(4, 14)` for
+  `"horizontal"`, `c(5, 16)` for `"dendrogram"`, `c(10, 45)` pixels for
+  `"interactive"`. Not used by `"icicle"`.
 
 - edge_size_range:
 
-  Numeric length-2 vector for edge width. Default `c(0.3, 2.5)` for the
-  static styles, `c(1, 10)` (pixels) for `"interactive"`. Ignored by
+  Thinnest and thickest edge. Default `NULL`: `c(0.3, 2.5)` for the
+  static drawings, `c(1, 10)` pixels for `"interactive"`. Not used by
   `"icicle"`.
 
 - ...:
 
-  Passed to the chosen backend. For `style = "horizontal"`,
-  `show_prediction` (logical, default `TRUE`) toggles each node's modal
-  prediction `"(state pct%)"` on a second label line; set `FALSE` for
-  context-only labels. For `style = "interactive"`, `width` / `height`
-  size the htmlwidget.
+  Options of the chosen drawing. `"horizontal"`: `show_prediction`
+  (default `TRUE`) adds the most likely next state to each label.
+  `"icicle"`: `label_min_fraction` (default 0.03) and
+  `label_abbrev_fraction` (default 0.08), the arc shares below which a
+  label is omitted or abbreviated; `abbrev_len` (default 2) or
+  `abbrev_fun` (default `NULL`) for the abbreviation; `gap_size`
+  (default 5) and `gap_size_within` (default 0.3), the widths of the
+  white lines between first-level wedges and between arcs; `jitter`
+  (default 0.04) and `jitter_seed` (default 1), a small random variation
+  of the outer edge (0 for none). `"interactive"`: `width` and `height`
+  of the widget.
 
 ## Value
 
-A ggplot object for the three static styles; an `htmlwidget` for
-`"interactive"`.
+A ggplot object for `"horizontal"`, `"dendrogram"` and `"icicle"`; a
+visNetwork htmlwidget for `"interactive"`.
 
-## Details
+## Conditions
 
-The three static styles (`"horizontal"`, `"dendrogram"`, `"icicle"`) are
-drawn in pure ggplot2. `"interactive"` requires `visNetwork`; the
-dispatcher errors informatively if it is missing.
+- `transitiontrees_empty_result`:
+
+  (error) the tree has no nodes.
+
+- `transitiontrees_missing_package`:
+
+  (error) `"interactive"` without the visNetwork package installed.
+
+## See also
+
+[`plot.transitiontrees_group`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group.md)
+for one plot per group;
+[`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
+for the forward tree;
+[`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md),
+[`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md)
+and
+[`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
+for next-state distributions.
 
 ## Examples
 
 ``` r
-set.seed(1)
-m <- matrix(sample(c("A","B","C"), 200, TRUE), 20)
-tr <- context_tree(m, max_depth = 2L, min_count = 3L)
-plot(tr)                           # left-to-right phylogram (default)
+tree <- context_tree(trajectories, max_depth = 2)
+plot(tree)
 
-plot(tr, style = "dendrogram")     # radial dendrogram
+plot(tree, show_prediction = FALSE)
 
-plot(tr, style = "icicle")         # sunburst
+plot(tree, style = "dendrogram")
+
+plot(tree, style = "icicle")
 
 if (requireNamespace("visNetwork", quietly = TRUE)) {
-  widget <- plot(tr, style = "interactive")  # visNetwork htmlwidget
-  if (interactive()) print(widget)           # opens in the viewer
+  widget <- plot(tree, style = "interactive")
 }
 ```

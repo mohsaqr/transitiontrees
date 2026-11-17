@@ -1,14 +1,36 @@
 # Articles
 
-### All vignettes
+### Vignettes
 
-- [4. Advanced analysis: smoothing, tuning, comparison, and
-  mining](https://pak.dynasite.org/transitiontrees/articles/advanced-analysis.md):
-- [2. A complete analysis case: collaborative-regulation
-  sequences](https://pak.dynasite.org/transitiontrees/articles/analysis-case.md):
-- [3. Ecosystem compatibility: TraMineR, tna, and
-  Nestimate](https://pak.dynasite.org/transitiontrees/articles/ecosystem-compatibility.md):
-- [1. Getting started: basic analysis and trajectory
-  trees](https://pak.dynasite.org/transitiontrees/articles/getting-started.md):
-- [5. Visualization: every plot, and how to read
-  it](https://pak.dynasite.org/transitiontrees/articles/visualization.md):
+- [Variable-order transition
+  trees](https://pak.dynasite.org/transitiontrees/articles/transitiontrees.md):
+- [Comparing
+  groups](https://pak.dynasite.org/transitiontrees/articles/comparing-groups.md):
+
+### Guides
+
+- [A complete
+  workflow](https://pak.dynasite.org/transitiontrees/articles/workflow.md):
+- [Data input: wide sequences, event logs and network
+  objects](https://pak.dynasite.org/transitiontrees/articles/data-input.md):
+- [Smoothing and
+  pruning](https://pak.dynasite.org/transitiontrees/articles/smoothing-and-pruning.md):
+- [Model selection: tuning, fit and
+  perplexity](https://pak.dynasite.org/transitiontrees/articles/model-selection.md):
+- [Pathway reliability with the
+  bootstrap](https://pak.dynasite.org/transitiontrees/articles/pathway-reliability.md):
+- [Prediction, scoring, imputation and
+  mining](https://pak.dynasite.org/transitiontrees/articles/prediction-and-scoring.md):
+- [Visualizing transition
+  trees](https://pak.dynasite.org/transitiontrees/articles/visualization.md):
+- [Verification against the PST
+  package](https://pak.dynasite.org/transitiontrees/articles/verification.md):
+
+### Case studies
+
+- [Case study: collaborative regulation by
+  achievement](https://pak.dynasite.org/transitiontrees/articles/case-regulation-achievement.md):
+- [Case study: engagement
+  trajectories](https://pak.dynasite.org/transitiontrees/articles/case-engagement.md):
+- [Case study: human-AI
+  collaboration](https://pak.dynasite.org/transitiontrees/articles/case-ai-collaboration.md):

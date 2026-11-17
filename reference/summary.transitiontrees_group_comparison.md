@@ -1,9 +1,10 @@
-# Summarise a Group Comparison
+# Summarize a group comparison
 
-Prints a compact verdict for a `transitiontrees_group_comparison`: the
-omnibus behavioral and usage permutation p-values, and how many pathways
-pass the FDR cutoff on each axis or flip their modal next state between
-groups. Returns the per-pathway table invisibly.
+[`summary()`](https://rdrr.io/r/base/summary.html) reduces a
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+result to one row: the omnibus behavioral and usage tests, and the
+number of contexts whose adjusted p-value is below `alpha` on each axis
+or whose modal next state differs between groups.
 
 ## Usage
 
@@ -20,8 +21,7 @@ summary(object, alpha = 0.05, ...)
 
 - alpha:
 
-  Numeric. FDR cutoff used when counting significant pathways. Default
-  0.05.
+  False discovery rate cutoff used to count contexts. Default 0.05.
 
 - ...:
 
@@ -29,25 +29,30 @@ summary(object, alpha = 0.05, ...)
 
 ## Value
 
-Invisibly, the per-pathway data.frame (`object$pathways`); see
-[`compare_groups`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
-for the column vocabulary.
+An object of class `summary.transitiontrees_group_comparison`: a one-row
+data frame with columns `groups` (the group names joined by `" vs "`),
+`n_contexts`, `iter`, `stratified`, `behavioral_jsd` and `behavioral_p`
+(omnibus count-weighted Jensen-Shannon divergence, bits, and its
+permutation p-value), `usage_g2` and `usage_p` (omnibus usage statistic
+and its p-value), `alpha`, `n_behavioral` and `n_usage` (contexts with
+adjusted p-value below `alpha`) and `n_flips` (contexts whose modal next
+state differs). It prints as a short verdict.
+
+## See also
+
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
+[`as.data.frame.transitiontrees_group_comparison`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group_comparison.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
-summary(cmp)
-#> Group comparison: x vs y
-#>   behavioral omnibus p = 0.010 | usage omnibus p = 0.010
-#>   pathways with behavioral difference (jsd_padj < 0.05): 4
-#>   pathways with usage difference      (usage_padj < 0.05): 3
-#>   pathways whose modal next state flips between groups: 4
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+summary(compare_groups(grp, iter = 20), alpha = 0.1)
+#> Group comparison: High vs Low (10 contexts, 20 permutations)
+#>   behavioral omnibus: JSD = 874.104 bits, p = 0.048
+#>   usage omnibus     : G2 = 282.97, p = 0.048
+#>   pathways with a behavioral difference (adjusted p < 0.10): 8
+#>   pathways with a usage difference      (adjusted p < 0.10): 8
+#>   pathways whose modal next state differs between groups: 4
 ```

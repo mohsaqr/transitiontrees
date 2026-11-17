@@ -1,9 +1,17 @@
-# Model-Fit Scalars in One Call
+# Summarize the fit of a transition tree
 
-Bundles the standard goodness-of-fit scalars for a fitted tree into one
-tidy row: `logLik`, the parameter count `df`, the observation count
-`nobs`, `AIC`, `BIC`, and `perplexity`. A one-call replacement for
-[`logLik(); nobs(); AIC(); BIC(); perplexity()`](https://rdrr.io/r/stats/logLik.html).
+`model_fit()` returns the fit statistics of a tree as one row:
+log-likelihood, number of parameters, number of scored positions, AIC,
+BIC and perplexity. The row puts trees with different depths, pruning or
+smoothing on a common footing, and for a group of trees gives one row
+per group.
+
+Without `newdata` the statistics are in-sample. With `newdata` every
+statistic is computed on those sequences, with AIC and BIC formed from
+the held-out log-likelihood and the tree's number of parameters. The
+number of parameters is the number of contexts times \\k - 1\\, for
+\\k\\ states (see
+[`logLik.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md)).
 
 ## Usage
 
@@ -15,38 +23,40 @@ model_fit(tree, newdata = NULL)
 
 - tree:
 
-  A `transitiontrees` or `transitiontrees_group`.
+  A `transitiontrees` or `transitiontrees_group` object.
 
 - newdata:
 
-  Optional sequence data. If supplied, the scalars are evaluated on it
-  (held-out); if `NULL` (default), in-sample.
+  Sequences to evaluate the tree on. `NULL` (default) evaluates it
+  in-sample.
 
 ## Value
 
-A one-row `data.frame` (one row per group for a `transitiontrees_group`)
-with columns `logLik`, `df`, `nobs`, `AIC`, `BIC`, `perplexity`.
+A `data.frame` with columns `logLik`, `df`, `nobs`, `AIC`, `BIC` and
+`perplexity`: one row for a tree, or one row per group, with a leading
+`group` column, for a `transitiontrees_group`. When no position can be
+scored, the statistics are `NA`.
 
-## Details
+## Conditions
 
-With `newdata`, every scalar is computed **out-of-sample** (`AIC`/`BIC`
-use the held-out deviance with the model's training `df`). A
-`transitiontrees_group` returns one row per group, tagged with a leading
-`group` column.
+`transitiontrees_bad_input` when `tree` is not a fitted tree or group,
+or `newdata` has no usable sequence.
 
 ## See also
 
-[`perplexity`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md),
-[`logLik.transitiontrees`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md).
+[`logLik.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md),
+[`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md),
+[`summary.transitiontrees_group()`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_group.md),
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(60, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 2L, min_count = 3L)
+tree <- context_tree(trajectories, max_depth = 3)
 model_fit(tree)
-#>    logLik df nobs     AIC      BIC perplexity
-#> 1 -781.31 26  720 1614.62 1733.681   2.959892
+#>      logLik df nobs      AIC      BIC perplexity
+#> 1 -1511.774 76 1870 3175.548 3596.109   2.244394
+model_fit(prune_tree(tree))
+#>      logLik df nobs      AIC      BIC perplexity
+#> 1 -1536.197 36 1870 3144.395 3343.607   2.273899
 ```

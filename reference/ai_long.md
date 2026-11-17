@@ -1,9 +1,19 @@
-# AI-collaboration messages (long format)
+# AI turns in human-AI programming sessions (long event log)
 
-A long, one-row-per-message log from an AI-assisted collaboration study,
-with Unix timestamps and an explicit session id. Used to demonstrate
-long-format loading with Unix time and sessions. Bundled example
-dataset.
+`ai_long` is a coded dataset of the turns of an AI coding assistant in
+428 human-AI pair-programming sessions across 34 projects, held between
+5 February and 8 March 2026, one row per code. A turn (message) can
+carry several codes, in the order given by `code_order`. Each code is
+one of eight assistant actions (`Ask`, `Delegate`, `Execute`, `Explain`,
+`Investigate`, `Plan`, `Repair`, `Report`), grouped into three clusters
+(`Action`, `Communication`, `Repair`).
+
+Timestamps have day resolution (midnight, UTC+2, of the session date),
+so the order of events within a day comes from `order_in_session`, which
+counts the human turns of the session as well and therefore has gaps.
+Use `actor = "session_id"` with `order = "order_in_session"` for one
+sequence per session, or `time = "timestamp"` to split sequences at
+changes of day.
 
 ## Usage
 
@@ -13,83 +23,82 @@ ai_long
 
 ## Format
 
-A `data.frame` with 8551 rows and 9 columns:
+A `data.frame` with 8,551 rows (codes) and 9 columns:
 
 - message_id:
 
-  integer; the message the code was assigned to.
+  Integer identifier of the turn; the codes of one turn share it.
 
 - project:
 
-  character; the project (the actor).
+  Project identifier, `"Project_1"` to `"Project_34"`.
 
 - session_id:
 
-  character; the session id.
+  Session identifier, a 12-character hash.
 
 - timestamp:
 
-  integer; Unix time in seconds.
+  Integer Unix time in seconds (day resolution).
 
 - session_date:
 
-  character; the session date (YYYY-MM-DD).
+  Date of the row, `"YYYY-MM-DD"`.
 
 - code:
 
-  character; the move (eight codes, the fine state).
+  The assistant action, the state of the sequence.
 
 - cluster:
 
-  character; the coarse state the code belongs to.
+  The cluster of the code.
 
 - code_order:
 
-  integer; order of the code within its message.
+  Order of the code within its turn, from 1.
 
 - order_in_session:
 
-  integer; order within the session.
+  Position of the row in its session, counting human and AI rows
+  together.
 
 ## Source
 
-Bundled example dataset.
+Bundled example dataset. The same data are distributed with the
+Nestimate package as `ai_long`.
+
+## See also
+
+[`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md),
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
 
 ## Examples
 
 ``` r
-data(ai_long)
-context_tree(ai_long, actor = "project", time = "timestamp",
-             action = "code", max_depth = 2L)
-#> <transitiontrees>  62 nodes, depth <= 2, 8 states  [unpruned]
-#>   alphabet : Ask, Delegate, Execute, Explain, Investigate, Plan, Repair, Report
-#>   fit on   : 160 sequences, 8551 observations
-#>   smoothing: floor(ymin=0.001, rule=interpolate)   min_count = 5
-#> (start)   n=8551   -> Execute (0.38)
-#> |-- Ask       n=99     -> Explain (0.44)
-#> |   |-- Execute   n=32     -> Execute (0.37)
-#> |   |-- Explain   n=9      -> Explain (0.66)
-#> |   |-- Investigate  n=21     -> Explain (0.43)
-#> |   |-- Plan      n=15     -> Explain (0.40)
-#> |   `-- Repair    n=13     -> Explain (0.84)
-#> |-- Delegate  n=290    -> Plan (0.60)
-#> |   |-- Ask       n=5      -> Plan (0.60)
-#> |   |-- Delegate  n=9      -> Plan (0.55)
-#> |   |-- Execute   n=88     -> Plan (0.59)
-#> |   |-- Explain   n=7      -> Plan (0.43)
-#> |   |-- Investigate  n=43     -> Plan (0.58)
-#> |   |-- Plan      n=88     -> Plan (0.65)
-#> |   |-- Repair    n=11     -> Execute (0.54)
-#> |   `-- Report    n=12     -> Plan (0.41)
-#> |-- Execute   n=3188   -> Execute (0.49)
-#> |   |-- Ask       n=23     -> Execute (0.52)
-#> |   |-- Delegate  n=51     -> Execute (0.37)
-#> |   |-- Execute   n=1537   -> Execute (0.53)
-#> |   |-- Explain   n=129    -> Investigate (0.37)
-#> |   |-- Investigate  n=545    -> Execute (0.49)
-#> |   |-- Plan      n=695    -> Execute (0.44)
-#> |   |-- Repair    n=118    -> Execute (0.45)
-#> |   `-- Report    n=62     -> Execute (0.53)
-#> |-- Explain   n=512    -> Investigate (0.32) 
-#> ... 36 more nodes (use as.data.frame(x) or summary(x))
+tree <- context_tree(ai_long, actor = "session_id",
+                     order = "order_in_session", action = "code",
+                     max_depth = 2)
+state_frequencies(tree)
+#>         state count proportion
+#> 1     Execute  3258 0.38100807
+#> 2 Investigate  2317 0.27096246
+#> 3        Plan  1620 0.18945153
+#> 4     Explain   524 0.06127938
+#> 5    Delegate   295 0.03449889
+#> 6      Repair   257 0.03005496
+#> 7      Report   181 0.02116711
+#> 8         Ask    99 0.01157759
+common_pathways(tree, top = 5, depth = 2)
+#>                  pathway depth count likely_next next_probability  divergence
+#> 1     Execute -> Execute     2  1503     Execute        0.5522289 0.006393297
+#> 2    Investigate -> Plan     2   921     Execute        0.4668838 0.004718142
+#> 3 Execute -> Investigate     2   727        Plan        0.3438790 0.031815394
+#> 4        Plan -> Execute     2   674     Execute        0.4569733 0.016165977
+#> 5 Investigate -> Execute     2   532     Execute        0.5112782 0.007986774
+#>   changes_prediction
+#> 1              FALSE
+#> 2              FALSE
+#> 3              FALSE
+#> 4              FALSE
+#> 5              FALSE
 ```

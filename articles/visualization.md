@@ -1,32 +1,47 @@
-# 5. Visualization: every plot, and how to read it
+# Visualizing transition trees
 
-`transitiontrees` draws every static plot in pure `ggplot2` – no extra
-plotting dependency – plus one optional interactive renderer
-(`visNetwork`). Every plot returns a standard object you can theme,
-save, or further modify. This vignette tours them all and reads each
-one.
+A variable-order transition tree is a hierarchy of histories. Its root
+holds the overall distribution of states; each child extends its
+parent’s history by one earlier state and carries its own next-state
+distribution (Ron, Singer and Tishby, 1996; Gabadinho and Ritschard,
+2016). A figure of such a model has to show three things at once: which
+histories the model keeps, how much data supports each one, and what
+each history predicts. No single display shows all three well for a
+large tree. The package therefore offers several views of the same
+model. Tree drawings show the structure. Pathway charts rank histories
+by frequency or by how much they change the prediction. Diagnostic plots
+follow one pathway or one sequence. Inferential plots show the
+uncertainty and the group differences behind a result.
 
-A shared convention across the static tree styles: **node size = context
-count** and **edge thickness = the volume of sequences flowing down that
-branch**. Node fill differs by style: the horizontal phylogram colours
-each node by the **most-recent** state of its pathway, while the
-dendrogram and icicle colour by the **oldest** (branching) state, so
-each first-level branch keeps one colour.
+Every static plot is a `ggplot2` object, so it can be themed, annotated
+and saved with the usual `ggplot2` tools. One interactive view uses
+`visNetwork`. The default colors are the Okabe-Ito palette.
 
-## Setup
+## Data
 
-Every plot below is drawn from the same fitted, pruned tree on the
-bundled `trajectories` data (138 learners, three engagement states). We
-fit it once here and reuse it throughout.
+Three bundled datasets are used.
+
+- `trajectories`: the engagement states (`Active`, `Average`,
+  `Disengaged`) of 138 learners over 15 time steps, one row per learner.
+  It is used for the tree drawings and the pathway charts.
+- `group_regulation_long`: 27,533 collaborative-regulation events in
+  long format. `Actor` identifies the learner, `Time` orders the events,
+  `Action` is the state (nine regulation moves) and `Achiever` (`High`
+  or `Low`) is the group. It is used for the group plots.
+- `ai_long`: 8,551 coded messages from human-AI collaboration sessions.
+  `project` is the actor, `session_id` the session and `code` the state
+  (eight moves). It is used for the forward trajectory plots.
+
+To fit the tree used in most of this guide, we call
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
+with `max_depth` and `min_count`, and prune it with
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md).
 
 ``` r
 
 library(transitiontrees)
-data(trajectories)
-set.seed(1)
-
-tree   <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
-pruned <- prune_tree(tree, criterion = "G2", alpha = 0.05)
+tree <- context_tree(trajectories, max_depth = 3L, min_count = 5L)
+pruned <- prune_tree(tree)
 pruned
 #> <transitiontrees>  18 nodes, depth <= 3, 3 states  [pruned]
 #>   alphabet : Active, Average, Disengaged
@@ -53,13 +68,23 @@ pruned
 #>     `-- Disengaged  n=139    -> Disengaged (0.68)
 ```
 
-## 1. The fitted tree, four ways
+The pruned tree has 18 contexts: the root, three of depth one, eight of
+depth two and six of depth three.
 
-### Horizontal phylogram (default)
+## The tree
 
-Root on the left, depth rightward; every leaf is labelled with its full
-arrow-form pathway and the predicted next state. This is the style for a
-paper when you need to cite specific pathways inline.
+To draw the tree, we call
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) with `style`.
+All static styles share one encoding: the size of a node is the number
+of observations of its context, and the width of a branch is the number
+of observations flowing into the child.
+
+### Horizontal tree
+
+`style = "horizontal"` (the default) draws the root on the left and
+deeper contexts to the right. Each node is labeled with its pathway and
+its most likely next state with that state’s probability, and each node
+is colored by the most recent state of its pathway.
 
 ``` r
 
@@ -68,14 +93,15 @@ plot(pruned, style = "horizontal")
 
 ![](visualization_files/figure-html/horizontal-1.png)
 
-`point_size_range` and `edge_size_range` exaggerate or compress the size
-dynamic range – useful for slides where the count contrast must read
-from the back of the room. The encodings are unchanged; only the scales
-differ.
+This style suits a report that cites specific pathways, because every
+pathway and its prediction can be read from the figure. Adding
+`show_prediction = FALSE` keeps only the pathway labels.
+`point_size_range` and `edge_size_range` widen or compress the size
+scales without changing the encoding.
 
 ``` r
 
-plot(pruned, style = "horizontal",
+plot(pruned, style = "horizontal", show_prediction = FALSE,
      point_size_range = c(3, 12), edge_size_range = c(0.4, 3.5))
 ```
 
@@ -83,9 +109,10 @@ plot(pruned, style = "horizontal",
 
 ### Radial dendrogram
 
-The same tree wrapped into a circle: the eye goes to the thick central
-branches (the corpus highways) versus the thin outer twigs (contexts
-pruning kept on evidence, not volume).
+`style = "dendrogram"` wraps the tree into a circle with the root at the
+center and the deepest contexts on the outer ring. Nodes are colored by
+the oldest state of their pathway, so each first-level branch keeps one
+color.
 
 ``` r
 
@@ -94,11 +121,16 @@ plot(pruned, style = "dendrogram")
 
 ![](visualization_files/figure-html/dendrogram-1.png)
 
-### Icicle / sunburst
+The thick inner branches are the frequent histories; the thin outer
+twigs are deeper contexts that pruning kept because they change the
+prediction, not because they are frequent.
 
-A space-filling partition: arc angular width is proportional to count,
-so a dominant state visually swallows the ring – an honest depiction of
-class imbalance.
+### Icicle
+
+`style = "icicle"` is a sunburst: each ring is one depth, and the angle
+of a segment is proportional to the count of its context. The inner ring
+carries the full state names and the outer rings three-letter
+abbreviations.
 
 ``` r
 
@@ -107,78 +139,140 @@ plot(pruned, style = "icicle")
 
 ![](visualization_files/figure-html/icicle-1.png)
 
-A fourth style, `style = "interactive"`, renders the same tree as a
-draggable, zoomable `visNetwork` widget (collapse the dominant spine and
-the rare informative branches become legible). It produces an HTML
-widget rather than a static figure, so it is best run in an interactive
-session rather than shown inline here.
+Because area follows the counts, a frequent state takes most of the ring
+and the rare histories become thin slices. The display gives an accurate
+impression of how the observations are distributed over the contexts.
 
-## 2. Pathway-centric plots
+### Interactive tree
 
-These complement the tree by ranking *pathways* rather than drawing
-topology.
+`style = "interactive"` draws the same tree as a `visNetwork` widget
+that can be dragged and zoomed. Hovering over a node shows its pathway,
+count, most likely next state and full next-state distribution.
+`visNetwork` is a suggested package, so the call is guarded.
+
+``` r
+
+plot(pruned, style = "interactive", height = "450px")
+```
+
+### One tree per group
+
+A tree fitted with `group` holds one tree per group. To fit one, we call
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
+on the long log with `actor`, `time` and `action` naming the columns and
+`group` naming the grouping column.
+
+``` r
+
+regulation <- context_tree(group_regulation_long, actor = "Actor",
+                           time = "Time", action = "Action",
+                           group = "Achiever", max_depth = 2L,
+                           min_count = 10L)
+regulation
+#> <transitiontrees_group>  2 groups
+#>   High            74 nodes, depth <= 2, 1000 seq, 13721 obs
+#>   Low             77 nodes, depth <= 2, 1000 seq, 13812 obs
+```
+
+Each group’s tree has more than 70 contexts before pruning. To draw each
+group’s pruned tree, we call
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the pruned
+group object. Further arguments are passed to each tree’s plot, and each
+figure is captioned with its group.
+
+``` r
+
+plot(prune_tree(regulation), style = "dendrogram")
+```
+
+![](visualization_files/figure-html/group-plot-1.png)![](visualization_files/figure-html/group-plot-2.png)
+
+After pruning, the high achievers’ tree keeps 12 contexts and the low
+achievers’ 11, almost all of depth one: for both groups the most recent
+move carries most of what can be predicted.
+
+## Ranking pathways
+
+The tree drawings show structure. The pathway charts rank the contexts
+so that the most frequent or most informative ones can be read directly.
 
 ### Next-state heatmap
 
-Each row is a context, each column a next state, each cell
-`P(next | context)`, modal cell bold; a `>` prefix marks a context whose
-modal next state flips versus its shorter parent. Sorting the **same**
-data two ways is the single best “common vs informative” figure:
+To draw each context’s next-state distribution as a row of a heatmap, we
+call
+[`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md)
+with `top` for the number of contexts and `sort_by` for the order. The
+most likely next state of each row is shown in bold, and a `>` before
+the pathway marks a context whose most likely next state differs from
+its parent’s.
 
 ``` r
 
-plot_pathways(pruned, top = 12, sort_by = "count")        # the highways
+plot_pathways(pruned, top = 12L, sort_by = "count")
 ```
 
-![](visualization_files/figure-html/heatmap-count-1.png)
+![](visualization_files/figure-html/pathways-count-1.png)
+
+Sorted by count, the rows are the frequent histories, and most of them
+continue to the same state. To rank by how far each context’s
+distribution departs from its parent’s, we set `sort_by = "divergence"`.
 
 ``` r
 
-plot_pathways(pruned, top = 12, sort_by = "divergence")   # the informative ones
+plot_pathways(pruned, top = 12L, sort_by = "divergence")
 ```
 
-![](visualization_files/figure-html/heatmap-div-1.png)
+![](visualization_files/figure-html/pathways-divergence-1.png)
 
-Sorted by count the bright cells stack on the most frequent next state;
-sorted by divergence they move off it. That lateral shift is the thesis
-in one comparison.
+The two orderings answer different questions: which histories are
+common, and which histories change what happens next.
 
-### Divergence lollipop
+### Divergence chart
 
-Per-context KL from the shorter parent, ranked, with orange points
-marking modal-flip contexts – the histories that genuinely *change* the
-prediction. `min_count` removes small-sample mirages.
+To rank contexts by their Kullback-Leibler divergence from the parent,
+we call
+[`plot_divergence()`](https://pak.dynasite.org/transitiontrees/reference/plot_divergence.md)
+with `top` and `min_count`. Contexts whose most likely next state
+differs from their parent’s are marked.
 
 ``` r
 
-plot_divergence(pruned, top = 12, min_count = 5)
+plot_divergence(pruned, top = 12L, min_count = 5L)
 ```
 
 ![](visualization_files/figure-html/divergence-1.png)
 
-### Per-context distributions
+`min_count` removes contexts too rare for their divergence to be
+trusted; the bootstrap in [Pathway reliability with the
+bootstrap](https://pak.dynasite.org/transitiontrees/articles/pathway-reliability.md)
+quantifies the same concern.
 
-The full next-state distribution for each context as small multiples –
-peaked panels are near-settled continuations, flat panels are the
-decision points where history does not resolve the next state.
+### Next-state distributions
+
+To draw the full next-state distribution of each context as small
+multiples, we call
+[`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md)
+with `top` for the number of contexts, or `contexts` for chosen ones.
 
 ``` r
 
-plot_distributions(pruned, top = 6)
+plot_distributions(pruned, top = 6L)
 ```
 
 ![](visualization_files/figure-html/distributions-1.png)
 
-## 3. Diagnostic plots
+A panel with one tall bar is a context whose continuation is nearly
+settled; a flat panel is a point where the history does not determine
+the next state.
 
-### How much memory does one pathway need?
+## How much history a pathway needs
 
+To follow one pathway from its full context down to the root, we call
 [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
-walks a pathway’s suffix chain – the full context, then the same context
-with its oldest move dropped, down to the root – and marks which
-contexts the pruning test keeps (solid) versus drops (faded). It
-answers, for that one pathway, how far back history actually has to
-reach.
+on the unpruned tree with the pathway. Each row is one suffix of the
+pathway, from the full context to the root, with its next-state
+distribution; the suffixes that the $`G^2`$ pruning test keeps are drawn
+solid and the ones it drops faded.
 
 ``` r
 
@@ -187,166 +281,259 @@ plot_pruning(tree, "Active -> Active -> Average")
 
 ![](visualization_files/figure-html/pruning-1.png)
 
-### Predictive quality
+The figure answers, for one pathway, how far back the history has to
+reach before the prediction stops changing. Here the context
+`Active -> Average` changes the prediction of `Average` ($`G^2`$ =
+27.2), but adding the earlier `Active` does not ($`G^2`$ = 2.5), so the
+pathway needs two steps of history, not three.
 
-[`plot_predictive()`](https://pak.dynasite.org/transitiontrees/reference/plot_predictive.md)
-scores sequences against the fitted tree three ways. For this tour we
-score the bundled `trajectories` themselves; in a real evaluation pass
-genuinely held-out sequences (the *Advanced analysis* vignette shows the
-cross-validated route).
+## Forward trajectories
 
-`type = "logloss"` – per-position surprise in bits against position;
-below the uniform ceiling is structure the model exploited:
-
-``` r
-
-plot_predictive(pruned, trajectories, type = "logloss")
-```
-
-![](visualization_files/figure-html/predictive-logloss-1.png)
-
-`type = "ecdf"` – the distribution of the probability assigned to the
-state that actually occurred; steep steps reveal calibration plateaus
-(e.g. a mass of three-way-open branch points):
-
-``` r
-
-plot_predictive(pruned, trajectories, type = "ecdf")
-```
-
-![](visualization_files/figure-html/predictive-ecdf-1.png)
-
-A third type, `type = "position"`, traces each individual sequence’s
-confidence move-by-move (one grey line per sequence). It is a
-per-sequence view that only reads cleanly for a handful of sequences, so
-it is omitted here; reach for it when you want to inspect a few specific
-trajectories rather than the corpus as a whole.
-
-## 4. Forward trajectory trees
-
-The context tree reads backward;
+A context tree reads histories backwards from the present. To draw the
+same sequences forward in time, as a tree of the paths that sequences
+take from their first state, we call
 [`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
-draws the same sequences forward in time. Colour by **frequency** (how
-many sequences walk each path) or by **predictability**
-(`P(state | history)` from the model). Read together they separate
-traffic from predictability – a wide-but-pale edge is a high-traffic
-decision point.
-
-Forward trajectories show their structure best on a richer alphabet, so
-this section uses the bundled `ai_long` log (eight AI-prompting move
-types) rather than the three-state engagement data above.
+with `measure` and `min_count` for the smallest path shown. The forward
+view needs a richer alphabet than three states to be informative, so we
+fit a tree to the human-AI collaboration log.
 
 ``` r
 
-data(ai_long)
-tree_ai   <- context_tree(ai_long, actor = "project", session = "session_id",
-                         action = "code", max_depth = 3L, min_count = 10L)
-pruned_ai <- prune_tree(tree_ai)
+ai_tree <- context_tree(ai_long, actor = "project", session = "session_id",
+                        action = "code", max_depth = 3L, min_count = 10L)
 ```
+
+With `measure = "frequency"` the paths are colored by the number of
+sequences that take them.
 
 ``` r
 
-plot_trajectories(tree_ai, measure = "frequency", min_count = 20L)
+plot_trajectories(ai_tree, measure = "frequency", min_count = 20L)
 ```
 
-![](visualization_files/figure-html/traj-freq-1.png)
+![](visualization_files/figure-html/trajectories-frequency-1.png)
+
+With `measure = "predictability"` they are colored by the probability
+that the model gives each step, given the path before it.
 
 ``` r
 
-plot_trajectories(pruned_ai, measure = "predictability", min_count = 20L)
+plot_trajectories(ai_tree, measure = "predictability", min_count = 20L)
 ```
 
-![](visualization_files/figure-html/traj-pred-1.png)
+![](visualization_files/figure-html/trajectories-predictability-1.png)
 
-## 5. Inferential plots
+Read together, the two show where traffic and predictability part: a
+path that many sequences take but that the model predicts poorly is a
+decision point, where sequences with the same past go different ways.
+
+## Predictive performance
+
+To show how well the model predicts sequences, we call
+[`plot_predictive()`](https://pak.dynasite.org/transitiontrees/reference/plot_predictive.md)
+with `type`. `"logloss"` plots each transition’s surprise in bits
+against its position; `"ecdf"` and `"position"` are the other views.
+Held-out data should be used for an honest evaluation; the bundled data
+are scored here only to show the display.
+
+``` r
+
+plot_predictive(pruned, newdata = trajectories, type = "logloss")
+```
+
+![](visualization_files/figure-html/predictive-1.png)
+
+Held-out evaluation and the other two views are covered in [Prediction,
+scoring, imputation and
+mining](https://pak.dynasite.org/transitiontrees/articles/prediction-and-scoring.md).
+
+## Uncertainty and comparison
 
 ### Bootstrap forest plot
 
-Each pathway’s 95% bootstrap interval on G-squared against the
-chi-square critical value (dashed line); colour encodes the trust
-quadrant. A bar entirely to the right is reproducibly informative.
+To show the bootstrap uncertainty of each pathway, we call
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the result
+of
+[`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md).
+Each row is a pathway’s $`G^2`$ against its parent with its 95%
+bootstrap interval; the dashed line is the chi-square critical value;
+color marks whether the pathway is stable, informative, both or neither.
 
 ``` r
 
-boot <- bootstrap_pathways(pruned, iter = 100L, seed = 1L)
+boot <- bootstrap_pathways(pruned, iter = 200L, seed = 1L)
 plot(boot)
-#> `height` was translated to `width`.
 ```
 
-![](visualization_files/figure-html/boot-plot-1.png)
+![](visualization_files/figure-html/boot-1.png)
 
-### Per-pathway resample distributions
+To draw the resample distribution of a statistic for the leading
+pathways, we call
+[`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md)
+with `stat` and `top`.
 
 ``` r
 
-plot_pathway_resamples(boot, stat = "divergence", top = 6)
+plot_pathway_resamples(boot, stat = "divergence", top = 6L)
 ```
 
 ![](visualization_files/figure-html/boot-resamples-1.png)
 
-### Cohort comparison: permutation null
+### Comparing two trees
 
-We name an external group column (`Achiever`) on the bundled
-`group_regulation_long` log; `context_tree(group = )` fits one tree per
-cohort, and
+To test whether two groups produce different pathway distributions, we
+call
 [`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md)
-consumes the group directly.
+on the group object with `iter` for the number of permutations.
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws the
+permutation null of the distance between the trees, with the observed
+distance as a vertical line. A small `iter` keeps this guide fast; a
+reported test should use more permutations.
 
 ``` r
 
-data(group_regulation_long)
-grp_reg <- context_tree(group_regulation_long,
-                       actor = "Actor", time = "Time", action = "Action",
-                       group = "Achiever", max_depth = 2L, min_count = 10L)
-cmp <- compare_trees(prune_tree(grp_reg), iter = 199L, seed = 1L)
-plot(cmp)
+comparison <- compare_trees(prune_tree(regulation), iter = 99L, seed = 1L)
+plot(comparison)
 ```
 
-![](visualization_files/figure-html/compare-plot-1.png)
+![](visualization_files/figure-html/compare-trees-1.png)
 
-The observed distance (orange line) sits against the label-shuffled null
-(blue histogram); the share of the null at or beyond the line is the
-permutation p-value printed in the subtitle.
+### Comparing groups pathway by pathway
 
-### Tuning surface
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+tests the groups context by context. To plot the contexts whose
+next-state distributions differ most between the groups, we call
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on its result;
+`style = "matrix"` draws the distances between all pairs of groups
+instead.
 
 ``` r
 
-tg <- tune_tree(trajectories, max_depth = 1L:4L, folds = 5L, seed = 1L)
-plot(tg)
+group_comparison <- compare_groups(regulation, iter = 99L, seed = 1L)
+plot(group_comparison, top = 12L)
 ```
 
-![](visualization_files/figure-html/tune-plot-1.png)
+![](visualization_files/figure-html/compare-groups-1.png)
 
-Held-out perplexity drops sharply from depth 1 to depth 2 and is nearly
-flat beyond it – the picture of a process whose useful memory is about
-two steps. The orange star marks the cross-validated winner; on a curve
-this flat, the winner is one of several near-equivalent configurations.
+Most of the contexts with the largest divergence are rare, observed 11
+to 101 times, and none of the twelve is significant after the false
+discovery rate correction (grey points). To count the contexts that do
+differ significantly, we call
+[`summary()`](https://rdrr.io/r/base/summary.html).
+
+``` r
+
+summary(group_comparison)
+#> Group comparison: High vs Low (80 contexts, 99 permutations)
+#>   behavioral omnibus: JSD = 1772.142 bits, p = 0.010
+#>   usage omnibus     : G2 = 1356.46, p = 0.010
+#>   pathways with a behavioral difference (adjusted p < 0.05): 28
+#>   pathways with a usage difference      (adjusted p < 0.05): 43
+#>   pathways whose modal next state differs between groups: 26
+```
+
+Twenty-eight contexts differ in what follows them. Each of them is
+observed at least 147 times, and their divergences are at most 0.12
+bits: with frequent contexts a small difference is detectable, with rare
+ones a large difference is not.
+
+``` r
+
+plot(group_comparison, style = "matrix")
+```
+
+![](visualization_files/figure-html/compare-groups-matrix-1.png)
 
 ### Group difference map
 
+To map, context by context, where two groups continue differently, we
+call
 [`plot_difference()`](https://pak.dynasite.org/transitiontrees/reference/plot_difference.md)
-draws the per-context residual map for the same `group =`-fitted tree –
-where two cohorts resolve the same history toward different next states.
-`depth = 1L` keeps the map to the single-state contexts so the rows stay
-legible (a deep tree has too many contexts to label).
+with `depth` for the context depth. Each cell is the Pearson residual of
+the first group’s count of a next state against the count expected if
+both groups continued alike; an absolute value above about 2 is notable.
+With the
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+result as `comparison`, contexts with a significant difference are
+starred.
 
 ``` r
 
-plot_difference(grp_reg, depth = 1L)
+plot_difference(regulation, depth = 1L, comparison = group_comparison)
 ```
 
 ![](visualization_files/figure-html/difference-1.png)
 
-## Recap
+After `discuss`, high achievers move to `consensus` more often than
+expected (residual 8.2) and to `adapt` less often (-7.9); seven of the
+nine single-move contexts carry a significant difference.
 
-| Goal | Function |
+With `layout = "tree"`, the tree of the pooled sequences is drawn with
+each node colored by which group reaches that context more often. A tree
+of depth two over nine states has too many leaves to label, so we fit
+the groups at depth one for this view.
+
+``` r
+
+regulation_first <- context_tree(group_regulation_long, actor = "Actor",
+                                 time = "Time", action = "Action",
+                                 group = "Achiever", max_depth = 1L)
+plot_difference(regulation_first, layout = "tree")
+```
+
+![](visualization_files/figure-html/difference-tree-1.png)
+
+High achievers reach `consensus` and `emotion` more often, low achievers
+`plan`.
+
+The analysis of these two groups is developed in [Comparing
+groups](https://pak.dynasite.org/transitiontrees/articles/comparing-groups.md).
+
+### Tuning surface
+
+To show the cross-validated perplexity of each configuration, we call
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) on the result
+of
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md).
+
+``` r
+
+tuning <- tune_tree(trajectories, max_depth = 1L:4L, folds = 5L, seed = 1L)
+plot(tuning)
+```
+
+![](visualization_files/figure-html/tune-1.png)
+
+The choice of configuration from this surface is discussed in [Model
+selection: tuning, fit and
+perplexity](https://pak.dynasite.org/transitiontrees/articles/model-selection.md).
+
+## Summary
+
+| Question | Call |
 |----|----|
-| The tree | `plot(style = c("horizontal", "dendrogram", "icicle", "interactive"))` (interactive = `visNetwork` widget) |
-| Rank pathways | [`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md), [`plot_divergence()`](https://pak.dynasite.org/transitiontrees/reference/plot_divergence.md), [`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md) |
-| Memory of one pathway | [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md) |
-| Held-out quality | `plot_predictive(type = c("logloss", "ecdf", "position"))` |
-| Forward trajectories | `plot_trajectories(measure = c("frequency", "predictability"))` |
-| Reliability | `plot(<bootstrap>)`, [`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md) |
-| Comparison | `plot(<comparison>)`, [`plot_difference()`](https://pak.dynasite.org/transitiontrees/reference/plot_difference.md) |
-| Tuning | `plot(<tune>)` |
+| The tree with every pathway labeled | `plot(tree, style = "horizontal")` |
+| The tree as a circle | `plot(tree, style = "dendrogram")` |
+| The distribution of observations over contexts | `plot(tree, style = "icicle")` |
+| An explorable tree | `plot(tree, style = "interactive")` |
+| One tree per group | `plot(group_tree, style = "dendrogram")` |
+| Frequent or informative contexts | `plot_pathways(tree, sort_by = "divergence")` |
+| Contexts that change the prediction | `plot_divergence(tree)` |
+| Next-state distributions | `plot_distributions(tree)` |
+| How much history one pathway needs | `plot_pruning(tree, pathway)` |
+| Sequences forward in time | `plot_trajectories(tree, measure = "frequency")` |
+| Predictive performance | `plot_predictive(tree, newdata, type = "logloss")` |
+| Bootstrap intervals | `plot(bootstrap_pathways(tree))`, [`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md) |
+| Group tests | `plot(compare_trees(group_tree))`, `plot(compare_groups(group_tree))` |
+| Where two groups continue differently | `plot_difference(group_tree, depth = 1L)` |
+| Tuning surface | `plot(tune_tree(data))` |
+
+## References
+
+Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with
+probabilistic suffix trees: The PST R package. *Journal of Statistical
+Software, 72*(3). <https://doi.org/10.18637/jss.v072.i03>
+
+Ron, D., Singer, Y., & Tishby, N. (1996). The power of amnesia: Learning
+probabilistic automata with variable memory length. *Machine Learning,
+25*(2-3), 117-149. <https://doi.org/10.1023/A:1026490906255>

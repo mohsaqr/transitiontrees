@@ -1,9 +1,22 @@
-# Lollipop Chart of Pathway Divergence
+# Plot the pathways whose history changes the prediction most
 
-Lollipop chart of per-pathway Kullback-Leibler divergence from the
-(k-1)-suffix. Point size is proportional to pathway count; orange points
-mark pathways whose modal next state flips between orders. Annotates
-each flip with the prediction change, e.g. "Disengaged -\> Active".
+`plot_divergence()` ranks pathways by the Kullback-Leibler divergence,
+in bits, between their next-state distribution and that of their shorter
+suffix, the context without the earliest state. In a variable-order
+model a longer history matters only where it changes what is expected
+next. Each pathway is a lollipop whose point size is its count; points
+are colored by whether the most likely next state differs from the
+suffix's, and those pathways are annotated with the new most likely
+state and its probability. The chart identifies the histories that carry
+information a shorter memory would lose.
+
+The pathways are those returned by
+[`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md).
+A large divergence on a small count can be a sampling accident; check
+reproducibility with
+[`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md),
+and the pruning decision for one pathway with
+[`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md).
 
 ## Usage
 
@@ -15,19 +28,19 @@ plot_divergence(tree, top = 15L, min_count = 5L, title = NULL, ...)
 
 - tree:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - top:
 
-  Integer. Number of pathways to show. Default 15.
+  Number of pathways shown. Default 15.
 
 - min_count:
 
-  Integer. Drop pathways below this count. Default 5.
+  Pathways with a lower count are dropped. Default 5.
 
 - title:
 
-  Character. Plot title; if `NULL` (default) a default title is used.
+  Plot title. Default `NULL`: a title giving the number of pathways.
 
 - ...:
 
@@ -35,15 +48,30 @@ plot_divergence(tree, top = 15L, min_count = 5L, title = NULL, ...)
 
 ## Value
 
-A ggplot object.
+A ggplot object: one lollipop per pathway, divergence (bits) on the
+x-axis.
+
+## Conditions
+
+- `transitiontrees_bad_input`:
+
+  (error) `tree` is not a `transitiontrees` object.
+
+- `transitiontrees_empty_result`:
+
+  (error) no pathway reaches `min_count`.
+
+## See also
+
+[`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md)
+for the table;
+[`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md),
+[`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md),
+[`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(50, sample(c("A", "B", "C"), 12, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 3L)
-plot_divergence(tree)
-
+tree <- context_tree(trajectories, max_depth = 3)
+plot_divergence(tree, top = 10)
 ```

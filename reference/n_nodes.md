@@ -1,7 +1,8 @@
-# Number of Contexts (Nodes) in a Tree
+# Count the contexts of a transition tree
 
-The number of contexts (nodes, including the root) the tree represents –
-the number printed in the tree banner.
+`n_nodes()` returns the number of contexts (nodes) in a fitted tree, the
+root included: the number shown in the printed header and a direct
+measure of the tree's complexity, for example before and after pruning.
 
 ## Usage
 
@@ -13,19 +14,29 @@ n_nodes(tree)
 
 - tree:
 
-  A `transitiontrees` or `transitiontrees_group`.
+  A `transitiontrees` or `transitiontrees_group` object.
 
 ## Value
 
-An integer. For a `transitiontrees_group`, a named integer vector with
-one count per group.
+A single integer; for a `transitiontrees_group`, a named integer vector
+with one count per group.
+
+## Conditions
+
+`transitiontrees_bad_input` when `tree` is not a fitted tree or group.
+
+## See also
+
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md),
+[`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md),
+[`summary.transitiontrees_group()`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_group.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(50, sample(c("A","B","C"), 12, replace = TRUE),
-                  simplify = FALSE)
-n_nodes(context_tree(seqs, max_depth = 3L))
-#> [1] 40
+tree <- context_tree(trajectories, max_depth = 3)
+n_nodes(tree)
+#> [1] 38
+n_nodes(prune_tree(tree))
+#> [1] 18
 ```

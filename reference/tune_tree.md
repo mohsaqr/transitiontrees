@@ -1,11 +1,36 @@
-# Cross-Validated Hyperparameter Tuning for context trees
+# Select context tree settings by cross-validated perplexity
 
-Runs k-fold cross-validation over a grid of fitting and pruning
-hyperparameters. Returns a data.frame ranked by held-out perplexity;
-printing it also shows the minimum-perplexity configuration.
+`tune_tree()` selects the settings of a variable-order context tree by
+cross-validated perplexity. Four settings decide how much history the
+tree uses and how far it trusts sparse histories: the maximum depth, the
+minimum count a context needs to be kept, the smoothing of the
+next-state distributions, and whether the tree is pruned. A deeper, less
+smoothed tree reproduces the sequences it was fitted to more closely,
+but it does not necessarily predict new sequences better. Held-out
+perplexity measures the second property: it is the exponential of the
+mean negative log-likelihood per scored transition in sequences the
+model has not seen, and can be read as the effective number of next
+states the model is choosing between.
 
-Folds are at the sequence level (each fold holds out whole sequences,
-not positions within sequences).
+It fits a tree for every combination of the supplied values and scores
+it by k-fold cross-validation. Folds are formed from whole sequences, so
+a held-out sequence contributes no transitions to the fit, and every
+configuration is scored on the same folds. The selected configuration is
+the one with the lowest held-out perplexity among those that scored on
+every fold; a configuration with a failed fold is kept in the grid but
+is never selected. It returns the grid as a `transitiontrees_tune` data
+frame with one row per configuration, lowest held-out perplexity first.
+
+The grid compares settings by out-of-sample prediction. To describe the
+fit of one tree to its own data use
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
+or
+[`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md);
+to compare smoothing methods or pruning rules on one data set without
+cross-validation use
+[`compare_smoothing()`](https://pak.dynasite.org/transitiontrees/reference/compare_smoothing.md)
+and
+[`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md).
 
 ## Usage
 
@@ -32,103 +57,138 @@ tune_tree(
 
 - data:
 
-  Sequence data; format accepted by
+  Sequences in any format accepted by
   [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md).
 
 - max_depth:
 
-  Integer vector. Grid values for tree depth. Default `2:5`.
+  Maximum depths to try. Default `2:5`.
 
 - min_count:
 
-  Integer vector. Grid for minimum-count threshold. Default
-  `c(3L, 5L, 10L)`.
+  Minimum context counts to try. Default `c(3, 5, 10)`.
 
 - smoothing:
 
-  Smoothing grid. A character vector of method names (e.g.
-  `c("floor", "kneser_ney")`) – each method is tried with its default
-  hyperparameters – or a list of explicit specs (e.g.
-  `list(list("floor", ymin = 0.001), list("floor", ymin = 0.005))` for a
-  hyperparameter sweep within one method).
+  Smoothing methods to try: a character vector of method names, each
+  used with its default settings (default `"floor"`), or a list of
+  specifications such as
+  `list(list("floor", ymin = 0.001), list("floor", ymin = 0.005))` to
+  vary the settings of one method.
 
 - prune:
 
-  Logical vector. Whether to apply G^2 pruning. Default
-  `c(FALSE, TRUE)`.
+  Whether to prune with the \\G^2\\ criterion; both values are tried by
+  default (`c(FALSE, TRUE)`).
 
 - alpha:
 
-  Numeric. Significance level for G^2 pruning when `prune = TRUE`.
-  Default `0.05`.
+  Significance level of the \\G^2\\ pruning test. Default 0.05.
 
 - folds:
 
-  Integer. Number of CV folds. Default 5.
+  Number of cross-validation folds. Default 5.
 
 - seed:
 
-  Integer. RNG seed for reproducible folds, passed to
-  [`set.seed()`](https://rdrr.io/r/base/Random.html). Default 1.
+  Seed for the assignment of sequences to folds. Default 1. The call
+  sets the session's random-number state.
 
 - actor, time, action, order, session, time_threshold:
 
-  Long-format reshaping, forwarded to
+  Column names and session gap for a long event log, as in
+  [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md);
+  the log is reshaped with
   [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
-  when `action` is named (exactly as in
-  [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)),
-  so a long event log is reshaped before tuning rather than read as one
-  row per sequence. Default `NULL`/900 (data already in sequence shape).
+  before tuning. Default `NULL` (data already one row per sequence) and
+  900 seconds.
 
 ## Value
 
-A `transitiontrees_tune` object: a data.frame with one row per grid
-point and columns `max_depth`, `nmin`, `smoothing`, `prune`, `logLik`,
-`n_scored`, `perplexity`, `n_nodes_avg`, and `folds_failed` (the number
-of CV folds that errored for that configuration), sorted by `perplexity`
-ascending. `nmin` is the `min_count` grid value, `logLik` the summed
-held-out log-likelihood, `n_scored` the number of held-out positions
-scored. The `"best"` attribute holds the minimum-perplexity row **among
-configurations whose every fold scored** (`NULL` if none did); the print
-method shows it under “best” and
-[`plot()`](https://rdrr.io/r/graphics/plot.default.html) marks it with a
-star. A warning is issued when any configuration had a failed fold.
+An object of class `transitiontrees_tune`: a data frame with one row per
+configuration, sorted by held-out perplexity (lowest first), and columns
+`max_depth`, `min_count`, `smoothing`, `prune`, `logLik` (held-out
+log-likelihood summed over the folds that scored; `NA` when none did),
+`n_scored` (held-out transitions scored), `perplexity`, `n_nodes_avg`
+(mean number of contexts of the fitted trees) and `folds_failed` (folds
+that could not be fitted or scored). `as.data.frame(x, what = "best")`
+returns the selected configuration,
+[`summary()`](https://rdrr.io/r/base/summary.html) a one-row overview,
+and [`plot()`](https://rdrr.io/r/graphics/plot.default.html) the
+perplexity surface.
+
+## Conditions
+
+- `transitiontrees_bad_input`:
+
+  (error) fewer sequences than `folds`; `smoothing` neither a character
+  vector nor a list; `data` not in a sequence format.
+
+- `transitiontrees_fold_failed`:
+
+  (warning) at least one configuration had a fold that could not be
+  fitted or scored; the message gives the first error.
+
+- `transitiontrees_no_best`:
+
+  (warning) no configuration scored on every fold, so none is selected.
+
+## See also
+
+[`summary.transitiontrees_tune`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_tune.md),
+[`as.data.frame.transitiontrees_tune`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_tune.md)
+and
+[`plot.transitiontrees_tune`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_tune.md)
+for the result;
+[`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
+and
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
+to fit the selected configuration;
+[`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md)
+and
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
+for the fit of one tree.
 
 ## Examples
 
 ``` r
-set.seed(1)
-m <- matrix(sample(c("A","B","C"), 30 * 12, replace = TRUE), 30, 12)
-tune_tree(m, max_depth = 1:3,
-              smoothing = c("floor", "kneser_ney"),
-              prune = FALSE, folds = 4)
-#> <transitiontrees_tune>  18 configurations
-#>  max_depth nmin                           smoothing prune    logLik n_scored
-#>          1    3 floor(ymin=0.001, rule=interpolate) FALSE -400.6736      360
-#>          1    5 floor(ymin=0.001, rule=interpolate) FALSE -400.6736      360
-#>          1   10 floor(ymin=0.001, rule=interpolate) FALSE -400.6736      360
-#>          1    3           kneser_ney(discount=0.75) FALSE -400.7109      360
-#>          1    5           kneser_ney(discount=0.75) FALSE -400.7109      360
-#>          1   10           kneser_ney(discount=0.75) FALSE -400.7109      360
-#>          2    3 floor(ymin=0.001, rule=interpolate) FALSE -403.7448      360
-#>          2    5 floor(ymin=0.001, rule=interpolate) FALSE -403.7448      360
-#>          2   10 floor(ymin=0.001, rule=interpolate) FALSE -403.7448      360
-#>          2    3           kneser_ney(discount=0.75) FALSE -404.4129      360
-#>  perplexity n_nodes_avg folds_failed
-#>    3.043421           4            0
-#>    3.043421           4            0
-#>    3.043421           4            0
-#>    3.043737           4            0
-#>    3.043737           4            0
-#>    3.043737           4            0
-#>    3.069496          13            0
-#>    3.069496          13            0
-#>    3.069496          13            0
-#>    3.075198          13            0
+tuned <- tune_tree(trajectories, max_depth = 1:3, min_count = c(5, 10),
+                   prune = c(FALSE, TRUE), folds = 3)
+tuned
+#> <transitiontrees_tune>  12 configurations
+#>  max_depth min_count                           smoothing prune    logLik
+#>          2         5 floor(ymin=0.001, rule=interpolate) FALSE -1592.852
+#>          2        10 floor(ymin=0.001, rule=interpolate) FALSE -1592.852
+#>          3        10 floor(ymin=0.001, rule=interpolate) FALSE -1597.931
+#>          3        10 floor(ymin=0.001, rule=interpolate)  TRUE -1602.659
+#>          2         5 floor(ymin=0.001, rule=interpolate)  TRUE -1603.322
+#>          2        10 floor(ymin=0.001, rule=interpolate)  TRUE -1603.322
+#>          3         5 floor(ymin=0.001, rule=interpolate)  TRUE -1608.892
+#>          3         5 floor(ymin=0.001, rule=interpolate) FALSE -1610.315
+#>          1         5 floor(ymin=0.001, rule=interpolate) FALSE -1659.904
+#>          1        10 floor(ymin=0.001, rule=interpolate) FALSE -1659.904
+#>  n_scored perplexity n_nodes_avg folds_failed
+#>      1870   2.343845    13.00000            0
+#>      1870   2.343845    13.00000            0
+#>      1870   2.350220    30.00000            0
+#>      1870   2.356169    14.00000            0
+#>      1870   2.357004    10.33333            0
+#>      1870   2.357004    10.33333            0
+#>      1870   2.364036    14.33333            0
+#>      1870   2.365835    36.00000            0
+#>      1870   2.429412     4.00000            0
+#>      1870   2.429412     4.00000            0
 #> 
 #> best (min perplexity):
-#>  max_depth nmin                           smoothing prune    logLik n_scored
-#>          1    3 floor(ymin=0.001, rule=interpolate) FALSE -400.6736      360
-#>  perplexity n_nodes_avg folds_failed
-#>    3.043421           4            0
+#>  max_depth min_count                           smoothing prune    logLik
+#>          2         5 floor(ymin=0.001, rule=interpolate) FALSE -1592.852
+#>  n_scored perplexity n_nodes_avg folds_failed
+#>      1870   2.343845          13            0
+summary(tuned)
+#> <transitiontrees_tune summary>  12 configurations, 0 with a failed fold
+#> selected (minimum held-out perplexity):
+#>  max_depth min_count                           smoothing prune perplexity
+#>          2         5 floor(ymin=0.001, rule=interpolate) FALSE      2.344
+#>  n_nodes_avg
+#>           13
 ```

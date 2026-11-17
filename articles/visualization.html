@@ -4,12 +4,12 @@
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>5. Visualization: every plot, and how to read it • transitiontrees</title>
+<title>Visualizing transition trees • transitiontrees</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.8/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.8/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
 <link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
-<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="5. Visualization: every plot, and how to read it">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Visualizing transition trees">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -19,7 +19,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">transitiontrees</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -28,17 +28,32 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
+<li class="nav-item"><a class="nav-link" href="../articles/transitiontrees.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/advanced-analysis.html">4. Advanced analysis: smoothing, tuning, comparison, and mining</a></li>
-    <li><a class="dropdown-item" href="../articles/analysis-case.html">2. A complete analysis case: collaborative-regulation sequences</a></li>
-    <li><a class="dropdown-item" href="../articles/ecosystem-compatibility.html">3. Ecosystem compatibility: TraMineR, tna, and Nestimate</a></li>
-    <li><a class="dropdown-item" href="../articles/getting-started.html">1. Getting started: basic analysis and trajectory trees</a></li>
-    <li><a class="dropdown-item" href="../articles/visualization.html">5. Visualization: every plot, and how to read it</a></li>
+<li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Vignettes</h6></li>
+    <li><a class="dropdown-item" href="../articles/comparing-groups.html">Comparing groups</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Guides</h6></li>
+    <li><a class="dropdown-item" href="../articles/workflow.html">A complete workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/data-input.html">Data input: wide sequences, event logs and network objects</a></li>
+    <li><a class="dropdown-item" href="../articles/smoothing-and-pruning.html">Smoothing and pruning</a></li>
+    <li><a class="dropdown-item" href="../articles/model-selection.html">Model selection: tuning, fit and perplexity</a></li>
+    <li><a class="dropdown-item" href="../articles/pathway-reliability.html">Pathway reliability with the bootstrap</a></li>
+    <li><a class="dropdown-item" href="../articles/prediction-and-scoring.html">Prediction, scoring, imputation and mining</a></li>
+    <li><a class="dropdown-item" href="../articles/visualization.html">Visualizing transition trees</a></li>
+    <li><a class="dropdown-item" href="../articles/verification.html">Verification against the PST package</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Case studies</h6></li>
+    <li><a class="dropdown-item" href="../articles/case-regulation-achievement.html">Case study: collaborative regulation by achievement</a></li>
+    <li><a class="dropdown-item" href="../articles/case-engagement.html">Case study: engagement trajectories</a></li>
+    <li><a class="dropdown-item" href="../articles/case-ai-collaboration.html">Case study: human-AI collaboration</a></li>
   </ul>
 </li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
 <ul class="navbar-nav">
 <li class="nav-item"><form class="form-inline" role="search">
@@ -54,44 +69,66 @@
 
 
 
-
-<div class="row">
+<script src="visualization_files/htmlwidgets-1.6.4/htmlwidgets.js"></script><link href="visualization_files/vis-9.1.0/vis-network.min.css" rel="stylesheet">
+<script src="visualization_files/vis-9.1.0/vis-network.min.js"></script><script src="visualization_files/visNetwork-binding-2.1.4/visNetwork.js"></script><div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
 
-      <h1>5. Visualization: every plot, and how to read it</h1>
+      <h1>Visualizing transition trees</h1>
+                        <h4 data-toc-skip class="author">Written by <a href="https://saqr.me" class="external-link">Mohammed Saqr</a> and <a href="https://sonsoles.me" class="external-link">Sonsoles López-Pernas</a>
+</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/mohsaqr/transitiontrees/blob/main/vignettes/visualization.Rmd" class="external-link"><code>vignettes/visualization.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/mohsaqr/transitiontrees/blob/main/vignettes/articles/visualization.Rmd" class="external-link"><code>vignettes/articles/visualization.Rmd</code></a></small>
       <div class="d-none name"><code>visualization.Rmd</code></div>
     </div>
 
     
     
-<p><code>transitiontrees</code> draws every static plot in pure
-<code>ggplot2</code> – no extra plotting dependency – plus one optional
-interactive renderer (<code>visNetwork</code>). Every plot returns a
-standard object you can theme, save, or further modify. This vignette
-tours them all and reads each one.</p>
-<p>A shared convention across the static tree styles: <strong>node size
-= context count</strong> and <strong>edge thickness = the volume of
-sequences flowing down that branch</strong>. Node fill differs by style:
-the horizontal phylogram colours each node by the
-<strong>most-recent</strong> state of its pathway, while the dendrogram
-and icicle colour by the <strong>oldest</strong> (branching) state, so
-each first-level branch keeps one colour.</p>
+<p>A variable-order transition tree is a hierarchy of histories. Its
+root holds the overall distribution of states; each child extends its
+parent’s history by one earlier state and carries its own next-state
+distribution (Ron, Singer and Tishby, 1996; Gabadinho and Ritschard,
+2016). A figure of such a model has to show three things at once: which
+histories the model keeps, how much data supports each one, and what
+each history predicts. No single display shows all three well for a
+large tree. The package therefore offers several views of the same
+model. Tree drawings show the structure. Pathway charts rank histories
+by frequency or by how much they change the prediction. Diagnostic plots
+follow one pathway or one sequence. Inferential plots show the
+uncertainty and the group differences behind a result.</p>
+<p>Every static plot is a <code>ggplot2</code> object, so it can be
+themed, annotated and saved with the usual <code>ggplot2</code> tools.
+One interactive view uses <code>visNetwork</code>. The default colors
+are the Okabe-Ito palette.</p>
 <div class="section level2">
-<h2 id="setup">Setup<a class="anchor" aria-label="anchor" href="#setup"></a>
+<h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a>
 </h2>
-<p>Every plot below is drawn from the same fitted, pruned tree on the
-bundled <code>trajectories</code> data (138 learners, three engagement
-states). We fit it once here and reuse it throughout.</p>
+<p>Three bundled datasets are used.</p>
+<ul>
+<li>
+<code>trajectories</code>: the engagement states
+(<code>Active</code>, <code>Average</code>, <code>Disengaged</code>) of
+138 learners over 15 time steps, one row per learner. It is used for the
+tree drawings and the pathway charts.</li>
+<li>
+<code>group_regulation_long</code>: 27,533 collaborative-regulation
+events in long format. <code>Actor</code> identifies the learner,
+<code>Time</code> orders the events, <code>Action</code> is the state
+(nine regulation moves) and <code>Achiever</code> (<code>High</code> or
+<code>Low</code>) is the group. It is used for the group plots.</li>
+<li>
+<code>ai_long</code>: 8,551 coded messages from human-AI
+collaboration sessions. <code>project</code> is the actor,
+<code>session_id</code> the session and <code>code</code> the state
+(eight moves). It is used for the forward trajectory plots.</li>
+</ul>
+<p>To fit the tree used in most of this guide, we call
+<code><a href="../reference/context_tree.html">context_tree()</a></code> with <code>max_depth</code> and
+<code>min_count</code>, and prune it with <code><a href="../reference/prune_tree.html">prune_tree()</a></code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/mohsaqr/transitiontrees" class="external-link">transitiontrees</a></span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">trajectories</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/base/Random.html" class="external-link">set.seed</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">tree</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">trajectories</span>, max_depth <span class="op">=</span> <span class="fl">3L</span>, min_count <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
-<span><span class="va">pruned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">tree</span>, criterion <span class="op">=</span> <span class="st">"G2"</span>, alpha <span class="op">=</span> <span class="fl">0.05</span><span class="op">)</span></span>
+<span><span class="va">tree</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">trajectories</span>, max_depth <span class="op">=</span> <span class="fl">3L</span>, min_count <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span>
+<span><span class="va">pruned</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">tree</span><span class="op">)</span></span>
 <span><span class="va">pruned</span></span>
 <span><span class="co">#&gt; &lt;transitiontrees&gt;  18 nodes, depth &lt;= 3, 3 states  [pruned]</span></span>
 <span><span class="co">#&gt;   alphabet : Active, Average, Disengaged</span></span>
@@ -116,235 +153,344 @@ states). We fit it once here and reuse it throughout.</p>
 <span><span class="co">#&gt;     |-- Average   n=134    -&gt; Average (0.50)</span></span>
 <span><span class="co">#&gt;     |   `-- Active    n=17     -&gt; Active (0.41)</span></span>
 <span><span class="co">#&gt;     `-- Disengaged  n=139    -&gt; Disengaged (0.68)</span></span></code></pre></div>
+<p>The pruned tree has 18 contexts: the root, three of depth one, eight
+of depth two and six of depth three.</p>
 </div>
 <div class="section level2">
-<h2 id="the-fitted-tree-four-ways">1. The fitted tree, four ways<a class="anchor" aria-label="anchor" href="#the-fitted-tree-four-ways"></a>
+<h2 id="the-tree">The tree<a class="anchor" aria-label="anchor" href="#the-tree"></a>
 </h2>
+<p>To draw the tree, we call <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> with
+<code>style</code>. All static styles share one encoding: the size of a
+node is the number of observations of its context, and the width of a
+branch is the number of observations flowing into the child.</p>
 <div class="section level3">
-<h3 id="horizontal-phylogram-default">Horizontal phylogram (default)<a class="anchor" aria-label="anchor" href="#horizontal-phylogram-default"></a>
+<h3 id="horizontal-tree">Horizontal tree<a class="anchor" aria-label="anchor" href="#horizontal-tree"></a>
 </h3>
-<p>Root on the left, depth rightward; every leaf is labelled with its
-full arrow-form pathway and the predicted next state. This is the style
-for a paper when you need to cite specific pathways inline.</p>
+<p><code>style = "horizontal"</code> (the default) draws the root on the
+left and deeper contexts to the right. Each node is labeled with its
+pathway and its most likely next state with that state’s probability,
+and each node is colored by the most recent state of its pathway.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"horizontal"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/horizontal-1.png" class="r-plt" alt="" width="100%"></p>
-<p><code>point_size_range</code> and <code>edge_size_range</code>
-exaggerate or compress the size dynamic range – useful for slides where
-the count contrast must read from the back of the room. The encodings
-are unchanged; only the scales differ.</p>
+<p><img src="visualization_files/figure-html/horizontal-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>This style suits a report that cites specific pathways, because every
+pathway and its prediction can be read from the figure. Adding
+<code>show_prediction = FALSE</code> keeps only the pathway labels.
+<code>point_size_range</code> and <code>edge_size_range</code> widen or
+compress the size scales without changing the encoding.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"horizontal"</span>,</span>
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"horizontal"</span>, show_prediction <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>     point_size_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">3</span>, <span class="fl">12</span><span class="op">)</span>, edge_size_range <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.4</span>, <span class="fl">3.5</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/horizontal-sized-1.png" class="r-plt" alt="" width="100%"></p>
+<p><img src="visualization_files/figure-html/horizontal-sized-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
 <h3 id="radial-dendrogram">Radial dendrogram<a class="anchor" aria-label="anchor" href="#radial-dendrogram"></a>
 </h3>
-<p>The same tree wrapped into a circle: the eye goes to the thick
-central branches (the corpus highways) versus the thin outer twigs
-(contexts pruning kept on evidence, not volume).</p>
+<p><code>style = "dendrogram"</code> wraps the tree into a circle with
+the root at the center and the deepest contexts on the outer ring. Nodes
+are colored by the oldest state of their pathway, so each first-level
+branch keeps one color.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"dendrogram"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/dendrogram-1.png" class="r-plt" alt="" width="100%"></p>
+<p><img src="visualization_files/figure-html/dendrogram-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The thick inner branches are the frequent histories; the thin outer
+twigs are deeper contexts that pruning kept because they change the
+prediction, not because they are frequent.</p>
 </div>
 <div class="section level3">
-<h3 id="icicle-sunburst">Icicle / sunburst<a class="anchor" aria-label="anchor" href="#icicle-sunburst"></a>
+<h3 id="icicle">Icicle<a class="anchor" aria-label="anchor" href="#icicle"></a>
 </h3>
-<p>A space-filling partition: arc angular width is proportional to
-count, so a dominant state visually swallows the ring – an honest
-depiction of class imbalance.</p>
+<p><code>style = "icicle"</code> is a sunburst: each ring is one depth,
+and the angle of a segment is proportional to the count of its context.
+The inner ring carries the full state names and the outer rings
+three-letter abbreviations.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"icicle"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/icicle-1.png" class="r-plt" alt="" width="100%"></p>
-<p>A fourth style, <code>style = "interactive"</code>, renders the same
-tree as a draggable, zoomable <code>visNetwork</code> widget (collapse
-the dominant spine and the rare informative branches become legible). It
-produces an HTML widget rather than a static figure, so it is best run
-in an interactive session rather than shown inline here.</p>
+<p><img src="visualization_files/figure-html/icicle-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Because area follows the counts, a frequent state takes most of the
+ring and the rare histories become thin slices. The display gives an
+accurate impression of how the observations are distributed over the
+contexts.</p>
+</div>
+<div class="section level3">
+<h3 id="interactive-tree">Interactive tree<a class="anchor" aria-label="anchor" href="#interactive-tree"></a>
+</h3>
+<p><code>style = "interactive"</code> draws the same tree as a
+<code>visNetwork</code> widget that can be dragged and zoomed. Hovering
+over a node shows its pathway, count, most likely next state and full
+next-state distribution. <code>visNetwork</code> is a suggested package,
+so the call is guarded.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">pruned</span>, style <span class="op">=</span> <span class="st">"interactive"</span>, height <span class="op">=</span> <span class="st">"450px"</span><span class="op">)</span></span></code></pre></div>
+<div id="htmlwidget-ac96cb3ee4656e2e9ec3" style="width:100%;height:450px;" class="visNetwork html-widget"></div>
+<script type="application/json" data-for="htmlwidget-ac96cb3ee4656e2e9ec3">{"x":{"nodes":{"id":["<root>","Active","Disengaged","Average","Active -> Disengaged","Disengaged -> Disengaged","Active -> Active","Active -> Average","Average -> Active","Average -> Average","Average -> Disengaged","Disengaged -> Average","Active -> Average -> Average","Average -> Active -> Active","Disengaged -> Disengaged -> Average","Active -> Average -> Disengaged","Disengaged -> Average -> Active","Disengaged -> Active -> Average"],"label":["(start)","Active","Disengaged","Average","Active","Disengaged","Active","Active","Average","Average","Average","Disengaged","Active","Average","Disengaged","Active","Disengaged","Disengaged"],"count":[1870,658,325,751,23,139,433,160,144,419,134,122,80,70,31,17,12,10],"level":[0,1,1,1,2,2,2,2,2,2,2,2,3,3,3,3,3,3],"color":["#222222","#ED90A4","#6FB1E7","#7EBA68","#ED90A4","#6FB1E7","#ED90A4","#ED90A4","#7EBA68","#7EBA68","#7EBA68","#6FB1E7","#ED90A4","#7EBA68","#6FB1E7","#ED90A4","#6FB1E7","#6FB1E7"],"title":["<b>Pathway<\/b>: (start)<br/><b>Depth<\/b>: 0<br/><b>Count<\/b>: 1870<br/><b>Modal next<\/b>: Average (0.435)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.376<br/>&nbsp;&nbsp;Average: 0.435<br/>&nbsp;&nbsp;Disengaged: 0.189","<b>Pathway<\/b>: Active<br/><b>Depth<\/b>: 1<br/><b>Count<\/b>: 658<br/><b>Modal next<\/b>: Active (0.698)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.698<br/>&nbsp;&nbsp;Average: 0.267<br/>&nbsp;&nbsp;Disengaged: 0.035","<b>Pathway<\/b>: Disengaged<br/><b>Depth<\/b>: 1<br/><b>Count<\/b>: 325<br/><b>Modal next<\/b>: Disengaged (0.483)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.120<br/>&nbsp;&nbsp;Average: 0.397<br/>&nbsp;&nbsp;Disengaged: 0.483","<b>Pathway<\/b>: Average<br/><b>Depth<\/b>: 1<br/><b>Count<\/b>: 751<br/><b>Modal next<\/b>: Average (0.610)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.204<br/>&nbsp;&nbsp;Average: 0.610<br/>&nbsp;&nbsp;Disengaged: 0.186","<b>Pathway<\/b>: Active -> Disengaged<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 23<br/><b>Modal next<\/b>: Active (0.391)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.391<br/>&nbsp;&nbsp;Average: 0.304<br/>&nbsp;&nbsp;Disengaged: 0.304","<b>Pathway<\/b>: Disengaged -> Disengaged<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 139<br/><b>Modal next<\/b>: Disengaged (0.676)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.072<br/>&nbsp;&nbsp;Average: 0.252<br/>&nbsp;&nbsp;Disengaged: 0.676","<b>Pathway<\/b>: Active -> Active<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 433<br/><b>Modal next<\/b>: Active (0.785)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.785<br/>&nbsp;&nbsp;Average: 0.194<br/>&nbsp;&nbsp;Disengaged: 0.021","<b>Pathway<\/b>: Active -> Average<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 160<br/><b>Modal next<\/b>: Average (0.519)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.375<br/>&nbsp;&nbsp;Average: 0.519<br/>&nbsp;&nbsp;Disengaged: 0.106","<b>Pathway<\/b>: Average -> Active<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 144<br/><b>Modal next<\/b>: Active (0.500)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.500<br/>&nbsp;&nbsp;Average: 0.479<br/>&nbsp;&nbsp;Disengaged: 0.021","<b>Pathway<\/b>: Average -> Average<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 419<br/><b>Modal next<\/b>: Average (0.678)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.162<br/>&nbsp;&nbsp;Average: 0.678<br/>&nbsp;&nbsp;Disengaged: 0.160","<b>Pathway<\/b>: Average -> Disengaged<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 134<br/><b>Modal next<\/b>: Average (0.500)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.142<br/>&nbsp;&nbsp;Average: 0.500<br/>&nbsp;&nbsp;Disengaged: 0.358","<b>Pathway<\/b>: Disengaged -> Average<br/><b>Depth<\/b>: 2<br/><b>Count<\/b>: 122<br/><b>Modal next<\/b>: Average (0.516)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.098<br/>&nbsp;&nbsp;Average: 0.516<br/>&nbsp;&nbsp;Disengaged: 0.385","<b>Pathway<\/b>: Active -> Average -> Average<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 80<br/><b>Modal next<\/b>: Average (0.575)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.312<br/>&nbsp;&nbsp;Average: 0.575<br/>&nbsp;&nbsp;Disengaged: 0.113","<b>Pathway<\/b>: Average -> Active -> Active<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 70<br/><b>Modal next<\/b>: Active (0.529)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.529<br/>&nbsp;&nbsp;Average: 0.429<br/>&nbsp;&nbsp;Disengaged: 0.043","<b>Pathway<\/b>: Disengaged -> Disengaged -> Average<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 31<br/><b>Modal next<\/b>: Average (0.709)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.001<br/>&nbsp;&nbsp;Average: 0.709<br/>&nbsp;&nbsp;Disengaged: 0.290","<b>Pathway<\/b>: Active -> Average -> Disengaged<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 17<br/><b>Modal next<\/b>: Active (0.412)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.412<br/>&nbsp;&nbsp;Average: 0.353<br/>&nbsp;&nbsp;Disengaged: 0.235","<b>Pathway<\/b>: Disengaged -> Average -> Active<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 12<br/><b>Modal next<\/b>: Average (0.832)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.167<br/>&nbsp;&nbsp;Average: 0.832<br/>&nbsp;&nbsp;Disengaged: 0.001","<b>Pathway<\/b>: Disengaged -> Active -> Average<br/><b>Depth<\/b>: 3<br/><b>Count<\/b>: 10<br/><b>Modal next<\/b>: Average (0.500)<br/><b>Next-state distribution<\/b>:<br/>&nbsp;&nbsp;Active: 0.100<br/>&nbsp;&nbsp;Average: 0.500<br/>&nbsp;&nbsp;Disengaged: 0.400"],"size":[45,22.19354838709678,15.92741935483871,23.94354838709678,10.24462365591398,12.42741935483871,17.95967741935484,12.82258064516129,12.52150537634409,17.69623655913978,12.33333333333333,12.10752688172043,11.31720430107527,11.12903225806452,10.39516129032258,10.13172043010753,10.03763440860215,10]},"edges":{"from":["<root>","<root>","<root>","Disengaged","Disengaged","Active","Average","Active","Average","Disengaged","Average","Average -> Average","Active -> Active","Disengaged -> Average","Average -> Disengaged","Average -> Active","Active -> Average"],"to":["Active","Disengaged","Average","Active -> Disengaged","Disengaged -> Disengaged","Active -> Active","Active -> Average","Average -> Active","Average -> Average","Average -> Disengaged","Disengaged -> Average","Active -> Average -> Average","Average -> Active -> Active","Disengaged -> Disengaged -> Average","Active -> Average -> Disengaged","Disengaged -> Average -> Active","Disengaged -> Active -> Average"],"width":[8.870445344129555,4.825910931174089,10,1.157894736842105,2.566801619433198,6.137651821862348,2.821862348178137,2.62753036437247,5.967611336032388,2.506072874493927,2.360323886639677,1.850202429149798,1.728744939271255,1.255060728744939,1.08502024291498,1.024291497975709,1]},"nodesToDataframe":true,"edgesToDataframe":true,"options":{"width":"100%","height":"100%","nodes":{"shape":"dot","borderWidth":1,"color":{"border":"#444444","highlight":{"border":"#000000"}},"font":{"size":16,"face":"sans-serif"}},"manipulation":{"enabled":false},"layout":{"hierarchical":{"enabled":true,"levelSeparation":200,"nodeSpacing":120,"direction":"LR","sortMethod":"directed"}},"edges":{"arrows":"to","color":{"color":"#cfcfcf","highlight":"#555555"},"smooth":{"enabled":true,"type":"cubicBezier","roundness":0.5}},"interaction":{"dragNodes":true,"dragView":false,"hover":true,"zoomView":false,"zoomSpeed":1}},"groups":null,"width":null,"height":"450px","idselection":{"enabled":false,"style":"width: 150px; height: 26px","useLabels":true,"main":"Select by id"},"byselection":{"enabled":false,"style":"width: 150px; height: 26px","multiple":false,"hideColor":"rgba(200,200,200,0.5)","highlight":false},"main":null,"submain":null,"footer":null,"background":"rgba(0, 0, 0, 0)","highlight":{"enabled":true,"hoverNearest":true,"degree":1,"algorithm":"all","hideColor":"rgba(200,200,200,0.5)","labelOnly":true},"collapse":{"enabled":false,"fit":false,"resetHighlight":true,"clusterOptions":null,"keepCoord":true,"labelSuffix":"(cluster)"},"tooltipStay":300,"tooltipStyle":"position: fixed;visibility:hidden;padding: 5px;white-space: nowrap;font-family: verdana;font-size:14px;font-color:#000000;background-color: #f5f4ed;-moz-border-radius: 3px;-webkit-border-radius: 3px;border-radius: 3px;border: 1px solid #808074;box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);"},"evals":[],"jsHooks":[]}</script>
+</div>
+<div class="section level3">
+<h3 id="one-tree-per-group">One tree per group<a class="anchor" aria-label="anchor" href="#one-tree-per-group"></a>
+</h3>
+<p>A tree fitted with <code>group</code> holds one tree per group. To
+fit one, we call <code><a href="../reference/context_tree.html">context_tree()</a></code> on the long log with
+<code>actor</code>, <code>time</code> and <code>action</code> naming the
+columns and <code>group</code> naming the grouping column.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">regulation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">group_regulation_long</span>, actor <span class="op">=</span> <span class="st">"Actor"</span>,</span>
+<span>                           time <span class="op">=</span> <span class="st">"Time"</span>, action <span class="op">=</span> <span class="st">"Action"</span>,</span>
+<span>                           group <span class="op">=</span> <span class="st">"Achiever"</span>, max_depth <span class="op">=</span> <span class="fl">2L</span>,</span>
+<span>                           min_count <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span>
+<span><span class="va">regulation</span></span>
+<span><span class="co">#&gt; &lt;transitiontrees_group&gt;  2 groups</span></span>
+<span><span class="co">#&gt;   High            74 nodes, depth &lt;= 2, 1000 seq, 13721 obs</span></span>
+<span><span class="co">#&gt;   Low             77 nodes, depth &lt;= 2, 1000 seq, 13812 obs</span></span></code></pre></div>
+<p>Each group’s tree has more than 70 contexts before pruning. To draw
+each group’s pruned tree, we call <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the pruned
+group object. Further arguments are passed to each tree’s plot, and each
+figure is captioned with its group.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">regulation</span><span class="op">)</span>, style <span class="op">=</span> <span class="st">"dendrogram"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/group-plot-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"><img src="visualization_files/figure-html/group-plot-2.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>After pruning, the high achievers’ tree keeps 12 contexts and the low
+achievers’ 11, almost all of depth one: for both groups the most recent
+move carries most of what can be predicted.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="pathway-centric-plots">2. Pathway-centric plots<a class="anchor" aria-label="anchor" href="#pathway-centric-plots"></a>
+<h2 id="ranking-pathways">Ranking pathways<a class="anchor" aria-label="anchor" href="#ranking-pathways"></a>
 </h2>
-<p>These complement the tree by ranking <em>pathways</em> rather than
-drawing topology.</p>
+<p>The tree drawings show structure. The pathway charts rank the
+contexts so that the most frequent or most informative ones can be read
+directly.</p>
 <div class="section level3">
 <h3 id="next-state-heatmap">Next-state heatmap<a class="anchor" aria-label="anchor" href="#next-state-heatmap"></a>
 </h3>
-<p>Each row is a context, each column a next state, each cell
-<code>P(next | context)</code>, modal cell bold; a <code>&gt;</code>
-prefix marks a context whose modal next state flips versus its shorter
-parent. Sorting the <strong>same</strong> data two ways is the single
-best “common vs informative” figure:</p>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathways.html">plot_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12</span>, sort_by <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span>        <span class="co"># the highways</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/heatmap-count-1.png" class="r-plt" alt="" width="100%"></p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathways.html">plot_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12</span>, sort_by <span class="op">=</span> <span class="st">"divergence"</span><span class="op">)</span>   <span class="co"># the informative ones</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/heatmap-div-1.png" class="r-plt" alt="" width="100%"></p>
-<p>Sorted by count the bright cells stack on the most frequent next
-state; sorted by divergence they move off it. That lateral shift is the
-thesis in one comparison.</p>
-</div>
-<div class="section level3">
-<h3 id="divergence-lollipop">Divergence lollipop<a class="anchor" aria-label="anchor" href="#divergence-lollipop"></a>
-</h3>
-<p>Per-context KL from the shorter parent, ranked, with orange points
-marking modal-flip contexts – the histories that genuinely
-<em>change</em> the prediction. <code>min_count</code> removes
-small-sample mirages.</p>
-<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_divergence.html">plot_divergence</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12</span>, min_count <span class="op">=</span> <span class="fl">5</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/divergence-1.png" class="r-plt" alt="" width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="per-context-distributions">Per-context distributions<a class="anchor" aria-label="anchor" href="#per-context-distributions"></a>
-</h3>
-<p>The full next-state distribution for each context as small multiples
-– peaked panels are near-settled continuations, flat panels are the
-decision points where history does not resolve the next state.</p>
+<p>To draw each context’s next-state distribution as a row of a heatmap,
+we call <code><a href="../reference/plot_pathways.html">plot_pathways()</a></code> with <code>top</code> for the
+number of contexts and <code>sort_by</code> for the order. The most
+likely next state of each row is shown in bold, and a <code>&gt;</code>
+before the pathway marks a context whose most likely next state differs
+from its parent’s.</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_distributions.html">plot_distributions</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/distributions-1.png" class="r-plt" alt="" width="100%"></p>
-</div>
-</div>
-<div class="section level2">
-<h2 id="diagnostic-plots">3. Diagnostic plots<a class="anchor" aria-label="anchor" href="#diagnostic-plots"></a>
-</h2>
-<div class="section level3">
-<h3 id="how-much-memory-does-one-pathway-need">How much memory does one pathway need?<a class="anchor" aria-label="anchor" href="#how-much-memory-does-one-pathway-need"></a>
-</h3>
-<p><code><a href="../reference/plot_pruning.html">plot_pruning()</a></code> walks a pathway’s suffix chain – the full
-context, then the same context with its oldest move dropped, down to the
-root – and marks which contexts the pruning test keeps (solid) versus
-drops (faded). It answers, for that one pathway, how far back history
-actually has to reach.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathways.html">plot_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12L</span>, sort_by <span class="op">=</span> <span class="st">"count"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/pathways-count-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Sorted by count, the rows are the frequent histories, and most of
+them continue to the same state. To rank by how far each context’s
+distribution departs from its parent’s, we set
+<code>sort_by = "divergence"</code>.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pruning.html">plot_pruning</a></span><span class="op">(</span><span class="va">tree</span>, <span class="st">"Active -&gt; Active -&gt; Average"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/pruning-1.png" class="r-plt" alt="" width="100%"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathways.html">plot_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12L</span>, sort_by <span class="op">=</span> <span class="st">"divergence"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/pathways-divergence-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The two orderings answer different questions: which histories are
+common, and which histories change what happens next.</p>
 </div>
 <div class="section level3">
-<h3 id="predictive-quality">Predictive quality<a class="anchor" aria-label="anchor" href="#predictive-quality"></a>
+<h3 id="divergence-chart">Divergence chart<a class="anchor" aria-label="anchor" href="#divergence-chart"></a>
 </h3>
-<p><code><a href="../reference/plot_predictive.html">plot_predictive()</a></code> scores sequences against the fitted
-tree three ways. For this tour we score the bundled
-<code>trajectories</code> themselves; in a real evaluation pass
-genuinely held-out sequences (the <em>Advanced analysis</em> vignette
-shows the cross-validated route).</p>
-<p><code>type = "logloss"</code> – per-position surprise in bits against
-position; below the uniform ceiling is structure the model
-exploited:</p>
+<p>To rank contexts by their Kullback-Leibler divergence from the
+parent, we call <code><a href="../reference/plot_divergence.html">plot_divergence()</a></code> with <code>top</code> and
+<code>min_count</code>. Contexts whose most likely next state differs
+from their parent’s are marked.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_predictive.html">plot_predictive</a></span><span class="op">(</span><span class="va">pruned</span>, <span class="va">trajectories</span>, type <span class="op">=</span> <span class="st">"logloss"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/predictive-logloss-1.png" class="r-plt" alt="" width="100%"></p>
-<p><code>type = "ecdf"</code> – the distribution of the probability
-assigned to the state that actually occurred; steep steps reveal
-calibration plateaus (e.g. a mass of three-way-open branch points):</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_divergence.html">plot_divergence</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">12L</span>, min_count <span class="op">=</span> <span class="fl">5L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/divergence-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p><code>min_count</code> removes contexts too rare for their divergence
+to be trusted; the bootstrap in <a href="pathway-reliability.html">Pathway reliability with the
+bootstrap</a> quantifies the same concern.</p>
+</div>
+<div class="section level3">
+<h3 id="next-state-distributions">Next-state distributions<a class="anchor" aria-label="anchor" href="#next-state-distributions"></a>
+</h3>
+<p>To draw the full next-state distribution of each context as small
+multiples, we call <code><a href="../reference/plot_distributions.html">plot_distributions()</a></code> with
+<code>top</code> for the number of contexts, or <code>contexts</code>
+for chosen ones.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_predictive.html">plot_predictive</a></span><span class="op">(</span><span class="va">pruned</span>, <span class="va">trajectories</span>, type <span class="op">=</span> <span class="st">"ecdf"</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/predictive-ecdf-1.png" class="r-plt" alt="" width="100%"></p>
-<p>A third type, <code>type = "position"</code>, traces each individual
-sequence’s confidence move-by-move (one grey line per sequence). It is a
-per-sequence view that only reads cleanly for a handful of sequences, so
-it is omitted here; reach for it when you want to inspect a few specific
-trajectories rather than the corpus as a whole.</p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_distributions.html">plot_distributions</a></span><span class="op">(</span><span class="va">pruned</span>, top <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/distributions-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>A panel with one tall bar is a context whose continuation is nearly
+settled; a flat panel is a point where the history does not determine
+the next state.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="forward-trajectory-trees">4. Forward trajectory trees<a class="anchor" aria-label="anchor" href="#forward-trajectory-trees"></a>
+<h2 id="how-much-history-a-pathway-needs">How much history a pathway needs<a class="anchor" aria-label="anchor" href="#how-much-history-a-pathway-needs"></a>
 </h2>
-<p>The context tree reads backward; <code><a href="../reference/plot_trajectories.html">plot_trajectories()</a></code>
-draws the same sequences forward in time. Colour by
-<strong>frequency</strong> (how many sequences walk each path) or by
-<strong>predictability</strong> (<code>P(state | history)</code> from
-the model). Read together they separate traffic from predictability – a
-wide-but-pale edge is a high-traffic decision point.</p>
-<p>Forward trajectories show their structure best on a richer alphabet,
-so this section uses the bundled <code>ai_long</code> log (eight
-AI-prompting move types) rather than the three-state engagement data
-above.</p>
+<p>To follow one pathway from its full context down to the root, we call
+<code><a href="../reference/plot_pruning.html">plot_pruning()</a></code> on the unpruned tree with the pathway. Each
+row is one suffix of the pathway, from the full context to the root,
+with its next-state distribution; the suffixes that the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>G</mi><mn>2</mn></msup><annotation encoding="application/x-tex">G^2</annotation></semantics></math>
+pruning test keeps are drawn solid and the ones it drops faded.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">ai_long</span><span class="op">)</span></span>
-<span><span class="va">tree_ai</span>   <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">ai_long</span>, actor <span class="op">=</span> <span class="st">"project"</span>, session <span class="op">=</span> <span class="st">"session_id"</span>,</span>
-<span>                         action <span class="op">=</span> <span class="st">"code"</span>, max_depth <span class="op">=</span> <span class="fl">3L</span>, min_count <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span>
-<span><span class="va">pruned_ai</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">tree_ai</span><span class="op">)</span></span></code></pre></div>
-<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_trajectories.html">plot_trajectories</a></span><span class="op">(</span><span class="va">tree_ai</span>, measure <span class="op">=</span> <span class="st">"frequency"</span>, min_count <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/traj-freq-1.png" class="r-plt" alt="" width="100%"></p>
-<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_trajectories.html">plot_trajectories</a></span><span class="op">(</span><span class="va">pruned_ai</span>, measure <span class="op">=</span> <span class="st">"predictability"</span>, min_count <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/traj-pred-1.png" class="r-plt" alt="" width="100%"></p>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pruning.html">plot_pruning</a></span><span class="op">(</span><span class="va">tree</span>, <span class="st">"Active -&gt; Active -&gt; Average"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/pruning-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The figure answers, for one pathway, how far back the history has to
+reach before the prediction stops changing. Here the context
+<code>Active -&gt; Average</code> changes the prediction of
+<code>Average</code>
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>G</mi><mn>2</mn></msup><annotation encoding="application/x-tex">G^2</annotation></semantics></math>
+= 27.2), but adding the earlier <code>Active</code> does not
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>G</mi><mn>2</mn></msup><annotation encoding="application/x-tex">G^2</annotation></semantics></math>
+= 2.5), so the pathway needs two steps of history, not three.</p>
 </div>
 <div class="section level2">
-<h2 id="inferential-plots">5. Inferential plots<a class="anchor" aria-label="anchor" href="#inferential-plots"></a>
+<h2 id="forward-trajectories">Forward trajectories<a class="anchor" aria-label="anchor" href="#forward-trajectories"></a>
+</h2>
+<p>A context tree reads histories backwards from the present. To draw
+the same sequences forward in time, as a tree of the paths that
+sequences take from their first state, we call
+<code><a href="../reference/plot_trajectories.html">plot_trajectories()</a></code> with <code>measure</code> and
+<code>min_count</code> for the smallest path shown. The forward view
+needs a richer alphabet than three states to be informative, so we fit a
+tree to the human-AI collaboration log.</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">ai_tree</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">ai_long</span>, actor <span class="op">=</span> <span class="st">"project"</span>, session <span class="op">=</span> <span class="st">"session_id"</span>,</span>
+<span>                        action <span class="op">=</span> <span class="st">"code"</span>, max_depth <span class="op">=</span> <span class="fl">3L</span>, min_count <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span></code></pre></div>
+<p>With <code>measure = "frequency"</code> the paths are colored by the
+number of sequences that take them.</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_trajectories.html">plot_trajectories</a></span><span class="op">(</span><span class="va">ai_tree</span>, measure <span class="op">=</span> <span class="st">"frequency"</span>, min_count <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/trajectories-frequency-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>With <code>measure = "predictability"</code> they are colored by the
+probability that the model gives each step, given the path before
+it.</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_trajectories.html">plot_trajectories</a></span><span class="op">(</span><span class="va">ai_tree</span>, measure <span class="op">=</span> <span class="st">"predictability"</span>, min_count <span class="op">=</span> <span class="fl">20L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/trajectories-predictability-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Read together, the two show where traffic and predictability part: a
+path that many sequences take but that the model predicts poorly is a
+decision point, where sequences with the same past go different
+ways.</p>
+</div>
+<div class="section level2">
+<h2 id="predictive-performance">Predictive performance<a class="anchor" aria-label="anchor" href="#predictive-performance"></a>
+</h2>
+<p>To show how well the model predicts sequences, we call
+<code><a href="../reference/plot_predictive.html">plot_predictive()</a></code> with <code>type</code>.
+<code>"logloss"</code> plots each transition’s surprise in bits against
+its position; <code>"ecdf"</code> and <code>"position"</code> are the
+other views. Held-out data should be used for an honest evaluation; the
+bundled data are scored here only to show the display.</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_predictive.html">plot_predictive</a></span><span class="op">(</span><span class="va">pruned</span>, newdata <span class="op">=</span> <span class="va">trajectories</span>, type <span class="op">=</span> <span class="st">"logloss"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/predictive-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Held-out evaluation and the other two views are covered in <a href="prediction-and-scoring.html">Prediction, scoring, imputation and
+mining</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="uncertainty-and-comparison">Uncertainty and comparison<a class="anchor" aria-label="anchor" href="#uncertainty-and-comparison"></a>
 </h2>
 <div class="section level3">
 <h3 id="bootstrap-forest-plot">Bootstrap forest plot<a class="anchor" aria-label="anchor" href="#bootstrap-forest-plot"></a>
 </h3>
-<p>Each pathway’s 95% bootstrap interval on G-squared against the
-chi-square critical value (dashed line); colour encodes the trust
-quadrant. A bar entirely to the right is reproducibly informative.</p>
-<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_pathways.html">bootstrap_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, iter <span class="op">=</span> <span class="fl">100L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span></span>
-<span><span class="co">#&gt; `height` was translated to `width`.</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/boot-plot-1.png" class="r-plt" alt="" width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="per-pathway-resample-distributions">Per-pathway resample distributions<a class="anchor" aria-label="anchor" href="#per-pathway-resample-distributions"></a>
-</h3>
-<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathway_resamples.html">plot_pathway_resamples</a></span><span class="op">(</span><span class="va">boot</span>, stat <span class="op">=</span> <span class="st">"divergence"</span>, top <span class="op">=</span> <span class="fl">6</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/boot-resamples-1.png" class="r-plt" alt="" width="100%"></p>
-</div>
-<div class="section level3">
-<h3 id="cohort-comparison-permutation-null">Cohort comparison: permutation null<a class="anchor" aria-label="anchor" href="#cohort-comparison-permutation-null"></a>
-</h3>
-<p>We name an external group column (<code>Achiever</code>) on the
-bundled <code>group_regulation_long</code> log;
-<code>context_tree(group = )</code> fits one tree per cohort, and
-<code><a href="../reference/compare_trees.html">compare_trees()</a></code> consumes the group directly.</p>
+<p>To show the bootstrap uncertainty of each pathway, we call
+<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the result of <code><a href="../reference/bootstrap_pathways.html">bootstrap_pathways()</a></code>.
+Each row is a pathway’s
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>G</mi><mn>2</mn></msup><annotation encoding="application/x-tex">G^2</annotation></semantics></math>
+against its parent with its 95% bootstrap interval; the dashed line is
+the chi-square critical value; color marks whether the pathway is
+stable, informative, both or neither.</p>
 <div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">group_regulation_long</span><span class="op">)</span></span>
-<span><span class="va">grp_reg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">group_regulation_long</span>,</span>
-<span>                       actor <span class="op">=</span> <span class="st">"Actor"</span>, time <span class="op">=</span> <span class="st">"Time"</span>, action <span class="op">=</span> <span class="st">"Action"</span>,</span>
-<span>                       group <span class="op">=</span> <span class="st">"Achiever"</span>, max_depth <span class="op">=</span> <span class="fl">2L</span>, min_count <span class="op">=</span> <span class="fl">10L</span><span class="op">)</span></span>
-<span><span class="va">cmp</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_trees.html">compare_trees</a></span><span class="op">(</span><span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">grp_reg</span><span class="op">)</span>, iter <span class="op">=</span> <span class="fl">199L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">cmp</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/compare-plot-1.png" class="r-plt" alt="" width="100%"></p>
-<p>The observed distance (orange line) sits against the label-shuffled
-null (blue histogram); the share of the null at or beyond the line is
-the permutation p-value printed in the subtitle.</p>
+<code class="sourceCode R"><span><span class="va">boot</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/bootstrap_pathways.html">bootstrap_pathways</a></span><span class="op">(</span><span class="va">pruned</span>, iter <span class="op">=</span> <span class="fl">200L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">boot</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/boot-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>To draw the resample distribution of a statistic for the leading
+pathways, we call <code><a href="../reference/plot_pathway_resamples.html">plot_pathway_resamples()</a></code> with
+<code>stat</code> and <code>top</code>.</p>
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_pathway_resamples.html">plot_pathway_resamples</a></span><span class="op">(</span><span class="va">boot</span>, stat <span class="op">=</span> <span class="st">"divergence"</span>, top <span class="op">=</span> <span class="fl">6L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/boot-resamples-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
-<h3 id="tuning-surface">Tuning surface<a class="anchor" aria-label="anchor" href="#tuning-surface"></a>
+<h3 id="comparing-two-trees">Comparing two trees<a class="anchor" aria-label="anchor" href="#comparing-two-trees"></a>
 </h3>
-<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tg</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tune_tree.html">tune_tree</a></span><span class="op">(</span><span class="va">trajectories</span>, max_depth <span class="op">=</span> <span class="fl">1L</span><span class="op">:</span><span class="fl">4L</span>, folds <span class="op">=</span> <span class="fl">5L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tg</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/tune-plot-1.png" class="r-plt" alt="" width="100%"></p>
-<p>Held-out perplexity drops sharply from depth 1 to depth 2 and is
-nearly flat beyond it – the picture of a process whose useful memory is
-about two steps. The orange star marks the cross-validated winner; on a
-curve this flat, the winner is one of several near-equivalent
-configurations.</p>
+<p>To test whether two groups produce different pathway distributions,
+we call <code><a href="../reference/compare_trees.html">compare_trees()</a></code> on the group object with
+<code>iter</code> for the number of permutations. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code>
+draws the permutation null of the distance between the trees, with the
+observed distance as a vertical line. A small <code>iter</code> keeps
+this guide fast; a reported test should use more permutations.</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_trees.html">compare_trees</a></span><span class="op">(</span><span class="fu"><a href="../reference/prune_tree.html">prune_tree</a></span><span class="op">(</span><span class="va">regulation</span><span class="op">)</span>, iter <span class="op">=</span> <span class="fl">99L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">comparison</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/compare-trees-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+</div>
+<div class="section level3">
+<h3 id="comparing-groups-pathway-by-pathway">Comparing groups pathway by pathway<a class="anchor" aria-label="anchor" href="#comparing-groups-pathway-by-pathway"></a>
+</h3>
+<p><code><a href="../reference/compare_groups.html">compare_groups()</a></code> tests the groups context by context. To
+plot the contexts whose next-state distributions differ most between the
+groups, we call <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on its result;
+<code>style = "matrix"</code> draws the distances between all pairs of
+groups instead.</p>
+<div class="sourceCode" id="cb21"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">group_comparison</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/compare_groups.html">compare_groups</a></span><span class="op">(</span><span class="va">regulation</span>, iter <span class="op">=</span> <span class="fl">99L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">group_comparison</span>, top <span class="op">=</span> <span class="fl">12L</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/compare-groups-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>Most of the contexts with the largest divergence are rare, observed
+11 to 101 times, and none of the twelve is significant after the false
+discovery rate correction (grey points). To count the contexts that do
+differ significantly, we call <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code>.</p>
+<div class="sourceCode" id="cb22"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">group_comparison</span><span class="op">)</span></span>
+<span><span class="co">#&gt; Group comparison: High vs Low (80 contexts, 99 permutations)</span></span>
+<span><span class="co">#&gt;   behavioral omnibus: JSD = 1772.142 bits, p = 0.010</span></span>
+<span><span class="co">#&gt;   usage omnibus     : G2 = 1356.46, p = 0.010</span></span>
+<span><span class="co">#&gt;   pathways with a behavioral difference (adjusted p &lt; 0.05): 28</span></span>
+<span><span class="co">#&gt;   pathways with a usage difference      (adjusted p &lt; 0.05): 43</span></span>
+<span><span class="co">#&gt;   pathways whose modal next state differs between groups: 26</span></span></code></pre></div>
+<p>Twenty-eight contexts differ in what follows them. Each of them is
+observed at least 147 times, and their divergences are at most 0.12
+bits: with frequent contexts a small difference is detectable, with rare
+ones a large difference is not.</p>
+<div class="sourceCode" id="cb23"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">group_comparison</span>, style <span class="op">=</span> <span class="st">"matrix"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/compare-groups-matrix-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
 </div>
 <div class="section level3">
 <h3 id="group-difference-map">Group difference map<a class="anchor" aria-label="anchor" href="#group-difference-map"></a>
 </h3>
-<p><code><a href="../reference/plot_difference.html">plot_difference()</a></code> draws the per-context residual map for
-the same <code>group =</code>-fitted tree – where two cohorts resolve
-the same history toward different next states. <code>depth = 1L</code>
-keeps the map to the single-state contexts so the rows stay legible (a
-deep tree has too many contexts to label).</p>
-<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_difference.html">plot_difference</a></span><span class="op">(</span><span class="va">grp_reg</span>, depth <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span></code></pre></div>
-<p><img src="visualization_files/figure-html/difference-1.png" class="r-plt" alt="" width="100%"></p>
+<p>To map, context by context, where two groups continue differently, we
+call <code><a href="../reference/plot_difference.html">plot_difference()</a></code> with <code>depth</code> for the
+context depth. Each cell is the Pearson residual of the first group’s
+count of a next state against the count expected if both groups
+continued alike; an absolute value above about 2 is notable. With the
+<code><a href="../reference/compare_groups.html">compare_groups()</a></code> result as <code>comparison</code>,
+contexts with a significant difference are starred.</p>
+<div class="sourceCode" id="cb24"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_difference.html">plot_difference</a></span><span class="op">(</span><span class="va">regulation</span>, depth <span class="op">=</span> <span class="fl">1L</span>, comparison <span class="op">=</span> <span class="va">group_comparison</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/difference-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>After <code>discuss</code>, high achievers move to
+<code>consensus</code> more often than expected (residual 8.2) and to
+<code>adapt</code> less often (-7.9); seven of the nine single-move
+contexts carry a significant difference.</p>
+<p>With <code>layout = "tree"</code>, the tree of the pooled sequences
+is drawn with each node colored by which group reaches that context more
+often. A tree of depth two over nine states has too many leaves to
+label, so we fit the groups at depth one for this view.</p>
+<div class="sourceCode" id="cb25"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">regulation_first</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/context_tree.html">context_tree</a></span><span class="op">(</span><span class="va">group_regulation_long</span>, actor <span class="op">=</span> <span class="st">"Actor"</span>,</span>
+<span>                                 time <span class="op">=</span> <span class="st">"Time"</span>, action <span class="op">=</span> <span class="st">"Action"</span>,</span>
+<span>                                 group <span class="op">=</span> <span class="st">"Achiever"</span>, max_depth <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_difference.html">plot_difference</a></span><span class="op">(</span><span class="va">regulation_first</span>, layout <span class="op">=</span> <span class="st">"tree"</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/difference-tree-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>High achievers reach <code>consensus</code> and <code>emotion</code>
+more often, low achievers <code>plan</code>.</p>
+<p>The analysis of these two groups is developed in <a href="comparing-groups.html">Comparing groups</a>.</p>
+</div>
+<div class="section level3">
+<h3 id="tuning-surface">Tuning surface<a class="anchor" aria-label="anchor" href="#tuning-surface"></a>
+</h3>
+<p>To show the cross-validated perplexity of each configuration, we call
+<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> on the result of <code><a href="../reference/tune_tree.html">tune_tree()</a></code>.</p>
+<div class="sourceCode" id="cb26"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tuning</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tune_tree.html">tune_tree</a></span><span class="op">(</span><span class="va">trajectories</span>, max_depth <span class="op">=</span> <span class="fl">1L</span><span class="op">:</span><span class="fl">4L</span>, folds <span class="op">=</span> <span class="fl">5L</span>, seed <span class="op">=</span> <span class="fl">1L</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">tuning</span><span class="op">)</span></span></code></pre></div>
+<p><img src="visualization_files/figure-html/tune-1.png" class="r-plt" alt="" width="100%" style="display: block; margin: auto;"></p>
+<p>The choice of configuration from this surface is discussed in <a href="model-selection.html">Model selection: tuning, fit and
+perplexity</a>.</p>
 </div>
 </div>
 <div class="section level2">
-<h2 id="recap">Recap<a class="anchor" aria-label="anchor" href="#recap"></a>
+<h2 id="summary">Summary<a class="anchor" aria-label="anchor" href="#summary"></a>
 </h2>
 <table class="table">
 <colgroup>
@@ -352,55 +498,88 @@ deep tree has too many contexts to label).</p>
 <col width="50%">
 </colgroup>
 <thead><tr class="header">
-<th>Goal</th>
-<th>Function</th>
+<th>Question</th>
+<th>Call</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
-<td>The tree</td>
-<td>
-<code>plot(style = c("horizontal", "dendrogram", "icicle", "interactive"))</code>
-(interactive = <code>visNetwork</code> widget)</td>
+<td>The tree with every pathway labeled</td>
+<td><code>plot(tree, style = "horizontal")</code></td>
 </tr>
 <tr class="even">
-<td>Rank pathways</td>
-<td>
-<code><a href="../reference/plot_pathways.html">plot_pathways()</a></code>, <code><a href="../reference/plot_divergence.html">plot_divergence()</a></code>,
-<code><a href="../reference/plot_distributions.html">plot_distributions()</a></code>
-</td>
+<td>The tree as a circle</td>
+<td><code>plot(tree, style = "dendrogram")</code></td>
 </tr>
 <tr class="odd">
-<td>Memory of one pathway</td>
-<td><code><a href="../reference/plot_pruning.html">plot_pruning()</a></code></td>
+<td>The distribution of observations over contexts</td>
+<td><code>plot(tree, style = "icicle")</code></td>
 </tr>
 <tr class="even">
-<td>Held-out quality</td>
-<td><code>plot_predictive(type = c("logloss", "ecdf", "position"))</code></td>
+<td>An explorable tree</td>
+<td><code>plot(tree, style = "interactive")</code></td>
 </tr>
 <tr class="odd">
-<td>Forward trajectories</td>
-<td><code>plot_trajectories(measure = c("frequency", "predictability"))</code></td>
+<td>One tree per group</td>
+<td><code>plot(group_tree, style = "dendrogram")</code></td>
 </tr>
 <tr class="even">
-<td>Reliability</td>
+<td>Frequent or informative contexts</td>
+<td><code>plot_pathways(tree, sort_by = "divergence")</code></td>
+</tr>
+<tr class="odd">
+<td>Contexts that change the prediction</td>
+<td><code>plot_divergence(tree)</code></td>
+</tr>
+<tr class="even">
+<td>Next-state distributions</td>
+<td><code>plot_distributions(tree)</code></td>
+</tr>
+<tr class="odd">
+<td>How much history one pathway needs</td>
+<td><code>plot_pruning(tree, pathway)</code></td>
+</tr>
+<tr class="even">
+<td>Sequences forward in time</td>
+<td><code>plot_trajectories(tree, measure = "frequency")</code></td>
+</tr>
+<tr class="odd">
+<td>Predictive performance</td>
+<td><code>plot_predictive(tree, newdata, type = "logloss")</code></td>
+</tr>
+<tr class="even">
+<td>Bootstrap intervals</td>
 <td>
-<code>plot(&lt;bootstrap&gt;)</code>,
+<code>plot(bootstrap_pathways(tree))</code>,
 <code><a href="../reference/plot_pathway_resamples.html">plot_pathway_resamples()</a></code>
 </td>
 </tr>
 <tr class="odd">
-<td>Comparison</td>
+<td>Group tests</td>
 <td>
-<code>plot(&lt;comparison&gt;)</code>,
-<code><a href="../reference/plot_difference.html">plot_difference()</a></code>
+<code>plot(compare_trees(group_tree))</code>,
+<code>plot(compare_groups(group_tree))</code>
 </td>
 </tr>
 <tr class="even">
-<td>Tuning</td>
-<td><code>plot(&lt;tune&gt;)</code></td>
+<td>Where two groups continue differently</td>
+<td><code>plot_difference(group_tree, depth = 1L)</code></td>
+</tr>
+<tr class="odd">
+<td>Tuning surface</td>
+<td><code>plot(tune_tree(data))</code></td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level2">
+<h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a>
+</h2>
+<p>Gabadinho, A., &amp; Ritschard, G. (2016). Analyzing state sequences
+with probabilistic suffix trees: The PST R package. <em>Journal of
+Statistical Software, 72</em>(3). <a href="https://doi.org/10.18637/jss.v072.i03" class="external-link uri">https://doi.org/10.18637/jss.v072.i03</a></p>
+<p>Ron, D., Singer, Y., &amp; Tishby, N. (1996). The power of amnesia:
+Learning probabilistic automata with variable memory length. <em>Machine
+Learning, 25</em>(2-3), 117-149. <a href="https://doi.org/10.1023/A:1026490906255" class="external-link uri">https://doi.org/10.1023/A:1026490906255</a></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
@@ -409,7 +588,7 @@ deep tree has too many contexts to label).</p>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mohammed Saqr, Sonsoles López-Pernas.</p>
+  <p>Developed by <a href="https://saqr.me" class="external-link">Mohammed Saqr</a>, <a href="https://sonsoles.me" class="external-link">Sonsoles López-Pernas</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

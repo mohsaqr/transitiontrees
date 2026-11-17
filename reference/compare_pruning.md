@@ -1,13 +1,14 @@
-# Compare Pruning Criteria on One Tree
+# Compare pruning criteria on one tree
 
-Prunes a fitted tree under several criteria – holding `alpha` and
-`threshold` fixed – and returns a tidy one-row-per-criterion summary of
-how aggressively each trims the tree. A convenience wrapper over
-repeated
-[`prune_tree`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-calls that collapses the usual
-[`vapply()`](https://rdrr.io/r/base/lapply.html) criterion loop into one
-call.
+`compare_pruning()` prunes one fitted tree under each of several
+criteria and reports how many contexts each keeps. The table shows how
+strongly the criteria differ on the data at hand before one of them is
+applied with
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md);
+the criteria themselves are described there. A smaller tree is not by
+itself a better one: to compare pruned trees by how well they predict
+new sequences, use
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md).
 
 ## Usage
 
@@ -24,50 +25,52 @@ compare_pruning(
 
 - tree:
 
-  A `transitiontrees` (typically unpruned).
+  A `transitiontrees` object, usually unpruned.
 
 - criterion:
 
-  Character vector of criteria to compare. Defaults to all four: `"G2"`,
-  `"KL"`, `"AIC"`, `"BIC"`.
+  Criteria to compare. Default all four: `"G2"`, `"KL"`, `"AIC"`,
+  `"BIC"`.
 
 - alpha:
 
-  Significance level for `"G2"`; not used by `"KL"`, `"AIC"` or `"BIC"`.
-  Default 0.05.
+  Significance level for `"G2"`. Default 0.05.
 
 - threshold:
 
-  Minimum information gain in nats for `"KL"`. Default 0.005.
+  Minimum divergence in nats for `"KL"`. Default 0.005.
 
 ## Value
 
-A `data.frame` with one row per criterion (in the order given by
-`criterion`) and columns `criterion`, `n_nodes` (post-prune size) and
-`reduction_pct` (percent of the original nodes removed).
+A `data.frame` with one row per criterion, in the order of `criterion`,
+and columns `criterion`, `n_nodes` (contexts kept, root included) and
+`reduction_pct` (percentage of the original contexts removed).
+
+## Conditions
+
+`transitiontrees_bad_input` when `tree` is not a fitted tree,
+`criterion` is not a non-empty character vector, or `alpha` or
+`threshold` is invalid.
 
 ## See also
 
-[`prune_tree`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-to apply one criterion,
-[`tune_tree`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
-for cross-validated selection.
+[`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md),
+[`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md),
+[`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md),
+[`compare_smoothing()`](https://pak.dynasite.org/transitiontrees/reference/compare_smoothing.md).
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(80, sample(c("A", "B", "C"), 14, replace = TRUE),
-                  simplify = FALSE)
-tree <- context_tree(seqs, max_depth = 4L, min_count = 3L)
+tree <- context_tree(trajectories, max_depth = 4)
 compare_pruning(tree)
 #>   criterion n_nodes reduction_pct
-#> 1        G2      10          91.7
-#> 2        KL     118           2.5
-#> 3       AIC      25          79.3
-#> 4       BIC      24          80.2
+#> 1        G2      25          69.5
+#> 2        KL      78           4.9
+#> 3       AIC      42          48.8
+#> 4       BIC      36          56.1
 compare_pruning(tree, criterion = c("G2", "BIC"), alpha = 0.01)
 #>   criterion n_nodes reduction_pct
-#> 1        G2       1          99.2
-#> 2       BIC      24          80.2
+#> 1        G2      21          74.4
+#> 2       BIC      36          56.1
 ```

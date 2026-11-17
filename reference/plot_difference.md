@@ -1,12 +1,29 @@
-# Difference (Subtraction) Map Between Two Groups
+# Map the next-state differences between two groups
 
-A per-context map of how two groups differ in their next-state
-predictions: one row per shared context, one column per next state. By
-default each cell is the Pearson standardized residual of the first
-group against the no-difference null (red = more than expected, blue =
-less; `|r| > 2` notable), which is support-aware and decomposes the
-per-context \\G^2\\; `measure = "probability"` shows the raw
-`P(group1) - P(group2)` instead.
+`plot_difference()` maps the next-state differences between two groups
+of a `transitiontrees_group`: where the groups share a history and still
+continue from it differently. The map has one row per context the groups
+share and one column per next state. With `depth = 1` the map is the
+difference between the two first-order transition matrices; deeper
+contexts show whether the difference depends on a longer history.
+
+By default each cell is the Pearson residual of the first group's count
+of that next state against the count expected if both groups continued
+alike from that context, \\(O - E) / \sqrt{E}\\, with \\E\\ from the
+margins of the context's two-group table. Residuals take the context's
+count into account, and an absolute value above about 2 is notable.
+`measure = "probability"` shows the plain difference of next-state
+probabilities instead. Rows are ordered by their total absolute
+difference, largest at the top. With a
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+result as `comparison`, contexts with a significant behavioral
+difference are starred.
+
+`layout = "tree"` draws a different quantity: the context tree of the
+pooled sequences, each node and branch colored by which group reaches
+that context more often, as a share of the group's observations. The map
+describes differences; the permutation tests are in
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md).
 
 ## Usage
 
@@ -28,80 +45,81 @@ plot_difference(
 
 - group:
 
-  A `transitiontrees_group`.
+  A `transitiontrees_group` object.
 
 - groups:
 
-  Optional length-2 character vector naming the two groups to subtract
-  (`group1 - group2`). Defaults to the first two; it is required when
-  the object has more than two groups.
+  The two groups to compare, first minus second. Default `NULL`: the two
+  groups of a two-group object; required for more groups.
 
 - depth:
 
-  Integer or `NULL`. Restrict to contexts of this depth (`depth = 1`
-  gives the order-1 transition-matrix difference). `NULL` (default) uses
-  all shared contexts.
+  Only contexts of this depth. Default `NULL`: all shared contexts.
 
 - min_count:
 
-  Integer. Drop contexts whose count in *either* group is below this.
-  Default 1.
+  Contexts with a count below this in either group are dropped. Default
+  1.
 
 - comparison:
 
-  Optional `transitiontrees_group_comparison` (from
-  [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)).
-  When supplied, contexts whose behavioral difference is significant
-  (`jsd_padj < alpha`) are starred, so the map shows which differences
-  survived the permutation test.
+  A `transitiontrees_group_comparison` from
+  [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
+  used to star contexts with `jsd_padj < alpha`. Default `NULL`.
 
 - alpha:
 
-  Numeric. FDR threshold for the significance stars when `comparison` is
-  given. Default 0.05.
+  False discovery rate cutoff for the stars. Default 0.05.
 
 - annotate:
 
-  Logical. Print the signed difference in each cell (`layout = "tile"`
-  only). Default `TRUE`.
+  Print the value in each cell (`"tile"` only). Default `TRUE`.
 
 - layout:
 
-  One of `"tile"` (default; per-context heatmap over all shared
-  contexts) or `"tree"` (the horizontal context-tree phylogram drawn on
-  a pooled backbone, with each node and branch coloured by which group
-  reaches that context more – red for the first group, blue for the
-  second; node size = pooled count).
+  `"tile"` (default) for the heatmap, or `"tree"` for the pooled tree
+  colored by prevalence difference.
 
 - measure:
 
-  For `layout = "tile"`, what each cell encodes: `"residual"` (default)
-  is the Pearson standardized residual of the first group against the
-  no-group null (observed vs expected from the context's margins) –
-  support-aware and decomposing the per-context \\G^2\\; `"probability"`
-  is the raw next-state probability difference `P(group1) - P(group2)`.
-  Ignored by `"tree"`.
+  For `"tile"`: `"residual"` (default) or `"probability"`.
 
 ## Value
 
-A ggplot object.
+A ggplot object: a heatmap of contexts by next states, or a tree colored
+by prevalence difference.
+
+## Conditions
+
+- `transitiontrees_bad_input`:
+
+  (error) `group` is not a `transitiontrees_group`; `groups` is missing
+  for more than two groups or does not name two of them; no context is
+  shared at `depth` and `min_count`; `comparison` is not a
+  `transitiontrees_group_comparison`.
+
+- `transitiontrees_empty_result`:
+
+  (error) for `layout = "tree"`, the pooled tree is empty.
 
 ## See also
 
-[`compare_groups`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
-for the significance test.
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+for the tests;
+[`plot.transitiontrees_group`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group.md)
+for each group's tree.
 
 ## Examples
 
 ``` r
-set.seed(1)
-gx <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(60, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 60),
-                    max_depth = 2L)
-plot_difference(grp)                       # residual heatmap
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+plot_difference(grp)
 
-plot_difference(grp, layout = "tree")      # difference on the tree map
+plot_difference(grp, measure = "probability")
+
+plot_difference(grp, comparison = compare_groups(grp, iter = 20),
+                alpha = 0.1)
+
+plot_difference(grp, layout = "tree")
 ```

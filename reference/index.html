@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">transitiontrees</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.4</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.6</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -15,15 +15,30 @@
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+      <ul class="navbar-nav me-auto"><li class="nav-item"><a class="nav-link" href="../articles/transitiontrees.html">Get started</a></li>
+<li class="active nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
-  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/advanced-analysis.html">4. Advanced analysis: smoothing, tuning, comparison, and mining</a></li>
-    <li><a class="dropdown-item" href="../articles/analysis-case.html">2. A complete analysis case: collaborative-regulation sequences</a></li>
-    <li><a class="dropdown-item" href="../articles/ecosystem-compatibility.html">3. Ecosystem compatibility: TraMineR, tna, and Nestimate</a></li>
-    <li><a class="dropdown-item" href="../articles/getting-started.html">1. Getting started: basic analysis and trajectory trees</a></li>
-    <li><a class="dropdown-item" href="../articles/visualization.html">5. Visualization: every plot, and how to read it</a></li>
+  <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Vignettes</h6></li>
+    <li><a class="dropdown-item" href="../articles/comparing-groups.html">Comparing groups</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Guides</h6></li>
+    <li><a class="dropdown-item" href="../articles/workflow.html">A complete workflow</a></li>
+    <li><a class="dropdown-item" href="../articles/data-input.html">Data input: wide sequences, event logs and network objects</a></li>
+    <li><a class="dropdown-item" href="../articles/smoothing-and-pruning.html">Smoothing and pruning</a></li>
+    <li><a class="dropdown-item" href="../articles/model-selection.html">Model selection: tuning, fit and perplexity</a></li>
+    <li><a class="dropdown-item" href="../articles/pathway-reliability.html">Pathway reliability with the bootstrap</a></li>
+    <li><a class="dropdown-item" href="../articles/prediction-and-scoring.html">Prediction, scoring, imputation and mining</a></li>
+    <li><a class="dropdown-item" href="../articles/visualization.html">Visualizing transition trees</a></li>
+    <li><a class="dropdown-item" href="../articles/verification.html">Verification against the PST package</a></li>
+    <li><hr class="dropdown-divider"></li>
+    <li><h6 class="dropdown-header" data-toc-skip>Case studies</h6></li>
+    <li><a class="dropdown-item" href="../articles/case-regulation-achievement.html">Case study: collaborative regulation by achievement</a></li>
+    <li><a class="dropdown-item" href="../articles/case-engagement.html">Case study: engagement trajectories</a></li>
+    <li><a class="dropdown-item" href="../articles/case-ai-collaboration.html">Case study: human-AI collaboration</a></li>
   </ul></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
 <li class="nav-item"><a class="external-link nav-link" href="https://github.com/mohsaqr/transitiontrees/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
@@ -39,7 +54,7 @@
     </div>
 
     <div class="section level2">
-      <h2 id="all-functions">All functions<a class="anchor" aria-label="anchor" href="#all-functions"></a></h2>
+      <h2 id="overview">Overview<a class="anchor" aria-label="anchor" href="#overview"></a></h2>
 
 
 
@@ -50,425 +65,583 @@
 
       <dl><dt>
 
-          <code><a href="ai_long.html">ai_long</a></code>
+          <code><a href="transitiontrees-package.html">transitiontrees</a></code> <code><a href="transitiontrees-package.html">transitiontrees-package</a></code>
 
         </dt>
-        <dd>AI-collaboration messages (long format)</dd>
+        <dd>transitiontrees: Transition Trajectories and Dynamics of Variable-Length Pathways or Sequences</dd>
+      </dl></div><div class="section level2">
+      <h2 id="fitting">Fitting<a class="anchor" aria-label="anchor" href="#fitting"></a></h2>
 
-        <dt>
+      <div class="section-desc"><p>Fit a variable-order transition tree from wide sequences, event logs or network objects, prepare long logs, and re-smooth or prune a fitted tree.</p></div>
 
-          <code><a href="as.data.frame.transitiontrees.html">as.data.frame(<i>&lt;transitiontrees&gt;</i>)</a></code>
+      <dl></dl></div><div class="section level2">
 
-        </dt>
-        <dd>Coerce a context tree to a Tidy Data Frame</dd>
 
-        <dt>
 
-          <code><a href="as.data.frame.transitiontrees_bootstrap.html">as.data.frame(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
 
-        </dt>
-        <dd>Coerce a context tree Bootstrap to a Tidy Data Frame</dd>
-
-        <dt>
-
-          <code><a href="as.data.frame.transitiontrees_comparison.html">as.data.frame(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce a context tree Comparison to a Tidy Data Frame</dd>
-
-        <dt>
-
-          <code><a href="as.data.frame.transitiontrees_group.html">as.data.frame(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce a Group of Trees to One Tidy Data Frame</dd>
-
-        <dt>
-
-          <code><a href="as.data.frame.transitiontrees_group_comparison.html">as.data.frame(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Coerce a Group Comparison to a Tidy Data Frame</dd>
-
-        <dt>
-
-          <code><a href="bootstrap_pathways.html">bootstrap_pathways()</a></code>
-
-        </dt>
-        <dd>Bootstrap Pathway Stability and Informativeness</dd>
-
-        <dt>
-
-          <code><a href="common_pathways.html">common_pathways()</a></code>
-
-        </dt>
-        <dd>Most Common Pathways in a Fitted Tree</dd>
-
-        <dt>
-
-          <code><a href="compare_groups.html">compare_groups()</a></code>
-
-        </dt>
-        <dd>Compare Groups of Sequences for Structural Differences</dd>
-
-        <dt>
-
-          <code><a href="compare_pruning.html">compare_pruning()</a></code>
-
-        </dt>
-        <dd>Compare Pruning Criteria on One Tree</dd>
-
-        <dt>
-
-          <code><a href="compare_smoothing.html">compare_smoothing()</a></code>
-
-        </dt>
-        <dd>Compare Smoothing Schemes on One Dataset</dd>
-
-        <dt>
-
-          <code><a href="compare_trees.html">compare_trees()</a></code>
-
-        </dt>
-        <dd>Compare Two context trees by Symmetric Divergence with Permutation Test</dd>
-
-        <dt>
+      <dl><dt>
 
           <code><a href="context_tree.html">context_tree()</a></code>
 
         </dt>
-        <dd>Fit a Prediction Suffix Tree from Categorical Sequence Data</dd>
-
-        <dt>
-
-          <code><a href="divergent_pathways.html">divergent_pathways()</a></code>
-
-        </dt>
-        <dd>Most Predictively Divergent Pathways</dd>
-
-        <dt>
-
-          <code><a href="engagement.html">engagement</a></code>
-
-        </dt>
-        <dd>Student engagement state sequences (wide format)</dd>
-
-        <dt>
-
-          <code><a href="generate_sequences.html">generate_sequences()</a></code>
-
-        </dt>
-        <dd>Sample Sequences from a Fitted Context Tree</dd>
-
-        <dt>
-
-          <code><a href="group_regulation_long.html">group_regulation_long</a></code>
-
-        </dt>
-        <dd>Collaborative-regulation events (long format)</dd>
-
-        <dt>
-
-          <code><a href="impute_sequences.html">impute_sequences()</a></code>
-
-        </dt>
-        <dd>Impute Missing States in Sequences</dd>
-
-        <dt>
-
-          <code><a href="logLik.transitiontrees.html">logLik(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Log-Likelihood of a context tree</dd>
-
-        <dt>
-
-          <code><a href="mine_contexts.html">mine_contexts()</a></code>
-
-        </dt>
-        <dd>Mine Contexts by Next-State Probability</dd>
-
-        <dt>
-
-          <code><a href="mine_sequences.html">mine_sequences()</a></code>
-
-        </dt>
-        <dd>Mine Sequences by Predictive Surprise</dd>
-
-        <dt>
-
-          <code><a href="model_fit.html">model_fit()</a></code>
-
-        </dt>
-        <dd>Model-Fit Scalars in One Call</dd>
-
-        <dt>
-
-          <code><a href="n_nodes.html">n_nodes()</a></code>
-
-        </dt>
-        <dd>Number of Contexts (Nodes) in a Tree</dd>
-
-        <dt>
-
-          <code><a href="nobs.transitiontrees.html">nobs(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Number of Observations Used to Fit a context tree</dd>
-
-        <dt>
-
-          <code><a href="pathway_exists.html">pathway_exists()</a></code>
-
-        </dt>
-        <dd>Test Whether a Pathway Exists in the Tree</dd>
-
-        <dt>
-
-          <code><a href="perplexity.html">perplexity()</a></code>
-
-        </dt>
-        <dd>Perplexity of a context tree</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees.html">plot(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a Context Tree</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees_bootstrap.html">plot(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a context tree Bootstrap</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees_comparison.html">plot(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a context tree Comparison</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees_group.html">plot(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot Each Tree in a context tree Group</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees_group_comparison.html">plot(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a Group Comparison</dd>
-
-        <dt>
-
-          <code><a href="plot.transitiontrees_tune.html">plot(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Plot a context tree CV Grid</dd>
-
-        <dt>
-
-          <code><a href="plot_difference.html">plot_difference()</a></code>
-
-        </dt>
-        <dd>Difference (Subtraction) Map Between Two Groups</dd>
-
-        <dt>
-
-          <code><a href="plot_distributions.html">plot_distributions()</a></code>
-
-        </dt>
-        <dd>Per-Context Next-State Distributions</dd>
-
-        <dt>
-
-          <code><a href="plot_divergence.html">plot_divergence()</a></code>
-
-        </dt>
-        <dd>Lollipop Chart of Pathway Divergence</dd>
-
-        <dt>
-
-          <code><a href="plot_pathway_resamples.html">plot_pathway_resamples()</a></code>
-
-        </dt>
-        <dd>Plot Bootstrap Resample Distributions per Pathway</dd>
-
-        <dt>
-
-          <code><a href="plot_pathways.html">plot_pathways()</a></code>
-
-        </dt>
-        <dd>Plot Pathways as a Probability Heatmap</dd>
-
-        <dt>
-
-          <code><a href="plot_predictive.html">plot_predictive()</a></code>
-
-        </dt>
-        <dd>Predictive Diagnostics for Held-Out Scoring</dd>
-
-        <dt>
-
-          <code><a href="plot_pruning.html">plot_pruning()</a></code>
-
-        </dt>
-        <dd>Illustrate Pruning Along a Pathway's Suffix Chain</dd>
-
-        <dt>
-
-          <code><a href="plot_trajectories.html">plot_trajectories()</a></code>
-
-        </dt>
-        <dd>Forward Trajectory Tree (Prefix Tree)</dd>
-
-        <dt>
-
-          <code><a href="predict.transitiontrees.html">predict(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Predict Next-State Probabilities from a Context Tree</dd>
+        <dd>Fit a variable-order transition tree</dd>
 
         <dt>
 
           <code><a href="prepare_input.html">prepare_input()</a></code>
 
         </dt>
-        <dd>Reshape Long Event Data into a Wide Sequence Frame</dd>
-
-        <dt>
-
-          <code><a href="print.summary.transitiontrees.html">print(<i>&lt;summary.transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a Context-Tree Summary</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees.html">print(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a Context Tree</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees_bootstrap.html">print(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a context tree Bootstrap</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees_comparison.html">print(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a context tree Comparison</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees_group.html">print(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a Group of Context Trees</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees_group_comparison.html">print(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a Group Comparison</dd>
-
-        <dt>
-
-          <code><a href="print.transitiontrees_tune.html">print(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Print a context tree Tuning Grid</dd>
-
-        <dt>
-
-          <code><a href="prune_tree.html">prune_tree()</a></code>
-
-        </dt>
-        <dd>Prune a Context Tree</dd>
-
-        <dt>
-
-          <code><a href="query_pathway.html">query_pathway()</a></code>
-
-        </dt>
-        <dd>Query the Probability of a Specific Pathway -&gt; Next State</dd>
-
-        <dt>
-
-          <code><a href="score_positions.html">score_positions()</a></code>
-
-        </dt>
-        <dd>Per-Position Scoring</dd>
-
-        <dt>
-
-          <code><a href="score_sequences.html">score_sequences()</a></code>
-
-        </dt>
-        <dd>Per-Sequence Scoring</dd>
-
-        <dt>
-
-          <code><a href="sharp_pathways.html">sharp_pathways()</a></code>
-
-        </dt>
-        <dd>Sharpest Pathways</dd>
-
-        <dt>
-
-          <code><a href="simulate.transitiontrees.html">simulate(<i>&lt;transitiontrees&gt;</i>)</a></code>
-
-        </dt>
-        <dd>Simulate Sequences from a Fitted context tree</dd>
+        <dd>Reshape a long event log into one sequence per row</dd>
 
         <dt>
 
           <code><a href="smooth_tree.html">smooth_tree()</a></code>
 
         </dt>
-        <dd>Re-Smooth a Fitted context tree</dd>
+        <dd>Re-smooth the next-state probabilities of a fitted tree</dd>
+
+        <dt>
+
+          <code><a href="prune_tree.html">prune_tree()</a></code>
+
+        </dt>
+        <dd>Prune a transition tree to the contexts that change the prediction</dd>
+
+        <dt>
+
+          <code><a href="compare_smoothing.html">compare_smoothing()</a></code>
+
+        </dt>
+        <dd>Compare smoothing schemes on one dataset</dd>
+
+        <dt>
+
+          <code><a href="compare_pruning.html">compare_pruning()</a></code>
+
+        </dt>
+        <dd>Compare pruning criteria on one tree</dd>
+      </dl></div><div class="section level2">
+      <h2 id="pathways">Pathways<a class="anchor" aria-label="anchor" href="#pathways"></a></h2>
+
+      <div class="section-desc"><p>Ranked tables of the contexts a tree holds, the state distribution, and lookups of single pathways.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="tree_pathways.html">tree_pathways()</a></code>
+
+        </dt>
+        <dd>List the pathways of a fitted transition tree</dd>
+
+        <dt>
+
+          <code><a href="common_pathways.html">common_pathways()</a></code>
+
+        </dt>
+        <dd>List the most frequent pathways of a tree</dd>
+
+        <dt>
+
+          <code><a href="divergent_pathways.html">divergent_pathways()</a></code>
+
+        </dt>
+        <dd>List the pathways whose history most changes the prediction</dd>
+
+        <dt>
+
+          <code><a href="sharp_pathways.html">sharp_pathways()</a></code>
+
+        </dt>
+        <dd>List the pathways with the most certain next state</dd>
+
+        <dt>
+
+          <code><a href="tree_dependence.html">tree_dependence()</a></code>
+
+        </dt>
+        <dd>Measure how much each step of history changes the prediction</dd>
+
+        <dt>
+
+          <code><a href="state_frequencies.html">state_frequencies()</a></code>
+
+        </dt>
+        <dd>Count how often each state occurs</dd>
+
+        <dt>
+
+          <code><a href="query_pathway.html">query_pathway()</a></code>
+
+        </dt>
+        <dd>Look up the next-state distribution after a pathway</dd>
+
+        <dt>
+
+          <code><a href="pathway_exists.html">pathway_exists()</a></code>
+
+        </dt>
+        <dd>Test whether a pathway is a context of the tree</dd>
 
         <dt>
 
           <code><a href="subtree.html">subtree()</a></code>
 
         </dt>
-        <dd>Extract the Subtree Rooted at a Pathway</dd>
+        <dd>Extract the branch of a tree below one context</dd>
+      </dl></div><div class="section level2">
+      <h2 id="fit-and-selection">Fit and selection<a class="anchor" aria-label="anchor" href="#fit-and-selection"></a></h2>
+
+      <div class="section-desc"><p>In-sample and held-out fit, information criteria, perplexity and cross-validated selection of depth, minimum count, smoothing and pruning.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="model_fit.html">model_fit()</a></code>
+
+        </dt>
+        <dd>Summarize the fit of a transition tree</dd>
+
+        <dt>
+
+          <code><a href="logLik.transitiontrees.html">logLik(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Compute the log-likelihood of a transition tree</dd>
+
+        <dt>
+
+          <code><a href="nobs.transitiontrees.html">nobs(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Count the observations a transition tree was fitted on</dd>
+
+        <dt>
+
+          <code><a href="perplexity.html">perplexity()</a></code>
+
+        </dt>
+        <dd>Compute the perplexity of a transition tree</dd>
+
+        <dt>
+
+          <code><a href="n_nodes.html">n_nodes()</a></code>
+
+        </dt>
+        <dd>Count the contexts of a transition tree</dd>
+
+        <dt>
+
+          <code><a href="tune_tree.html">tune_tree()</a></code>
+
+        </dt>
+        <dd>Select context tree settings by cross-validated perplexity</dd>
+      </dl></div><div class="section level2">
+      <h2 id="prediction-and-scoring">Prediction and scoring<a class="anchor" aria-label="anchor" href="#prediction-and-scoring"></a></h2>
+
+      <div class="section-desc"><p>Next-state prediction, scoring of held-out sequences, simulation, imputation of gaps and mining of unusual contexts and sequences.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="predict.transitiontrees.html">predict(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Predict the next state after each history</dd>
+
+        <dt>
+
+          <code><a href="score_sequences.html">score_sequences()</a></code>
+
+        </dt>
+        <dd>Score each sequence under a fitted tree</dd>
+
+        <dt>
+
+          <code><a href="score_positions.html">score_positions()</a></code>
+
+        </dt>
+        <dd>Score each position of each sequence under a fitted tree</dd>
+
+        <dt>
+
+          <code><a href="generate_sequences.html">generate_sequences()</a></code>
+
+        </dt>
+        <dd>Generate sequences from a fitted transition tree</dd>
+
+        <dt>
+
+          <code><a href="simulate.transitiontrees.html">simulate(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Simulate sequences from a fitted transition tree</dd>
+
+        <dt>
+
+          <code><a href="impute_sequences.html">impute_sequences()</a></code>
+
+        </dt>
+        <dd>Fill in missing states of incomplete sequences</dd>
+
+        <dt>
+
+          <code><a href="mine_contexts.html">mine_contexts()</a></code>
+
+        </dt>
+        <dd>Find the contexts that make a given next state likely or unlikely</dd>
+
+        <dt>
+
+          <code><a href="mine_sequences.html">mine_sequences()</a></code>
+
+        </dt>
+        <dd>Find the least and most typical sequences</dd>
+      </dl></div><div class="section level2">
+      <h2 id="reliability-and-comparison">Reliability and comparison<a class="anchor" aria-label="anchor" href="#reliability-and-comparison"></a></h2>
+
+      <div class="section-desc"><p>Bootstrap stability of pathways, the distance between two trees, and permutation tests between two or more groups.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="bootstrap_pathways.html">bootstrap_pathways()</a></code>
+
+        </dt>
+        <dd>Bootstrap the stability and informativeness of pathways</dd>
+
+        <dt>
+
+          <code><a href="tree_distance.html">tree_distance()</a></code>
+
+        </dt>
+        <dd>Compute the divergence between two context trees</dd>
+
+        <dt>
+
+          <code><a href="compare_trees.html">compare_trees()</a></code>
+
+        </dt>
+        <dd>Test whether two context trees differ, with a permutation test</dd>
+
+        <dt>
+
+          <code><a href="compare_groups.html">compare_groups()</a></code>
+
+        </dt>
+        <dd>Test where groups of sequences differ, context by context</dd>
+      </dl></div><div class="section level2">
+      <h2 id="plots-of-a-tree">Plots of a tree<a class="anchor" aria-label="anchor" href="#plots-of-a-tree"></a></h2>
+
+      <div class="section-desc"><p>The fitted tree as a horizontal tree, dendrogram, sunburst or interactive network, and displays of its pathways, distributions, forward trajectories and pruning decisions.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="plot.transitiontrees.html">plot(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot a context tree</dd>
+
+        <dt>
+
+          <code><a href="plot.transitiontrees_group.html">plot(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the context tree of each group</dd>
+
+        <dt>
+
+          <code><a href="plot_pathways.html">plot_pathways()</a></code>
+
+        </dt>
+        <dd>Plot pathways as a heatmap of next-state probabilities</dd>
+
+        <dt>
+
+          <code><a href="plot_divergence.html">plot_divergence()</a></code>
+
+        </dt>
+        <dd>Plot the pathways whose history changes the prediction most</dd>
+
+        <dt>
+
+          <code><a href="plot_distributions.html">plot_distributions()</a></code>
+
+        </dt>
+        <dd>Plot the next-state distribution of each context</dd>
+
+        <dt>
+
+          <code><a href="plot_predictive.html">plot_predictive()</a></code>
+
+        </dt>
+        <dd>Plot how well a context tree predicts new sequences</dd>
+
+        <dt>
+
+          <code><a href="plot_trajectories.html">plot_trajectories()</a></code>
+
+        </dt>
+        <dd>Draw a forward trajectory tree</dd>
+
+        <dt>
+
+          <code><a href="plot_pruning.html">plot_pruning()</a></code>
+
+        </dt>
+        <dd>Plot how much memory one pathway needs</dd>
+
+        <dt>
+
+          <code><a href="plot_difference.html">plot_difference()</a></code>
+
+        </dt>
+        <dd>Map the next-state differences between two groups</dd>
+      </dl></div><div class="section level2">
+      <h2 id="plots-of-inference-results">Plots of inference results<a class="anchor" aria-label="anchor" href="#plots-of-inference-results"></a></h2>
+
+      <div class="section-desc"><p>Displays of bootstrap, comparison and tuning results.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="plot.transitiontrees_bootstrap.html">plot(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot bootstrap intervals of pathway informativeness</dd>
+
+        <dt>
+
+          <code><a href="plot_pathway_resamples.html">plot_pathway_resamples()</a></code>
+
+        </dt>
+        <dd>Plot the bootstrap distribution of pathway statistics</dd>
+
+        <dt>
+
+          <code><a href="plot.transitiontrees_comparison.html">plot(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the permutation distribution of a two-tree comparison</dd>
+
+        <dt>
+
+          <code><a href="plot.transitiontrees_group_comparison.html">plot(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the context-level differences between groups</dd>
+
+        <dt>
+
+          <code><a href="plot.transitiontrees_tune.html">plot(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Plot the cross-validated perplexity of a tuning grid</dd>
+      </dl></div><div class="section level2">
+      <h2 id="result-accessors">Result accessors<a class="anchor" aria-label="anchor" href="#result-accessors"></a></h2>
+
+      <div class="section-desc"><p>Tidy tables and summaries of fitted trees and inference results.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="as.data.frame.transitiontrees.html">as.data.frame(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a fitted transition tree to a data frame of contexts</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.transitiontrees_group.html">as.data.frame(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a group of transition trees to one data frame of contexts</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.transitiontrees_bootstrap.html">as.data.frame(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a pathway bootstrap to a data frame</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.transitiontrees_comparison.html">as.data.frame(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a two-tree comparison to a data frame</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.transitiontrees_group_comparison.html">as.data.frame(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a group comparison to a data frame</dd>
+
+        <dt>
+
+          <code><a href="as.data.frame.transitiontrees_tune.html">as.data.frame(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Convert a tuning grid to a data frame</dd>
 
         <dt>
 
           <code><a href="summary.transitiontrees.html">summary(<i>&lt;transitiontrees&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summary of a Context Tree</dd>
+        <dd>Summarize a fitted transition tree</dd>
+
+        <dt>
+
+          <code><a href="summary.transitiontrees_group.html">summary(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a group of fitted transition trees</dd>
 
         <dt>
 
           <code><a href="summary.transitiontrees_bootstrap.html">summary(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summarise a context tree Bootstrap</dd>
+        <dd>Summarize a pathway bootstrap</dd>
+
+        <dt>
+
+          <code><a href="summary.transitiontrees_comparison.html">summary(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a two-tree comparison</dd>
 
         <dt>
 
           <code><a href="summary.transitiontrees_group_comparison.html">summary(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
 
         </dt>
-        <dd>Summarise a Group Comparison</dd>
+        <dd>Summarize a group comparison</dd>
 
         <dt>
+
+          <code><a href="summary.transitiontrees_tune.html">summary(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Summarize a tuning grid</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees.html">print(<i>&lt;transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a fitted transition tree</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees_group.html">print(<i>&lt;transitiontrees_group&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a group of fitted transition trees</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees_bootstrap.html">print(<i>&lt;transitiontrees_bootstrap&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a pathway bootstrap</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees_comparison.html">print(<i>&lt;transitiontrees_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a two-tree comparison</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees_group_comparison.html">print(<i>&lt;transitiontrees_group_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a group comparison</dd>
+
+        <dt>
+
+          <code><a href="print.transitiontrees_tune.html">print(<i>&lt;transitiontrees_tune&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a tuning grid</dd>
+
+        <dt>
+
+          <code><a href="print.summary.transitiontrees.html">print(<i>&lt;summary.transitiontrees&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print the summary of a transition tree</dd>
+
+        <dt>
+
+          <code><a href="print.summary.transitiontrees_group.html">print(<i>&lt;summary.transitiontrees_group&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print the summary of a group of transition trees</dd>
+
+        <dt>
+
+          <code><a href="print.summary.transitiontrees_comparison.html">print(<i>&lt;summary.transitiontrees_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a summary of a two-tree comparison</dd>
+
+        <dt>
+
+          <code><a href="print.summary.transitiontrees_group_comparison.html">print(<i>&lt;summary.transitiontrees_group_comparison&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a summary of a group comparison</dd>
+
+        <dt>
+
+          <code><a href="print.summary.transitiontrees_tune.html">print(<i>&lt;summary.transitiontrees_tune&gt;</i>)</a></code>
+
+        </dt>
+        <dd>Print a summary of a tuning grid</dd>
+      </dl></div><div class="section level2">
+      <h2 id="data">Data<a class="anchor" aria-label="anchor" href="#data"></a></h2>
+
+      <div class="section-desc"><p>Engagement trajectories, collaborative regulation events and human-AI collaboration messages.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
 
           <code><a href="trajectories.html">trajectories</a></code>
 
@@ -477,37 +650,31 @@
 
         <dt>
 
-          <code><a href="tree_dependence.html">tree_dependence()</a></code>
+          <code><a href="engagement.html">engagement</a></code>
 
         </dt>
-        <dd>Per-Context Path Dependence of a Context Tree</dd>
+        <dd>Student engagement sequences (wide format)</dd>
 
         <dt>
 
-          <code><a href="tree_distance.html">tree_distance()</a></code>
+          <code><a href="group_regulation_long.html">group_regulation_long</a></code>
 
         </dt>
-        <dd>Symmetric KL Distance Between Two context trees</dd>
+        <dd>Regulation of collaborative learning (long event log)</dd>
 
         <dt>
 
-          <code><a href="tree_pathways.html">tree_pathways()</a></code>
+          <code><a href="ai_long.html">ai_long</a></code>
 
         </dt>
-        <dd>Pathways from a Fitted Tree</dd>
-
-        <dt>
-
-          <code><a href="tune_tree.html">tune_tree()</a></code>
-
-        </dt>
-        <dd>Cross-Validated Hyperparameter Tuning for context trees</dd>
+        <dd>AI turns in human-AI programming sessions (long event log)</dd>
       </dl></div>
-  </main></div>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+    </nav></aside></div>
 
 
     <footer><div class="pkgdown-footer-left">
-  <p>Developed by Mohammed Saqr, Sonsoles López-Pernas.</p>
+  <p>Developed by <a href="https://saqr.me" class="external-link">Mohammed Saqr</a>, <a href="https://sonsoles.me" class="external-link">Sonsoles López-Pernas</a>.</p>
 </div>
 
 <div class="pkgdown-footer-right">

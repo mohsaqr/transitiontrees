@@ -1,6 +1,9 @@
-# Summary of a Context Tree
+# Summarize a fitted transition tree
 
-Summary of a Context Tree
+[`summary()`](https://rdrr.io/r/base/summary.html) summarizes a fitted
+tree by its size (numbers of states and contexts, depth, pruned or not)
+and its table of contexts ordered by depth and, within depth, by
+decreasing count, so that the table reads from the root downward.
 
 ## Usage
 
@@ -13,26 +16,32 @@ summary(object, ...)
 
 - object:
 
-  A `transitiontrees`.
+  A `transitiontrees` object.
 
 - ...:
 
-  Ignored.
+  Not used.
 
 ## Value
 
-A `summary.transitiontrees` object. The `$table` slot is the canonical
-pathway data.frame from
-[`tree_pathways`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
-(columns `pathway`, `depth`, `count`, `likely_next`, `next_probability`,
-`divergence`, `changes_prediction`), re-sorted by `(depth, -count)` so
-the structural tree order is read top-to-bottom. Its other components
-are the scalars `n_states`, `max_depth`, `n_nodes` and `pruned`.
+An object of class `summary.transitiontrees`, which prints a header and
+the first rows of the context table (columns as in
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)).
+For the full table use
+[`as.data.frame()`](https://rdrr.io/r/base/as.data.frame.html) on the
+tree; for fit statistics use
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md).
+
+## See also
+
+[`print.summary.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees.md),
+[`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md),
+[`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md).
 
 ## Examples
 
 ``` r
-tree <- context_tree(trajectories, max_depth = 2L)
+tree <- context_tree(trajectories, max_depth = 2)
 summary(tree)
 #> <transitiontrees summary>  13 nodes, depth <= 2, 3 states  [unpruned]
 #> 

@@ -1,7 +1,10 @@
-# Plot Bootstrap Resample Distributions per Pathway
+# Plot the bootstrap distribution of pathway statistics
 
-Faceted histogram of the bootstrap resample values for a chosen pathway
-statistic, one panel per pathway.
+`plot_pathway_resamples()` draws, for each selected pathway, a histogram
+of one statistic across the bootstrap resamples. The spread of a
+histogram shows how much the statistic depends on which sequences were
+sampled; a count histogram with mass near zero marks a pathway that a
+different sample may not contain.
 
 ## Usage
 
@@ -19,37 +22,47 @@ plot_pathway_resamples(
 
 - x:
 
-  A `transitiontrees_bootstrap` object.
+  A `transitiontrees_bootstrap` object fitted with
+  `keep_resamples = TRUE`.
 
 - pathways:
 
-  Character vector of pathway names. `NULL` (default) picks the top
-  `top` pathways from the summary.
+  Pathways to show, in arrow notation. Default `NULL`: the first `top`
+  pathways of the summary table.
 
 - stat:
 
-  Character. One of `"count"` (default), `"next_probability"`,
-  `"divergence"`, `"G2"`.
+  `"count"` (default), `"next_probability"`, `"divergence"` or `"G2"`.
 
 - top:
 
-  Integer. Default 6.
+  Number of pathways when `pathways` is `NULL`. Default 6.
 
 - bins:
 
-  Integer. Histogram bins. Default 30.
+  Number of histogram bins. Default 30.
 
 ## Value
 
-A ggplot object.
+A ggplot object with one histogram panel per pathway.
+
+## Conditions
+
+- `transitiontrees_bad_input`:
+
+  (error) `x` is not a `transitiontrees_bootstrap`; the resamples were
+  not kept; a requested pathway is not in the bootstrap.
+
+## See also
+
+[`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md),
+[`as.data.frame.transitiontrees_bootstrap`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_bootstrap.md)
+for the values.
 
 ## Examples
 
 ``` r
-set.seed(1)
-seqs <- replicate(40, sample(c("A", "B", "C"), 10, replace = TRUE),
-                  simplify = FALSE)
-boot <- bootstrap_pathways(context_tree(seqs, max_depth = 1L),
-                           iter = 50L)
-plot_pathway_resamples(boot, stat = "count")
+boot <- bootstrap_pathways(context_tree(trajectories, max_depth = 2),
+                           iter = 50)
+plot_pathway_resamples(boot, stat = "count", top = 4, bins = 15)
 ```

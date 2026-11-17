@@ -1,8 +1,8 @@
-# Print a Group Comparison
+# Print a group comparison
 
-Print method for a `transitiontrees_group_comparison`: a header with the
-groups and permutation setup, the omnibus behavioral / usage statistics,
-and the top pathways ranked by behavioral divergence.
+[`print()`](https://rdrr.io/r/base/print.html) prints the groups and
+permutation design, the omnibus behavioral and usage tests, and the `n`
+contexts with the largest behavioral differences.
 
 ## Usage
 
@@ -19,11 +19,11 @@ print(x, n = 10L, digits = 3L, ...)
 
 - n:
 
-  Integer. Number of top pathways to print. Default 10.
+  Number of contexts to print. Default 10.
 
 - digits:
 
-  Integer. Numeric digits for the printed tables. Default 3.
+  Rounding digits for the printed tables. Default 3.
 
 - ...:
 
@@ -31,33 +31,37 @@ print(x, n = 10L, digits = 3L, ...)
 
 ## Value
 
-`x` invisibly.
+`x`, invisibly.
+
+## See also
+
+[`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md),
+[`as.data.frame.transitiontrees_group_comparison`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group_comparison.md)
+for every context.
 
 ## Examples
 
 ``` r
-set.seed(1)
-gx <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.6,.2)), simplify = FALSE)
-gy <- replicate(40, sample(c("A","B","C"), 8, replace = TRUE,
-                           prob = c(.2,.2,.6)), simplify = FALSE)
-grp <- context_tree(c(gx, gy), group = rep(c("x","y"), each = 40),
-                    max_depth = 1L)
-cmp <- compare_groups(grp, iter = 99L)
-print(cmp, n = 3L)
-#> <transitiontrees_group_comparison>  2 groups, 99 permutations
-#>   groups   : x, y
-#>   contexts : 4 tested
+grp <- context_tree(group_regulation_long, actor = "Actor", time = "Time",
+                    action = "Action", group = "Achiever", max_depth = 1)
+print(compare_groups(grp, iter = 20), n = 3)
+#> <transitiontrees_group_comparison>  2 groups, 20 permutations
+#>   groups   : High, Low
+#>   contexts : 10 tested
 #> 
 #> omnibus (permutation):
-#>        axis                 statistic  value p_value
-#>  behavioral count-weighted JSD (bits) 184.09    0.01
-#>       usage                   sum G^2 208.68    0.01
+#>        axis                 statistic   value p_value
+#>  behavioral count-weighted JSD (bits) 874.104   0.048
+#>       usage                   sum G^2 282.974   0.048
 #> 
 #> top pathways by behavioral divergence (JSD):
-#>  pathway depth count_total modal_x modal_y flips jsd_bits jsd_padj usage_padj
-#>        B     1         226       B       C  TRUE    0.171     0.01      0.015
-#>  (start)     0         640       B       C  TRUE    0.162     0.01         NA
-#>        A     1         117       B       C  TRUE    0.142     0.01      0.020
-#> # ... 1 more (use as.data.frame(x) for the full table)
+#>    pathway depth count_total modal_High modal_Low flips jsd_bits jsd_padj
+#>  synthesis     1         652  consensus consensus FALSE    0.102     0.06
+#>    discuss     1        3951  consensus   discuss  TRUE    0.066     0.06
+#>   cohesion     1        1695  consensus consensus FALSE    0.043     0.06
+#>  usage_padj
+#>       0.054
+#>       0.238
+#>       0.054
+#> # ... 7 more (use as.data.frame(x) for the full table)
 ```

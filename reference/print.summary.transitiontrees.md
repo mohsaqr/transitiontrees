@@ -1,9 +1,9 @@
-# Print a Context-Tree Summary
+# Print the summary of a transition tree
 
-Print method for the object returned by
-[`summary.transitiontrees`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees.md):
-a one-line banner followed by the leading rows of the canonical pathway
-table.
+[`print()`](https://rdrr.io/r/base/print.html) prints the object
+returned by
+[`summary.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees.md):
+a one-line header followed by the first `n` rows of the context table.
 
 ## Usage
 
@@ -20,21 +20,25 @@ print(x, n = 10L, ...)
 
 - n:
 
-  Integer. Number of pathway rows to print. Default 10.
+  Number of context rows to print. Default 10.
 
 - ...:
 
-  Ignored.
+  Not used.
 
 ## Value
 
-`x` invisibly.
+`x`, invisibly.
+
+## See also
+
+[`summary.transitiontrees()`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees.md).
 
 ## Examples
 
 ``` r
-tree <- context_tree(trajectories, max_depth = 2L)
-print(summary(tree), n = 5L)
+tree <- context_tree(trajectories, max_depth = 2)
+print(summary(tree), n = 5)
 #> <transitiontrees summary>  13 nodes, depth <= 2, 3 states  [unpruned]
 #> 
 #>           pathway depth count likely_next next_probability divergence

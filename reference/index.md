@@ -1,135 +1,211 @@
 # Package index
 
-## All functions
+## Overview
 
-- [`ai_long`](https://pak.dynasite.org/transitiontrees/reference/ai_long.md)
-  : AI-collaboration messages (long format)
-- [`as.data.frame(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees.md)
-  : Coerce a context tree to a Tidy Data Frame
-- [`as.data.frame(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_bootstrap.md)
-  : Coerce a context tree Bootstrap to a Tidy Data Frame
-- [`as.data.frame(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_comparison.md)
-  : Coerce a context tree Comparison to a Tidy Data Frame
-- [`as.data.frame(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group.md)
-  : Coerce a Group of Trees to One Tidy Data Frame
-- [`as.data.frame(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group_comparison.md)
-  : Coerce a Group Comparison to a Tidy Data Frame
-- [`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md)
-  : Bootstrap Pathway Stability and Informativeness
-- [`common_pathways()`](https://pak.dynasite.org/transitiontrees/reference/common_pathways.md)
-  : Most Common Pathways in a Fitted Tree
-- [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
-  : Compare Groups of Sequences for Structural Differences
-- [`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md)
-  : Compare Pruning Criteria on One Tree
-- [`compare_smoothing()`](https://pak.dynasite.org/transitiontrees/reference/compare_smoothing.md)
-  : Compare Smoothing Schemes on One Dataset
-- [`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md)
-  : Compare Two context trees by Symmetric Divergence with Permutation
-  Test
+- [`transitiontrees`](https://pak.dynasite.org/transitiontrees/reference/transitiontrees-package.md)
+  [`transitiontrees-package`](https://pak.dynasite.org/transitiontrees/reference/transitiontrees-package.md)
+  : transitiontrees: Transition Trajectories and Dynamics of
+  Variable-Length Pathways or Sequences
+
+## Fitting
+
+Fit a variable-order transition tree from wide sequences, event logs or
+network objects, prepare long logs, and re-smooth or prune a fitted
+tree.
+
 - [`context_tree()`](https://pak.dynasite.org/transitiontrees/reference/context_tree.md)
-  : Fit a Prediction Suffix Tree from Categorical Sequence Data
-- [`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md)
-  : Most Predictively Divergent Pathways
-- [`engagement`](https://pak.dynasite.org/transitiontrees/reference/engagement.md)
-  : Student engagement state sequences (wide format)
-- [`generate_sequences()`](https://pak.dynasite.org/transitiontrees/reference/generate_sequences.md)
-  : Sample Sequences from a Fitted Context Tree
-- [`group_regulation_long`](https://pak.dynasite.org/transitiontrees/reference/group_regulation_long.md)
-  : Collaborative-regulation events (long format)
-- [`impute_sequences()`](https://pak.dynasite.org/transitiontrees/reference/impute_sequences.md)
-  : Impute Missing States in Sequences
-- [`logLik(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md)
-  : Log-Likelihood of a context tree
-- [`mine_contexts()`](https://pak.dynasite.org/transitiontrees/reference/mine_contexts.md)
-  : Mine Contexts by Next-State Probability
-- [`mine_sequences()`](https://pak.dynasite.org/transitiontrees/reference/mine_sequences.md)
-  : Mine Sequences by Predictive Surprise
-- [`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
-  : Model-Fit Scalars in One Call
-- [`n_nodes()`](https://pak.dynasite.org/transitiontrees/reference/n_nodes.md)
-  : Number of Contexts (Nodes) in a Tree
-- [`nobs(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/nobs.transitiontrees.md)
-  : Number of Observations Used to Fit a context tree
-- [`pathway_exists()`](https://pak.dynasite.org/transitiontrees/reference/pathway_exists.md)
-  : Test Whether a Pathway Exists in the Tree
-- [`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md)
-  : Perplexity of a context tree
-- [`plot(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees.md)
-  : Plot a Context Tree
-- [`plot(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_bootstrap.md)
-  : Plot a context tree Bootstrap
-- [`plot(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_comparison.md)
-  : Plot a context tree Comparison
-- [`plot(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group.md)
-  : Plot Each Tree in a context tree Group
-- [`plot(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group_comparison.md)
-  : Plot a Group Comparison
-- [`plot(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_tune.md)
-  : Plot a context tree CV Grid
-- [`plot_difference()`](https://pak.dynasite.org/transitiontrees/reference/plot_difference.md)
-  : Difference (Subtraction) Map Between Two Groups
-- [`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md)
-  : Per-Context Next-State Distributions
-- [`plot_divergence()`](https://pak.dynasite.org/transitiontrees/reference/plot_divergence.md)
-  : Lollipop Chart of Pathway Divergence
-- [`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md)
-  : Plot Bootstrap Resample Distributions per Pathway
-- [`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md)
-  : Plot Pathways as a Probability Heatmap
-- [`plot_predictive()`](https://pak.dynasite.org/transitiontrees/reference/plot_predictive.md)
-  : Predictive Diagnostics for Held-Out Scoring
-- [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
-  : Illustrate Pruning Along a Pathway's Suffix Chain
-- [`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
-  : Forward Trajectory Tree (Prefix Tree)
-- [`predict(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/predict.transitiontrees.md)
-  : Predict Next-State Probabilities from a Context Tree
+  : Fit a variable-order transition tree
 - [`prepare_input()`](https://pak.dynasite.org/transitiontrees/reference/prepare_input.md)
-  : Reshape Long Event Data into a Wide Sequence Frame
-- [`print(`*`<summary.transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees.md)
-  : Print a Context-Tree Summary
-- [`print(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees.md)
-  : Print a Context Tree
-- [`print(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_bootstrap.md)
-  : Print a context tree Bootstrap
-- [`print(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_comparison.md)
-  : Print a context tree Comparison
-- [`print(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_group.md)
-  : Print a Group of Context Trees
-- [`print(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_group_comparison.md)
-  : Print a Group Comparison
-- [`print(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_tune.md)
-  : Print a context tree Tuning Grid
-- [`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
-  : Prune a Context Tree
-- [`query_pathway()`](https://pak.dynasite.org/transitiontrees/reference/query_pathway.md)
-  : Query the Probability of a Specific Pathway -\> Next State
-- [`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md)
-  : Per-Position Scoring
-- [`score_sequences()`](https://pak.dynasite.org/transitiontrees/reference/score_sequences.md)
-  : Per-Sequence Scoring
-- [`sharp_pathways()`](https://pak.dynasite.org/transitiontrees/reference/sharp_pathways.md)
-  : Sharpest Pathways
-- [`simulate(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/simulate.transitiontrees.md)
-  : Simulate Sequences from a Fitted context tree
+  : Reshape a long event log into one sequence per row
 - [`smooth_tree()`](https://pak.dynasite.org/transitiontrees/reference/smooth_tree.md)
-  : Re-Smooth a Fitted context tree
+  : Re-smooth the next-state probabilities of a fitted tree
+- [`prune_tree()`](https://pak.dynasite.org/transitiontrees/reference/prune_tree.md)
+  : Prune a transition tree to the contexts that change the prediction
+- [`compare_smoothing()`](https://pak.dynasite.org/transitiontrees/reference/compare_smoothing.md)
+  : Compare smoothing schemes on one dataset
+- [`compare_pruning()`](https://pak.dynasite.org/transitiontrees/reference/compare_pruning.md)
+  : Compare pruning criteria on one tree
+
+## Pathways
+
+Ranked tables of the contexts a tree holds, the state distribution, and
+lookups of single pathways.
+
+- [`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
+  : List the pathways of a fitted transition tree
+- [`common_pathways()`](https://pak.dynasite.org/transitiontrees/reference/common_pathways.md)
+  : List the most frequent pathways of a tree
+- [`divergent_pathways()`](https://pak.dynasite.org/transitiontrees/reference/divergent_pathways.md)
+  : List the pathways whose history most changes the prediction
+- [`sharp_pathways()`](https://pak.dynasite.org/transitiontrees/reference/sharp_pathways.md)
+  : List the pathways with the most certain next state
+- [`tree_dependence()`](https://pak.dynasite.org/transitiontrees/reference/tree_dependence.md)
+  : Measure how much each step of history changes the prediction
+- [`state_frequencies()`](https://pak.dynasite.org/transitiontrees/reference/state_frequencies.md)
+  : Count how often each state occurs
+- [`query_pathway()`](https://pak.dynasite.org/transitiontrees/reference/query_pathway.md)
+  : Look up the next-state distribution after a pathway
+- [`pathway_exists()`](https://pak.dynasite.org/transitiontrees/reference/pathway_exists.md)
+  : Test whether a pathway is a context of the tree
 - [`subtree()`](https://pak.dynasite.org/transitiontrees/reference/subtree.md)
-  : Extract the Subtree Rooted at a Pathway
+  : Extract the branch of a tree below one context
+
+## Fit and selection
+
+In-sample and held-out fit, information criteria, perplexity and
+cross-validated selection of depth, minimum count, smoothing and
+pruning.
+
+- [`model_fit()`](https://pak.dynasite.org/transitiontrees/reference/model_fit.md)
+  : Summarize the fit of a transition tree
+- [`logLik(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/logLik.transitiontrees.md)
+  : Compute the log-likelihood of a transition tree
+- [`nobs(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/nobs.transitiontrees.md)
+  : Count the observations a transition tree was fitted on
+- [`perplexity()`](https://pak.dynasite.org/transitiontrees/reference/perplexity.md)
+  : Compute the perplexity of a transition tree
+- [`n_nodes()`](https://pak.dynasite.org/transitiontrees/reference/n_nodes.md)
+  : Count the contexts of a transition tree
+- [`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
+  : Select context tree settings by cross-validated perplexity
+
+## Prediction and scoring
+
+Next-state prediction, scoring of held-out sequences, simulation,
+imputation of gaps and mining of unusual contexts and sequences.
+
+- [`predict(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/predict.transitiontrees.md)
+  : Predict the next state after each history
+- [`score_sequences()`](https://pak.dynasite.org/transitiontrees/reference/score_sequences.md)
+  : Score each sequence under a fitted tree
+- [`score_positions()`](https://pak.dynasite.org/transitiontrees/reference/score_positions.md)
+  : Score each position of each sequence under a fitted tree
+- [`generate_sequences()`](https://pak.dynasite.org/transitiontrees/reference/generate_sequences.md)
+  : Generate sequences from a fitted transition tree
+- [`simulate(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/simulate.transitiontrees.md)
+  : Simulate sequences from a fitted transition tree
+- [`impute_sequences()`](https://pak.dynasite.org/transitiontrees/reference/impute_sequences.md)
+  : Fill in missing states of incomplete sequences
+- [`mine_contexts()`](https://pak.dynasite.org/transitiontrees/reference/mine_contexts.md)
+  : Find the contexts that make a given next state likely or unlikely
+- [`mine_sequences()`](https://pak.dynasite.org/transitiontrees/reference/mine_sequences.md)
+  : Find the least and most typical sequences
+
+## Reliability and comparison
+
+Bootstrap stability of pathways, the distance between two trees, and
+permutation tests between two or more groups.
+
+- [`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md)
+  : Bootstrap the stability and informativeness of pathways
+- [`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)
+  : Compute the divergence between two context trees
+- [`compare_trees()`](https://pak.dynasite.org/transitiontrees/reference/compare_trees.md)
+  : Test whether two context trees differ, with a permutation test
+- [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md)
+  : Test where groups of sequences differ, context by context
+
+## Plots of a tree
+
+The fitted tree as a horizontal tree, dendrogram, sunburst or
+interactive network, and displays of its pathways, distributions,
+forward trajectories and pruning decisions.
+
+- [`plot(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees.md)
+  : Plot a context tree
+- [`plot(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group.md)
+  : Plot the context tree of each group
+- [`plot_pathways()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathways.md)
+  : Plot pathways as a heatmap of next-state probabilities
+- [`plot_divergence()`](https://pak.dynasite.org/transitiontrees/reference/plot_divergence.md)
+  : Plot the pathways whose history changes the prediction most
+- [`plot_distributions()`](https://pak.dynasite.org/transitiontrees/reference/plot_distributions.md)
+  : Plot the next-state distribution of each context
+- [`plot_predictive()`](https://pak.dynasite.org/transitiontrees/reference/plot_predictive.md)
+  : Plot how well a context tree predicts new sequences
+- [`plot_trajectories()`](https://pak.dynasite.org/transitiontrees/reference/plot_trajectories.md)
+  : Draw a forward trajectory tree
+- [`plot_pruning()`](https://pak.dynasite.org/transitiontrees/reference/plot_pruning.md)
+  : Plot how much memory one pathway needs
+- [`plot_difference()`](https://pak.dynasite.org/transitiontrees/reference/plot_difference.md)
+  : Map the next-state differences between two groups
+
+## Plots of inference results
+
+Displays of bootstrap, comparison and tuning results.
+
+- [`plot(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_bootstrap.md)
+  : Plot bootstrap intervals of pathway informativeness
+- [`plot_pathway_resamples()`](https://pak.dynasite.org/transitiontrees/reference/plot_pathway_resamples.md)
+  : Plot the bootstrap distribution of pathway statistics
+- [`plot(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_comparison.md)
+  : Plot the permutation distribution of a two-tree comparison
+- [`plot(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_group_comparison.md)
+  : Plot the context-level differences between groups
+- [`plot(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/plot.transitiontrees_tune.md)
+  : Plot the cross-validated perplexity of a tuning grid
+
+## Result accessors
+
+Tidy tables and summaries of fitted trees and inference results.
+
+- [`as.data.frame(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees.md)
+  : Convert a fitted transition tree to a data frame of contexts
+- [`as.data.frame(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group.md)
+  : Convert a group of transition trees to one data frame of contexts
+- [`as.data.frame(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_bootstrap.md)
+  : Convert a pathway bootstrap to a data frame
+- [`as.data.frame(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_comparison.md)
+  : Convert a two-tree comparison to a data frame
+- [`as.data.frame(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_group_comparison.md)
+  : Convert a group comparison to a data frame
+- [`as.data.frame(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/as.data.frame.transitiontrees_tune.md)
+  : Convert a tuning grid to a data frame
 - [`summary(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees.md)
-  : Summary of a Context Tree
+  : Summarize a fitted transition tree
+- [`summary(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_group.md)
+  : Summarize a group of fitted transition trees
 - [`summary(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_bootstrap.md)
-  : Summarise a context tree Bootstrap
+  : Summarize a pathway bootstrap
+- [`summary(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_comparison.md)
+  : Summarize a two-tree comparison
 - [`summary(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_group_comparison.md)
-  : Summarise a Group Comparison
+  : Summarize a group comparison
+- [`summary(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/summary.transitiontrees_tune.md)
+  : Summarize a tuning grid
+- [`print(`*`<transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees.md)
+  : Print a fitted transition tree
+- [`print(`*`<transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_group.md)
+  : Print a group of fitted transition trees
+- [`print(`*`<transitiontrees_bootstrap>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_bootstrap.md)
+  : Print a pathway bootstrap
+- [`print(`*`<transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_comparison.md)
+  : Print a two-tree comparison
+- [`print(`*`<transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_group_comparison.md)
+  : Print a group comparison
+- [`print(`*`<transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.transitiontrees_tune.md)
+  : Print a tuning grid
+- [`print(`*`<summary.transitiontrees>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees.md)
+  : Print the summary of a transition tree
+- [`print(`*`<summary.transitiontrees_group>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees_group.md)
+  : Print the summary of a group of transition trees
+- [`print(`*`<summary.transitiontrees_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees_comparison.md)
+  : Print a summary of a two-tree comparison
+- [`print(`*`<summary.transitiontrees_group_comparison>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees_group_comparison.md)
+  : Print a summary of a group comparison
+- [`print(`*`<summary.transitiontrees_tune>`*`)`](https://pak.dynasite.org/transitiontrees/reference/print.summary.transitiontrees_tune.md)
+  : Print a summary of a tuning grid
+
+## Data
+
+Engagement trajectories, collaborative regulation events and human-AI
+collaboration messages.
+
 - [`trajectories`](https://pak.dynasite.org/transitiontrees/reference/trajectories.md)
   : Student engagement trajectories
-- [`tree_dependence()`](https://pak.dynasite.org/transitiontrees/reference/tree_dependence.md)
-  : Per-Context Path Dependence of a Context Tree
-- [`tree_distance()`](https://pak.dynasite.org/transitiontrees/reference/tree_distance.md)
-  : Symmetric KL Distance Between Two context trees
-- [`tree_pathways()`](https://pak.dynasite.org/transitiontrees/reference/tree_pathways.md)
-  : Pathways from a Fitted Tree
-- [`tune_tree()`](https://pak.dynasite.org/transitiontrees/reference/tune_tree.md)
-  : Cross-Validated Hyperparameter Tuning for context trees
+- [`engagement`](https://pak.dynasite.org/transitiontrees/reference/engagement.md)
+  : Student engagement sequences (wide format)
+- [`group_regulation_long`](https://pak.dynasite.org/transitiontrees/reference/group_regulation_long.md)
+  : Regulation of collaborative learning (long event log)
+- [`ai_long`](https://pak.dynasite.org/transitiontrees/reference/ai_long.md)
+  : AI turns in human-AI programming sessions (long event log)

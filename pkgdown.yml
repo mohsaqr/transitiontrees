@@ -2,12 +2,20 @@ pandoc: 3.8.3
 pkgdown: 2.2.1
 pkgdown_sha: ~
 articles:
-  advanced-analysis: advanced-analysis.html
-  analysis-case: analysis-case.html
-  ecosystem-compatibility: ecosystem-compatibility.html
-  getting-started: getting-started.html
-  visualization: visualization.html
-last_built: 2026-11-09T19:38Z
+  articles/case-ai-collaboration: case-ai-collaboration.html
+  articles/case-engagement: case-engagement.html
+  articles/case-regulation-achievement: case-regulation-achievement.html
+  comparing-groups: comparing-groups.html
+  articles/data-input: data-input.html
+  articles/model-selection: model-selection.html
+  articles/pathway-reliability: pathway-reliability.html
+  articles/prediction-and-scoring: prediction-and-scoring.html
+  articles/smoothing-and-pruning: smoothing-and-pruning.html
+  transitiontrees: transitiontrees.html
+  articles/verification: verification.html
+  articles/visualization: visualization.html
+  articles/workflow: workflow.html
+last_built: 2026-11-17T11:28Z
 urls:
   reference: https://pak.dynasite.org/transitiontrees/reference
   article: https://pak.dynasite.org/transitiontrees/articles
