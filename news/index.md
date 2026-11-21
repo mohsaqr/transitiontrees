@@ -2,6 +2,8 @@
 
 ## transitiontrees 0.2.0
 
+CRAN release: 2026-11-17
+
 This release collects the changes made since the CRAN release 0.1.2
 (including the unreleased 0.1.3 and 0.1.4).
 
