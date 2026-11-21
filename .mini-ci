@@ -7,3 +7,7 @@ node system
 # needs unreleased goes in as: sibling ../DIR
 job test   Rscript -e 'testthat::test_local(stop_on_failure = TRUE)'
 job check  Rscript -e 'r <- rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran"), error_on = "never"); print(r); if (r$status != 0 || length(r$errors) || length(r$warnings)) quit(status = 1)'
+
+# Equivalence suite against PST, markovchain and tna (kept out of the package; references in ~/equiv-lib)
+include local_testing_and_equivalence
+job equiv  TRANSITREES_EQUIV_TESTS=true Rscript -e '.libPaths(c(file.path(Sys.getenv("HOME"), "equiv-lib"), .libPaths())); devtools::load_all(".", quiet = TRUE); for (p in c("PST", "markovchain", "tna")) message(p, " ", packageVersion(p)); r <- as.data.frame(testthat::test_dir("local_testing_and_equivalence", reporter = "summary", load_package = "none", stop_on_failure = FALSE)); print(r[, c("file", "test", "nb", "failed", "skipped", "error")]); if (sum(r$failed) || any(r$error) || sum(r$skipped)) quit(status = 1)'
