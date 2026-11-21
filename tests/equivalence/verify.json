@@ -1,0 +1,87 @@
+{
+  "product": "r-transitiontrees",
+  "collection": "equivalence",
+  "title": "Equivalence tests",
+  "references": {
+    "PST": {
+      "authority": "open-source",
+      "citation": "Gabadinho, A., & Ritschard, G. (2016). Analyzing state sequences with probabilistic suffix trees: The PST R package. Journal of Statistical Software, 72(3), 1-39. doi:10.18637/jss.v072.i03"
+    },
+    "markovchain": {
+      "authority": "open-source"
+    },
+    "TraMineR": {
+      "authority": "open-source"
+    },
+    "entropy": {
+      "authority": "open-source"
+    },
+    "tna": {
+      "authority": "open-source"
+    },
+    "stats": {
+      "authority": "open-source"
+    }
+  },
+  "exports": {
+    "covered": [
+      "context_tree()",
+      "query_pathway()",
+      "as.data.frame.transitiontrees()",
+      "tree_pathways()",
+      "n_nodes()",
+      "pathway_exists()",
+      "subtree()",
+      "state_frequencies()",
+      "logLik.transitiontrees()",
+      "nobs.transitiontrees()",
+      "score_positions()",
+      "score_sequences()",
+      "perplexity()",
+      "model_fit()",
+      "mine_sequences()",
+      "predict.transitiontrees()",
+      "impute_sequences()",
+      "generate_sequences()",
+      "simulate.transitiontrees()",
+      "prune_tree()",
+      "compare_pruning()",
+      "smooth_tree()",
+      "compare_smoothing()",
+      "tree_dependence()",
+      "common_pathways()",
+      "divergent_pathways()",
+      "sharp_pathways()",
+      "mine_contexts()",
+      "summary.transitiontrees()",
+      "tree_distance()",
+      "compare_trees()",
+      "as.data.frame.transitiontrees_comparison()",
+      "summary.transitiontrees_comparison()",
+      "as.data.frame.transitiontrees_group()",
+      "summary.transitiontrees_group()",
+      "compare_groups()",
+      "summary.transitiontrees_group_comparison()",
+      "as.data.frame.transitiontrees_group_comparison()",
+      "prepare_input()",
+      "tune_tree()",
+      "as.data.frame.transitiontrees_tune()",
+      "summary.transitiontrees_tune()"
+    ],
+    "not_numeric": {
+      "plot_difference()": "draws a heat map or tree of group differences (a ggplot); its numbers come from compare_groups()",
+      "plot_distributions()": "draws next-state distributions of contexts (a ggplot); the numbers are query_pathway()'s",
+      "plot_divergence()": "draws the divergence ranking (a ggplot); the numbers are tree_pathways()'",
+      "plot_pathway_resamples()": "draws bootstrap resample distributions (a ggplot) of bootstrap_pathways()",
+      "plot_pathways()": "draws the pathway ranking (a ggplot); the numbers are tree_pathways()'",
+      "plot_predictive()": "draws per-position predictive probabilities or log loss (a ggplot); the numbers are score_positions()'",
+      "plot_pruning()": "draws a pathway's suffix chain with its G2 keep/prune status (a ggplot); the chain is internal, reachable only by reaching into the plot's data, so its numbers are not compared (API gap, FINDINGS.md)",
+      "plot_trajectories()": "draws forward trajectory trees (a ggplot)"
+    },
+    "not_yet": {
+      "bootstrap_pathways()": "resamples sequences inside the function (seed = only) with no argument to supply the resampled indices; a check needs an index argument, or a seeded Monte Carlo study of its stability rates against an established bootstrap",
+      "as.data.frame.transitiontrees_bootstrap()": "the table of bootstrap_pathways(), whose resamples cannot be supplied (see bootstrap_pathways())",
+      "summary.transitiontrees_bootstrap()": "the summary of bootstrap_pathways(), whose resamples cannot be supplied (see bootstrap_pathways())"
+    }
+  }
+}

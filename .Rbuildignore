@@ -38,3 +38,4 @@
 ^vignettes/articles$
 ^Project_docs$
 ^AGENT-NOTE.*\.md$
+^tests/equivalence$

@@ -11,3 +11,9 @@ job check  Rscript -e 'r <- rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-c
 # Equivalence suite against PST, markovchain and tna (kept out of the package; references in ~/equiv-lib)
 include local_testing_and_equivalence
 job equiv  TRANSITREES_EQUIV_TESTS=true Rscript -e '.libPaths(c(file.path(Sys.getenv("HOME"), "equiv-lib"), .libPaths())); devtools::load_all(".", quiet = TRUE); for (p in c("PST", "markovchain", "tna")) message(p, " ", packageVersion(p)); r <- as.data.frame(testthat::test_dir("local_testing_and_equivalence", reporter = "summary", load_package = "none", stop_on_failure = FALSE)); print(r[, c("file", "test", "nb", "failed", "skipped", "error")]); if (sum(r$failed) || any(r$error) || sum(r$skipped)) quit(status = 1)'
+
+# The declared equivalence tests (tests/equivalence, the standard: ../equivalence/STANDARD.md): every
+# comparison with a reference (PST, markovchain, TraMineR, entropy, tna in ~/equiv-lib), recorded in
+# .ci/verify-capture/capture.json. Then, on the Mac: sh ../equivalence/push.sh transitiontrees
+job verify Rscript -e 'source("tests/equivalence/helper-verify.R"); verify_tests(lib = "~/equiv-lib")'
+fetch .ci/verify-capture
