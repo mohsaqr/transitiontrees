@@ -21,6 +21,10 @@
     },
     "stats": {
       "authority": "open-source"
+    },
+    "boot": {
+      "authority": "open-source",
+      "citation": "Canty, A., & Ripley, B. D. boot: Bootstrap R (S-Plus) Functions. Davison, A. C., & Hinkley, D. V. (1997). Bootstrap Methods and Their Applications. Cambridge University Press."
     }
   },
   "exports": {
@@ -66,7 +70,10 @@
       "prepare_input()",
       "tune_tree()",
       "as.data.frame.transitiontrees_tune()",
-      "summary.transitiontrees_tune()"
+      "summary.transitiontrees_tune()",
+      "bootstrap_pathways()",
+      "as.data.frame.transitiontrees_bootstrap()",
+      "summary.transitiontrees_bootstrap()"
     ],
     "not_numeric": {
       "plot_difference()": "draws a heat map or tree of group differences (a ggplot); its numbers come from compare_groups()",
@@ -78,10 +85,6 @@
       "plot_pruning()": "draws a pathway's suffix chain with its G2 keep/prune status (a ggplot); the chain is internal, reachable only by reaching into the plot's data, so its numbers are not compared (API gap, FINDINGS.md)",
       "plot_trajectories()": "draws forward trajectory trees (a ggplot)"
     },
-    "not_yet": {
-      "bootstrap_pathways()": "resamples sequences inside the function (seed = only) with no argument to supply the resampled indices; a check needs an index argument, or a seeded Monte Carlo study of its stability rates against an established bootstrap",
-      "as.data.frame.transitiontrees_bootstrap()": "the table of bootstrap_pathways(), whose resamples cannot be supplied (see bootstrap_pathways())",
-      "summary.transitiontrees_bootstrap()": "the summary of bootstrap_pathways(), whose resamples cannot be supplied (see bootstrap_pathways())"
-    }
+    "not_yet": {}
   }
 }

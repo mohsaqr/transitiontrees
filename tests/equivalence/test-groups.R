@@ -142,10 +142,12 @@ test_that("compare_groups() gives each context's group counts, JSD and usage G2,
   ours <- subset(as.data.frame(comparison), select = c(pathway, depth, count_total, count_odd, count_even, jsd_bits, usage_g2))
   # The usage G2 is a glm deviance, converged by IRLS to its default epsilon 1e-8: tolerance 1e-6.
   expect_reference(subset(ours, select = -usage_g2), subset(theirs$table, select = -usage_g2), reference = "entropy",
-                   covers = "compare_groups()", quantity = "per context: group counts and Jensen-Shannon divergence (bits)",
+                   covers = c("compare_groups()", "as.data.frame.transitiontrees_group_comparison()"),
+                   quantity = "per context: group counts and Jensen-Shannon divergence (bits)",
                    tolerance = 1e-12, key = "pathway")
   expect_reference(subset(ours, select = c(pathway, usage_g2)), subset(theirs$table, select = c(pathway, usage_g2)),
-                   reference = "stats", covers = "compare_groups()", quantity = "per context: usage G2",
+                   reference = "stats", covers = c("compare_groups()", "as.data.frame.transitiontrees_group_comparison()"),
+                   quantity = "per context: usage G2",
                    tolerance = 1e-6, key = "pathway")
   overview <- ref_tag(subset(as.data.frame(summary(comparison)), select = c(behavioral_jsd, usage_g2)), test = "omnibus")
   expect_reference(overview, data.frame(test = "omnibus", behavioral_jsd = theirs$behavioral, usage_g2 = theirs$usage),

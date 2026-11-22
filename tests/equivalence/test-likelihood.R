@@ -95,6 +95,26 @@ test_that("perplexity() is exp(-logLik / nobs) of PST's fit, in and out of sampl
                    covers = "perplexity()", quantity = "perplexity", tolerance = 1e-10, measure = "relative")
 })
 
+test_that("perplexity() of one sequence is 2^PST::predict(output = 'logloss') of it", {
+  skip_without_reference(c("PST", "TraMineR"))
+  inputs <- smoothed_inputs()
+  sides <- lapply(names(inputs), \(config) {
+    input <- inputs[[config]]
+    tree <- fit_input(input)
+    pst <- pst_fit_input(input)
+    held_out <- ref_chain(5L, 20L, length(input$alphabet), 98L)
+    rows <- seq_len(nrow(held_out))
+    logloss <- as.numeric(pst_predict(pst, pst_sequences(held_out, input$alphabet), output = "logloss"))
+    list(ours = data.frame(config = config, sequence = rows,
+                           perplexity = vapply(rows, \(i) perplexity(tree, newdata = held_out[i, , drop = FALSE]), numeric(1))),
+         theirs = data.frame(config = config, sequence = rows, perplexity = 2^logloss))
+  })
+  expect_reference(do.call(rbind, lapply(sides, `[[`, "ours")), do.call(rbind, lapply(sides, `[[`, "theirs")),
+                   reference = "PST", covers = "perplexity()", quantity = "perplexity of one held-out sequence",
+                   tolerance = 1e-10, measure = "relative", key = c("config", "sequence"),
+                   note = "PST's mean log loss of the sequence is in bits: its perplexity is 2^logloss")
+})
+
 test_that("model_fit() reports PST's logLik, df and nobs, and AIC, BIC and perplexity from them", {
   skip_without_reference(c("PST", "TraMineR"))
   inputs <- ref_inputs()

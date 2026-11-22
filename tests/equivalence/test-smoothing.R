@@ -107,6 +107,13 @@ test_that("compare_smoothing() reports each smoother's nodes and in-sample perpl
                  perplexity = exp(-mean(log(position_probs))))
     }))
   }))
+  # The number of nodes is the tree's, whatever the smoother: PST's count of nodes and leaves of the same fit.
+  nodes <- do.call(rbind, lapply(names(inputs), \(config) {
+    data.frame(config = config, smoothing = methods, n_nodes = pst_n_nodes(pst_fit_input(inputs[[config]], ymin = 0.001)))
+  }))
+  expect_reference(subset(ours, select = c(config, smoothing, n_nodes)), nodes, reference = "PST",
+                   covers = "compare_smoothing()", quantity = "nodes of the tree per smoother", tolerance = 0,
+                   key = c("config", "smoothing"))
   expect_reference(subset(ours, smoothing != "floor"), other_rows,
                    reference = "independent: perplexity of each position's longest context under the smoothers' definitions on PST's counts",
                    covers = "compare_smoothing()", quantity = "nodes and perplexity per smoother", tolerance = 1e-10,

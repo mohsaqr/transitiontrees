@@ -58,6 +58,17 @@ test_that("compare_trees() gives the observed distance and the per-context break
   results <- lapply(pairs, \(pair) compare_trees(pair$a, pair$b, iter = 19, seed = 1))
   ours <- do.call(rbind, lapply(names(results), \(name) cbind(pair = name, as.data.frame(results[[name]]))))
   theirs <- do.call(rbind, lapply(names(pairs), \(name) cbind(pair = name, ref_breakdown(pairs[[name]]$pst_a, pairs[[name]]$pst_b))))
+  # Each context's counts are PST's node counts, and its divergences entropy::KL.plugin() of PST::query()'s two
+  # distributions (no formula of the test's own beyond the union of the contexts).
+  expect_reference(subset(ours, select = c(pair, pathway, count_a, count_b)),
+                   subset(theirs, select = c(pair, pathway, count_a, count_b)), reference = "PST",
+                   covers = c("compare_trees()", "as.data.frame.transitiontrees_comparison()"),
+                   quantity = "per-context counts of the two trees", tolerance = 0, key = c("pair", "pathway"))
+  expect_reference(subset(ours, select = c(pair, pathway, divergence_ab, divergence_ba, divergence_sym)),
+                   subset(theirs, select = c(pair, pathway, divergence_ab, divergence_ba, divergence_sym)),
+                   reference = "entropy", covers = c("compare_trees()", "as.data.frame.transitiontrees_comparison()"),
+                   quantity = "per-context divergences, entropy::KL.plugin() of PST::query()", tolerance = 1e-12,
+                   key = c("pair", "pathway"))
   expect_reference(ours, theirs, reference = reference, covers = c("compare_trees()", "as.data.frame.transitiontrees_comparison()"),
                    quantity = "per-context counts and divergences", tolerance = 1e-12, key = c("pair", "pathway"))
   overview <- do.call(rbind, lapply(names(results), \(name) cbind(pair = name, subset(summary(results[[name]]), select = c(distance, n_pathways)))))
