@@ -1,5 +1,22 @@
 # Changelog
 
+## transitiontrees 0.2.1
+
+- No change to the package’s code. The equivalence tests
+  (`tests/equivalence/`, not part of the build) now compare
+  `smoothing = "kneser_ney"` with interpolated Kneser-Ney written out
+  with continuation counts (Kneser & Ney 1995; Chen & Goodman 1999). The
+  option is interpolated absolute discounting that backs off to the
+  parent’s smoothed distribution, as its documentation says, so the two
+  disagree (median 0.0035, largest 0.149 per probability over eight
+  configurations); this is recorded as a known defect pending a decision
+  to implement Kneser-Ney or to rename the option.
+- The equivalence tests also compare, by seeded Monte Carlo, the
+  bootstrap SDs, percentile bounds and `p_stability` of
+  [`bootstrap_pathways()`](https://pak.dynasite.org/transitiontrees/reference/bootstrap_pathways.md),
+  its observed G2, and the permutation p-values of
+  [`compare_groups()`](https://pak.dynasite.org/transitiontrees/reference/compare_groups.md).
+
 ## transitiontrees 0.2.0
 
 CRAN release: 2026-11-17
