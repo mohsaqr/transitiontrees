@@ -1,4 +1,4 @@
-# How lagdynamics is tested on the Mac mini (ci VM). Run in the repo: mini-ci [job]
+# How transitiontrees is tested on the Mac mini (ci VM). Run in the repo: mini-ci [job]
 #   job NAME COMMAND (first = default) · env KEY=VALUE · sibling ../DIR · include PATH
 #   fetch PATH · report cvs · node mac|X.Y.Z|system (mac = the same Node version as this Mac)
 node system

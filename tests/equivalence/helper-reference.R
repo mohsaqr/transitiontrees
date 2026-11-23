@@ -233,9 +233,11 @@ ref_prune <- function(pst, criterion, cut) {
 #' For a context with counts n_s (total n, k states) and parent distribution q (the nearest shorter suffix in
 #' the tree, already smoothed; uniform for the root). laplace: (n_s + alpha) / (n + k alpha) (Chen & Goodman 1999,
 #' additive). jelinek_mercer: (1 - lambda) n_s / n + lambda q_s (Jelinek & Mercer 1980). witten_bell: the same with
-#' lambda = r / (r + n), r the number of distinct states seen (Witten & Bell 1991). kneser_ney: absolute
-#' discounting, max(n_s - d, 0) / n + (1 - sum(max(n_s - d, 0)) / n) q_s (Ney, Essen & Kneser 1994; the
-#' parent's smoothed distribution, not continuation counts). floor_cap: max(n_s / n, ymin) renormalised.
+#' lambda = r / (r + n), r the number of distinct states seen (Witten & Bell 1991). absolute_discounting:
+#' max(n_s - d, 0) / n + (1 - sum(max(n_s - d, 0)) / n) q_s (interpolated absolute discounting, Ney, Essen &
+#' Kneser 1994: the rule the package documents for its "kneser_ney" option, which backs off to the parent's
+#' smoothed distribution, not to continuation counts; Kneser-Ney itself is ref_kneser_ney_tree()).
+#' floor_cap: max(n_s / n, ymin) renormalised.
 #' @param counts,parent Count vector and parent distribution. @param method,parameter The smoother and its
 #'   hyperparameter (alpha, lambda, discount or ymin).
 ref_smoother <- function(counts, parent, method, parameter = NULL) {
@@ -249,7 +251,7 @@ ref_smoother <- function(counts, parent, method, parameter = NULL) {
            r <- sum(counts > 0)
            (1 - r / (r + n)) * mle + r / (r + n) * parent
          },
-         kneser_ney = {
+         absolute_discounting = {
            discounted <- pmax(counts - parameter, 0) / n
            discounted + (1 - sum(discounted)) * parent
          },
@@ -270,6 +272,84 @@ ref_smooth_tree <- function(pst, method, parameter = NULL) {
     smoothed[[context]] <- ref_smoother(nodes[[context]]$counts, parent, method, parameter)
     smoothed
   }, ordered, list())
+}
+
+#' Continuation counts of every context and next state, from the sequences
+#'
+#' N1+(. h w): the number of distinct states x that precede the context h (a run of states, oldest first) in an
+#' occurrence of x h w (Kneser & Ney 1995; Chen & Goodman 1999, sec. 3, "continuation counts"). For the root
+#' (the empty context), the number of distinct states that precede w. Counted over every window of the sequences
+#' (a position with no state before it has no predecessor and is not counted).
+#' @param sequences A character matrix (NA = missing; trailing NA only). @param alphabet The states.
+#' @param max_length The longest context h counted.
+#' @return A named list keyed by context (arrow notation, "(start)" for the root) of count vectors in alphabet order.
+ref_continuation_counts <- function(sequences, alphabet, max_length) {
+  windows <- do.call(rbind, lapply(seq_len(nrow(sequences)), \(i) {
+    states <- as.character(stats::na.omit(sequences[i, ]))
+    do.call(rbind, lapply(seq.int(0L, max_length), \(m) {
+      ends <- seq.int(m + 2L, length.out = max(length(states) - m - 1L, 0L))
+      if (!length(ends)) return(NULL)
+      context <- vapply(ends, \(t) if (m == 0L) "(start)" else paste(states[(t - m):(t - 1L)], collapse = " -> "),
+                        character(1))
+      data.frame(before = states[ends - m - 1L], context = context, state = states[ends], stringsAsFactors = FALSE)
+    }))
+  }))
+  distinct <- unique(windows)
+  counts <- table(factor(distinct$context, unique(distinct$context)), factor(distinct$state, alphabet))
+  lapply(stats::setNames(rownames(counts), rownames(counts)), \(context) as.numeric(counts[context, ]))
+}
+
+#' Interpolated Kneser-Ney of every context of a PST tree
+#'
+#' Chen & Goodman (1999), eq. for interpolated Kneser-Ney with one discount d: the distribution of a context h
+#' uses its own counts c(h w) (PST's counts), max(c(h w) - d, 0) / c(h) + d N1+(h .) / c(h) P(w | h'), with h' the
+#' context without its oldest state; every lower-order P(w | h') uses continuation counts N1+(. h' w) in place
+#' of c(h' w), with the same discount and interpolation, down to the uniform distribution 1/k. A context whose
+#' (continuation) counts are all zero takes its lower-order distribution. The root queried itself uses its own
+#' counts, interpolated with the uniform distribution.
+#' @param pst A PST tree (unsmoothed). @param sequences The sequences it was fitted on. @param discount d.
+#' @return A named list of probability vectors in alphabet order, keyed by context.
+ref_kneser_ney_tree <- function(pst, sequences, discount) {
+  alphabet <- pst@alphabet
+  k <- length(alphabet)
+  nodes <- pst_node_list(pst)
+  depth <- \(context) if (context == "(start)") 0L else length(strsplit(context, " -> ", fixed = TRUE)[[1L]])
+  continuation <- ref_continuation_counts(sequences, alphabet, max(vapply(names(nodes), depth, integer(1))))
+  interpolate <- function(counts, lower) {
+    n <- sum(counts)
+    if (n == 0) return(lower)
+    pmax(counts - discount, 0) / n + discount * sum(counts > 0) / n * lower
+  }
+  lower_order <- function(context) {
+    counts <- continuation[[context]] %||% numeric(k)
+    below <- if (context == "(start)") rep(1 / k, k) else lower_order(ref_parent(context))
+    interpolate(counts, below)
+  }
+  contexts <- names(nodes)
+  stats::setNames(lapply(contexts, \(context) {
+    below <- if (context == "(start)") rep(1 / k, k) else lower_order(ref_parent(context))
+    interpolate(nodes[[context]]$counts, below)
+  }), contexts)
+}
+
+#' Per-sequence next-state counts of every pathway: an array sequence x pathway x next state
+#'
+#' A pathway "A -> B" is the history A then B (oldest first); "(start)" counts every position.
+ref_sequence_counts <- function(sequences, pathways, alphabet) {
+  rows <- lapply(seq_len(nrow(sequences)), \(s) {
+    states <- stats::na.omit(sequences[s, ])
+    depths <- lengths(strsplit(setdiff(pathways, "(start)"), " -> ", fixed = TRUE))
+    windows <- lapply(sort(unique(depths)), \(d) {
+      starts <- seq_len(max(length(states) - d, 0L))
+      data.frame(context = vapply(starts, \(t) paste(states[t:(t + d - 1L)], collapse = " -> "), character(1)),
+                 next_state = states[starts + d], stringsAsFactors = FALSE)
+    })
+    rbind(data.frame(sequence = s, context = "(start)", next_state = states),
+          cbind(sequence = s, do.call(rbind, windows)))
+  })
+  long <- do.call(rbind, rows)
+  table(factor(long$sequence, levels = seq_len(nrow(sequences))), factor(long$context, levels = pathways),
+        factor(long$next_state, levels = alphabet))
 }
 
 #' The probability of every observed state under a table of context distributions

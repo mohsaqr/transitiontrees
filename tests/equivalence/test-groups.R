@@ -5,7 +5,10 @@
 # distributions in bits (entropy::entropy.plugin() of the mixture minus the weighted entropies), and the G2 of the
 # context's usage (the group x [this context, the other tested contexts of its depth] table; stats::glm() Poisson
 # deviance of independence). The permutation p-values are drawn inside the function with no argument to supply
-# the permutations, and are not compared.
+# the permutations: they are compared by seeded Monte Carlo with a label permutation written out in base R from
+# ?compare_groups (the same contexts, statistics and tie rule, its own seed), cell by cell in standard errors of
+# the difference of two Monte Carlo p-values, sqrt(p (1 - p) (1 / B1 + 1 / B2)) with p the mean of the two, within
+# 4 (fixed before the run), over three seeds.
 
 grouped_input <- function() {
   sequences <- ref_chain(150L, 20L, 3L, 51L)
@@ -150,14 +153,103 @@ test_that("compare_groups() gives each context's group counts, JSD and usage G2,
                    quantity = "per context: usage G2",
                    tolerance = 1e-6, key = "pathway")
   overview <- ref_tag(subset(as.data.frame(summary(comparison)), select = c(behavioral_jsd, usage_g2)), test = "omnibus")
-  expect_reference(overview, data.frame(test = "omnibus", behavioral_jsd = theirs$behavioral, usage_g2 = theirs$usage),
+  # The behavioral omnibus is a sum of entropy::entropy.plugin() divergences; the usage omnibus a sum of glm deviances.
+  expect_reference(subset(overview, select = c(test, behavioral_jsd)),
+                   data.frame(test = "omnibus", behavioral_jsd = theirs$behavioral),
+                   reference = "entropy", key = "test",
+                   covers = c("compare_groups()", "summary.transitiontrees_group_comparison()"),
+                   quantity = "omnibus: count-weighted JSD", tolerance = 1e-12, measure = "relative")
+  expect_reference(subset(overview, select = c(test, usage_g2)), data.frame(test = "omnibus", usage_g2 = theirs$usage),
                    reference = "stats", key = "test",
                    covers = c("compare_groups()", "summary.transitiontrees_group_comparison()"),
-                   quantity = "omnibus: count-weighted JSD and summed usage G2", tolerance = 1e-6, measure = "relative")
+                   quantity = "omnibus: summed usage G2", tolerance = 1e-6, measure = "relative")
   distance <- subset(as.data.frame(comparison, what = "distance"), select = c(group_a, group_b, distance))
   expect_reference(distance, data.frame(group_a = "even", group_b = "odd",
                                         distance = tree_distance_reference(pst_groups(input))),
                    reference = "independent: count-weighted mean KL over the union of contexts, of PST::query() distributions (entropy::KL.plugin)",
                    covers = c("compare_groups()", "as.data.frame.transitiontrees_group_comparison()"),
                    quantity = "distance between the groups' trees", tolerance = 1e-12, key = c("group_a", "group_b"))
+})
+
+# The permutation null of compare_groups() written out: sequences keep their counts, labels are shuffled
+# (base::sample() of the label vector, the reference's own seed), and every context's JSD and usage G2 and the two
+# omnibus totals are recomputed; p = (1 + #{permuted >= observed - 1e-12}) / (B + 1), as ?compare_groups defines.
+ref_group_permutation <- function(input, contexts, iterations, seed) {
+  per_sequence <- ref_sequence_counts(input$sequences, contexts, input$alphabet)
+  dims <- dim(per_sequence)
+  flat <- matrix(per_sequence, nrow = dims[[1L]])
+  depth <- vapply(contexts, \(context) if (context == "(start)") 0L else length(strsplit(context, " -> ", fixed = TRUE)[[1L]]),
+                  integer(1), USE.NAMES = FALSE)
+  entropy_bits <- \(p) -sum(p[p > 0] * log2(p[p > 0]))
+  jsd_of <- \(counts) {
+    totals <- rowSums(counts)
+    seen <- totals > 0
+    if (sum(seen) < 2L) return(0)
+    weights <- totals[seen] / sum(totals[seen])
+    distributions <- counts[seen, , drop = FALSE] / totals[seen]
+    max(entropy_bits(colSums(weights * distributions)) -
+          sum(weights * apply(distributions, 1L, entropy_bits)), 0)
+  }
+  g2_of <- \(table) {
+    expected <- outer(rowSums(table), colSums(table)) / sum(table)
+    seen <- table > 0 & expected > 0
+    if (sum(table) == 0) 0 else 2 * sum(table[seen] * log(table[seen] / expected[seen]))
+  }
+  statistics <- function(labels) {
+    indicator <- stats::model.matrix(~ 0 + factor(labels))
+    pooled <- array(crossprod(indicator, flat), c(ncol(indicator), dims[[2L]], dims[[3L]]))
+    used <- apply(pooled, c(1L, 2L), sum)
+    totals <- vapply(seq_along(contexts), \(i) rowSums(used[, depth == depth[[i]], drop = FALSE]), numeric(nrow(used)))
+    jsd <- vapply(seq_along(contexts), \(i) jsd_of(pooled[, i, ]), numeric(1))
+    usage <- vapply(seq_along(contexts), \(i) g2_of(cbind(used[, i], pmax(totals[, i] - used[, i], 0))), numeric(1))
+    list(jsd = jsd, usage = usage, omnibus = c(behavioral = sum(colSums(used) * jsd), usage = sum(usage)))
+  }
+  observed <- statistics(input$group)
+  old <- if (exists(".Random.seed", envir = globalenv())) get(".Random.seed", envir = globalenv())
+  on.exit(if (is.null(old)) rm(".Random.seed", envir = globalenv()) else
+    assign(".Random.seed", old, envir = globalenv()), add = TRUE)
+  set.seed(seed)
+  permuted <- replicate(iterations, statistics(sample(input$group)), simplify = FALSE)
+  exceed <- \(part) rowSums(vapply(permuted, \(s) s[[part]] >= observed[[part]] - 1e-12, logical(length(observed[[part]]))))
+  p_of <- \(part) (1 + exceed(part)) / (iterations + 1)
+  list(contexts = data.frame(pathway = contexts, jsd_p = p_of("jsd"),
+                             usage_p = ifelse(contexts == "(start)", NA_real_, p_of("usage")), stringsAsFactors = FALSE),
+       omnibus = data.frame(axis = c("behavioral", "usage"), p_value = unname(p_of("omnibus")), stringsAsFactors = FALSE))
+}
+
+test_that("compare_groups() permutation p-values agree with a label permutation written out (seeded Monte Carlo)", {
+  skip_without_reference(c("PST", "TraMineR"))
+  input <- grouped_input()
+  groups <- fit_groups(input)
+  contexts <- unique(unlist(lapply(pst_groups(input), \(pst) pst_node_table(pst)$pathway)))
+  iterations <- 999L
+  scaled <- function(found, theirs, key, columns) {
+    rows <- match(theirs[[key]], found[[key]])
+    se <- lapply(stats::setNames(columns, columns), \(column) {
+      # The mean of the two, kept off 0 and 1 so two p-values of exactly 1 stay equal, not 0 / 0.
+      p <- pmin(pmax((found[[column]][rows] + theirs[[column]]) / 2, 0.5 / iterations), 1 - 0.5 / iterations)
+      sqrt(p * (1 - p) * 2 / iterations)
+    })
+    side <- \(table, rows) cbind(stats::setNames(data.frame(theirs[[key]], stringsAsFactors = FALSE), key),
+                                 as.data.frame(lapply(stats::setNames(columns, columns), \(column) table[[column]][rows] / se[[column]])))
+    list(found = side(found, rows), theirs = side(theirs, seq_len(nrow(theirs))))
+  }
+  invisible(lapply(c(1L, 2L, 3L), \(seed) {
+    comparison <- compare_groups(groups, iter = iterations, seed = seed)
+    theirs <- ref_group_permutation(input, contexts, iterations, seed + 1000L)
+    per_context <- scaled(as.data.frame(comparison), theirs$contexts, "pathway", c("jsd_p", "usage_p"))
+    expect_reference(per_context$found, per_context$theirs,
+                     reference = "independent: label permutation of ?compare_groups written out in base R",
+                     covers = c("compare_groups()", "as.data.frame.transitiontrees_group_comparison()"),
+                     quantity = sprintf("seed %d: per-context permutation p-values in standard errors", seed),
+                     tolerance = 4, key = "pathway",
+                     note = "999 permutations each side; both divided by sqrt(p (1 - p) (1/999 + 1/999)), p the mean of the two; 4 SE fixed before the run")
+    omnibus <- scaled(as.data.frame(comparison, what = "omnibus"), theirs$omnibus, "axis", "p_value")
+    expect_reference(omnibus$found, omnibus$theirs,
+                     reference = "independent: label permutation of ?compare_groups written out in base R",
+                     covers = c("compare_groups()", "as.data.frame.transitiontrees_group_comparison()"),
+                     quantity = sprintf("seed %d: omnibus permutation p-values in standard errors", seed),
+                     tolerance = 4, key = "axis",
+                     note = "999 permutations each side; both divided by sqrt(p (1 - p) (1/999 + 1/999)), p the mean of the two; 4 SE fixed before the run")
+  }))
 })

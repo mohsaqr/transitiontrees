@@ -3,12 +3,16 @@
 # helper-reference.R) and applied to PST's counts, shallow to deep, each context backing off to its parent's
 # smoothed distribution. The floor rule PST uses (rule = "interpolate") is compared with PST in
 # test-context_tree.R; the "cap" variant is written out here.
+# The option "kneser_ney" is checked twice: against the rule the package documents (interpolated absolute
+# discounting that backs off to the parent's smoothed distribution, Ney, Essen & Kneser 1994), and against
+# interpolated Kneser-Ney itself, with continuation counts in the lower orders (Kneser & Ney 1995; Chen & Goodman
+# 1999), which the package cites. The second disagrees: a declared defect, the owner's decision pending.
 
 smoothers <- list(
   laplace = list(spec = "laplace", method = "laplace", parameter = 1),
   laplace_half = list(spec = list("laplace", alpha = 0.5), method = "laplace", parameter = 0.5),
-  kneser_ney = list(spec = "kneser_ney", method = "kneser_ney", parameter = 0.75),
-  kneser_ney_half = list(spec = list("kneser_ney", discount = 0.5), method = "kneser_ney", parameter = 0.5),
+  kneser_ney = list(spec = "kneser_ney", method = "absolute_discounting", parameter = 0.75),
+  kneser_ney_half = list(spec = list("kneser_ney", discount = 0.5), method = "absolute_discounting", parameter = 0.5),
   witten_bell = list(spec = "witten_bell", method = "witten_bell", parameter = NULL),
   jelinek_mercer = list(spec = "jelinek_mercer", method = "jelinek_mercer", parameter = 0.5),
   jelinek_mercer_03 = list(spec = list("jelinek_mercer", lambda = 0.3), method = "jelinek_mercer", parameter = 0.3),
@@ -50,7 +54,9 @@ test_that("every smoother, fitted or applied to a fitted tree, gives the distrib
   })
   flat <- unlist(rows, recursive = FALSE)
   stack <- \(part) do.call(rbind, lapply(flat, `[[`, part))
-  reference <- "independent: the smoothers' definitions (Chen & Goodman 1999; Jelinek & Mercer 1980; Witten & Bell 1991; Ney, Essen & Kneser 1994) on PST's counts"
+  # kneser_ney here is the documented rule, interpolated absolute discounting (Ney, Essen & Kneser 1994); the
+  # other definitions: Chen & Goodman 1999 (additive), Jelinek & Mercer 1980, Witten & Bell 1991.
+  reference <- "independent: smoothers' definitions on PST's counts (kneser_ney = absolute discounting, Ney, Essen & Kneser 1994)"
   expect_reference(stack("fitted"), stack("theirs"), reference = reference,
                    covers = c("context_tree()", "smooth_tree()"), quantity = "smoothed next-state probability (fitted)",
                    tolerance = 1e-12, key = c("config", "smoother", "pathway", "state"))
@@ -101,7 +107,8 @@ test_that("compare_smoothing() reports each smoother's nodes and in-sample perpl
     input <- inputs[[config]]
     pst <- pst_fit_input(input, ymin = 0)
     do.call(rbind, lapply(names(defaults), \(method) {
-      probs <- lapply(ref_smooth_tree(pst, method, defaults[[method]]), \(p) stats::setNames(p, input$alphabet))
+      rule <- if (method == "kneser_ney") "absolute_discounting" else method
+      probs <- lapply(ref_smooth_tree(pst, rule, defaults[[method]]), \(p) stats::setNames(p, input$alphabet))
       position_probs <- ref_position_probs(input$sequences, probs, input$alphabet, input$max_depth)
       data.frame(config = config, smoothing = method, n_nodes = pst_n_nodes(pst),
                  perplexity = exp(-mean(log(position_probs))))
@@ -115,7 +122,40 @@ test_that("compare_smoothing() reports each smoother's nodes and in-sample perpl
                    covers = "compare_smoothing()", quantity = "nodes of the tree per smoother", tolerance = 0,
                    key = c("config", "smoothing"))
   expect_reference(subset(ours, smoothing != "floor"), other_rows,
-                   reference = "independent: perplexity of each position's longest context under the smoothers' definitions on PST's counts",
+                   reference = "independent: perplexity of each position's longest context, smoothers' definitions on PST's counts (kneser_ney = absolute discounting)",
                    covers = "compare_smoothing()", quantity = "nodes and perplexity per smoother", tolerance = 1e-10,
                    measure = "relative", key = c("config", "smoothing"))
+})
+
+test_that("smoothing = 'kneser_ney' against interpolated Kneser-Ney with continuation counts", {
+  skip_without_reference(c("PST", "TraMineR"))
+  inputs <- ref_inputs()
+  discounts <- c(kneser_ney = 0.75, kneser_ney_half = 0.5)
+  rows <- unlist(lapply(names(inputs), \(config) {
+    input <- inputs[[config]]
+    pst <- pst_fit_input(input, ymin = 0)
+    base <- context_tree(input$sequences, max_depth = input$max_depth, min_count = input$min_count,
+                         smoothing = list("floor", ymin = 0), alphabet = input$alphabet)
+    lapply(names(discounts), \(name) {
+      spec <- list("kneser_ney", discount = discounts[[name]])
+      fitted <- context_tree(input$sequences, max_depth = input$max_depth, min_count = input$min_count,
+                             smoothing = spec, alphabet = input$alphabet)
+      kneser_ney <- lapply(ref_kneser_ney_tree(pst, input$sequences, discounts[[name]]),
+                           \(probs) stats::setNames(probs, input$alphabet))
+      list(fitted = cbind(config = config, smoother = name, state_probs(fitted)),
+           resmoothed = cbind(config = config, smoother = name, state_probs(smooth_tree(base, smoothing = spec))),
+           theirs = cbind(config = config, smoother = name, ref_state_probs(kneser_ney)))
+    })
+  }), recursive = FALSE)
+  stack <- \(part) do.call(rbind, lapply(rows, `[[`, part))
+  reference <- "independent: interpolated Kneser-Ney, continuation counts (Kneser & Ney 1995; Chen & Goodman 1999)"
+  defect <- paste("smoothing = 'kneser_ney' is interpolated absolute discounting, not Kneser-Ney (no continuation",
+                  "counts in the lower orders); owner decision pending (implement or rename); FINDINGS.md")
+  expect_reference(stack("fitted"), stack("theirs"), reference = reference,
+                   covers = c("context_tree()", "smooth_tree()"),
+                   quantity = "Kneser-Ney next-state probability (fitted)", tolerance = 1e-12,
+                   key = c("config", "smoother", "pathway", "state"), defect = defect)
+  expect_reference(stack("resmoothed"), stack("theirs"), reference = reference, covers = "smooth_tree()",
+                   quantity = "Kneser-Ney next-state probability (smooth_tree() of a fitted tree)", tolerance = 1e-12,
+                   key = c("config", "smoother", "pathway", "state"), defect = defect)
 })
